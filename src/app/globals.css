@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+
+  html *,
+  html *::before,
+  html *::after {
+    transition-property: background-color, border-color, color, fill, stroke,
+      box-shadow;
+    transition-duration: 200ms;
+    transition-timing-function: ease;
+  }
+}
+
+:root {
+  --color-background: #f5f0e8;
+  --color-surface: #fdfaf5;
+  --color-surface-alt: #ede6d8;
+  --color-border: #d5c9bc;
+  --color-accent: #c4a882;
+  --color-accent-dark: #a68b65;
+  --color-accent-light: #dbc9aa;
+  --color-text-primary: #2c2416;
+  --color-text-secondary: #6b5e4e;
+  --color-text-muted: #9e8e7e;
+  --color-warm-25: #fefcf9;
+  --color-warm-50: #fdfaf5;
+  --color-warm-100: #ede6d8;
+  --color-warm-200: #d5c9bc;
+  --color-warm-300: #c4b8a8;
+  --color-warm-400: #9e8e7e;
+  --color-warm-600: #6b5e4e;
+  --color-warm-700: #524738;
+  --color-warm-900: #2c2416;
+  --color-success: #5c8a6e;
+  --color-danger: #b85c5c;
+  --color-warning: #c4903c;
+  --color-info: #6b7fa8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --color-background: #1a1510;
+    --color-surface: #221c14;
+    --color-surface-alt: #2c2416;
+    --color-border: #3d3328;
+    --color-text-primary: #f5f0e8;
+    --color-text-secondary: #bfb0a0;
+    --color-warm-25: #1d1812;
+    --color-warm-50: #221c14;
+    --color-warm-100: #2c271f;
+    --color-warm-200: #3d3328;
+    --color-warm-300: #7a7065;
+    --color-warm-400: #9e8e7e;
+    --color-warm-600: #cfc4b8;
+    --color-warm-700: #e0d6ca;
+    --color-warm-900: #f5f0e8;
+    --color-info: #8fa4cf;
+  }
+}
+
+.dark {
+  --color-background: #1a1510;
+  --color-surface: #221c14;
+  --color-surface-alt: #2c2416;
+  --color-border: #3d3328;
+  --color-text-primary: #f5f0e8;
+  --color-text-secondary: #bfb0a0;
+  --color-warm-25: #1d1812;
+  --color-warm-50: #221c14;
+  --color-warm-100: #2c271f;
+  --color-warm-200: #3d3328;
+  --color-warm-300: #7a7065;
+  --color-warm-400: #9e8e7e;
+  --color-warm-600: #cfc4b8;
+  --color-warm-700: #e0d6ca;
+  --color-warm-900: #f5f0e8;
+  --color-info: #8fa4cf;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui,
+      sans-serif;
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  }
+}
+
+@layer utilities {
+  .font-amount {
+    font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}

@@ -1,0 +1,360 @@
+import type { ApiResponse } from "@/shared/types/api";
+import { apiClient } from "@/shared/lib/axios";
+import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
+
+import type {
+  FinTransactionHistory,
+  Transaction,
+  TransactionAttachment,
+  TransactionDetail,
+  TransactionFilters,
+  TransactionType,
+  TransactionsPage,
+  TxnStatus,
+} from "../types";
+import { normalizeTxnType } from "../utils/txnDisplay";
+
+type ApiEnvelope<T> = ApiResponse<T>;
+
+function assertData<T>(body: ApiEnvelope<T>): asserts body is ApiEnvelope<T> & {
+  success: true;
+  data: T;
+} {
+  if (!body.success) {
+    throw new Error(getFailureMessageFromApiBody(body));
+  }
+  if (body.data === null || body.data === undefined) {
+    throw new Error("Phản hồi API không hợp lệ");
+  }
+}
+
+async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> {
+  const { data: body } = await getter;
+  assertData(body);
+  return body.data;
+}
+
+interface RemoteListItem {
+  id: string;
+  smoduleId: string;
+  type: string;
+  status: string;
+  amount: number;
+  currency: string;
+  txnDate: string;
+  sourceId: string;
+  sourceName: string;
+  categoryId?: string | null;
+  categoryName?: string | null;
+  description: string;
+  note?: string | null;
+  createdAt: string;
+}
+
+interface RemoteListEnvelope {
+  items: RemoteListItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+function mapListItem(row: RemoteListItem): Transaction {
+  return {
+    id: row.id,
+    smoduleId: row.smoduleId,
+    type: normalizeTxnType(row.type),
+    status: row.status as TxnStatus,
+    amount: row.amount,
+    currency: row.currency,
+    sourceId: row.sourceId,
+    sourceName: row.sourceName,
+    categoryId: row.categoryId,
+    categoryName: row.categoryName,
+    txnDate: row.txnDate,
+    note: row.note,
+    description: row.description,
+    createdAt: row.createdAt,
+  };
+}
+
+interface RemoteDetailDto {
+  id: string;
+  smoduleId: string;
+  type: string;
+  status: string;
+  amount: number;
+  currency: string;
+  txnDate: string;
+  sourceId: string;
+  categoryId?: string | null;
+  description: string;
+  note?: string | null;
+  billingCycleId?: string | null;
+  monthlyPeriodId?: string | null;
+  refTxnId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+  source?: {
+    id: string;
+    name: string;
+    currency: string;
+    balance: number;
+  } | null;
+  category?: {
+    id: string;
+    name: string;
+    kind: string;
+  } | null;
+}
+
+interface RemoteDetailEnvelope {
+  transaction: RemoteDetailDto;
+}
+
+function mapDetailDto(t: RemoteDetailDto): TransactionDetail {
+  return {
+    id: t.id,
+    smoduleId: t.smoduleId,
+    type: normalizeTxnType(t.type),
+    status: t.status as TxnStatus,
+    amount: t.amount,
+    currency: t.currency,
+    sourceId: t.sourceId,
+    sourceName: t.source?.name ?? "",
+    categoryId: t.categoryId,
+    categoryName: t.category?.name ?? null,
+    txnDate: t.txnDate,
+    note: t.note,
+    description: t.description,
+    refTxnId: t.refTxnId ?? null,
+    billingCycleId: t.billingCycleId ?? null,
+    monthlyPeriodId: t.monthlyPeriodId ?? null,
+    createdAt: t.createdAt,
+    updatedAt: t.updatedAt,
+    version: t.version,
+    source: t.source
+      ? {
+          id: t.source.id,
+          name: t.source.name,
+          currency: t.source.currency,
+          balance: t.source.balance,
+        }
+      : null,
+    category: t.category
+      ? {
+          id: t.category.id,
+          name: t.category.name,
+          kind: t.category.kind,
+        }
+      : null,
+  };
+}
+
+interface RemoteHistoryItem {
+  id: string;
+  transactionId: string;
+  version: number;
+  changedBy?: string | null;
+  sessionId?: string | null;
+  changeType: string;
+  changedFields?: string | null;
+  snapshot?: string | null;
+  changeReason?: string | null;
+  createdAt: string;
+}
+
+interface RemoteHistoryEnvelope {
+  items: RemoteHistoryItem[];
+}
+
+function mapHistoryChangeType(raw: string): FinTransactionHistory["changeType"] {
+  const m: Record<string, FinTransactionHistory["changeType"]> = {
+    created: "created",
+    updated: "updated",
+    deleted: "deleted",
+    restored: "restored",
+    cancelled: "cancelled",
+  };
+  return m[raw] ?? "updated";
+}
+
+interface RemoteAttachment {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  isPublic: boolean;
+  uploadedAtUtc: string;
+  uploadedBy: string;
+}
+
+interface RemoteAttachmentsEnvelope {
+  items: RemoteAttachment[];
+}
+
+function buildQueryParams(filters: TransactionFilters): URLSearchParams {
+  const qs = new URLSearchParams({
+    smodule_id: filters.smoduleId,
+    page: String(filters.page),
+    page_size: String(filters.pageSize),
+  });
+  if (filters.sourceId) qs.set("source_id", filters.sourceId);
+  if (filters.type) qs.set("type", serializeTypeForQuery(filters.type));
+  if (filters.categoryId) qs.set("category_id", filters.categoryId);
+  if (filters.dateFrom) qs.set("date_from", filters.dateFrom);
+  if (filters.dateTo) qs.set("date_to", filters.dateTo);
+  if (typeof filters.amountMin === "number")
+    qs.set("amount_min", String(filters.amountMin));
+  if (typeof filters.amountMax === "number")
+    qs.set("amount_max", String(filters.amountMax));
+  return qs;
+}
+
+/** Backend nhận giá trị enum .NET (camelCase) trên query, ví dụ debtBorrow. */
+function serializeTypeForQuery(t: TransactionType): string {
+  const toApi: Record<TransactionType, string> = {
+    direct: "direct",
+    deferred: "deferred",
+    income: "income",
+    transfer: "transfer",
+    split: "split",
+    debt_borrow: "debtBorrow",
+    debt_repay: "debtRepay",
+    loan_give: "loanGive",
+    loan_collect: "loanCollect",
+    reversal: "reversal",
+  };
+  return toApi[t];
+}
+
+export async function getTransactions(
+  filters: TransactionFilters,
+): Promise<TransactionsPage> {
+  const qs = buildQueryParams(filters);
+  const { data: body } = await apiClient.get<ApiEnvelope<RemoteListEnvelope>>(
+    `/finance/transactions?${qs.toString()}`,
+  );
+  assertData(body);
+  const envelope = body.data;
+  return {
+    items: envelope.items.map(mapListItem),
+    page: envelope.page,
+    pageSize: envelope.pageSize,
+    totalCount: envelope.totalCount,
+    totalPages: envelope.totalPages,
+  };
+}
+
+export async function getTransactionById(id: string): Promise<TransactionDetail> {
+  const envelope = await unwrap<RemoteDetailEnvelope>(
+    apiClient.get(`/finance/transactions/${id}`),
+  );
+  return mapDetailDto(envelope.transaction);
+}
+
+export async function getTransactionHistory(
+  id: string,
+): Promise<FinTransactionHistory[]> {
+  const envelope = await unwrap<RemoteHistoryEnvelope>(
+    apiClient.get(`/finance/transactions/${id}/history`),
+  );
+  return envelope.items.map((row) => ({
+    id: row.id,
+    transactionId: row.transactionId,
+    version: row.version,
+    changedBy: row.changedBy ?? null,
+    sessionId: row.sessionId ?? null,
+    changeType: mapHistoryChangeType(row.changeType),
+    changedFields: row.changedFields ?? null,
+    snapshot: row.snapshot ?? null,
+    changeReason: row.changeReason ?? null,
+    createdAt: row.createdAt,
+  }));
+}
+
+export async function getTransactionAttachments(
+  id: string,
+): Promise<TransactionAttachment[]> {
+  const envelope = await unwrap<RemoteAttachmentsEnvelope>(
+    apiClient.get(`/finance/transactions/${id}/attachments`),
+  );
+  return envelope.items.map((a) => ({
+    id: a.id,
+    fileName: a.fileName,
+    mimeType: a.mimeType,
+    fileSize: a.fileSize,
+    isPublic: a.isPublic,
+    uploadedAtUtc: a.uploadedAtUtc,
+    uploadedBy: a.uploadedBy,
+  }));
+}
+
+/** Giá trị `type` theo POST body (camelCase trong OpenAPI backend). */
+export type CreateTransactionBodyType =
+  | "direct"
+  | "deferred"
+  | "income"
+  | "transfer"
+  | "split"
+  | "debtBorrow"
+  | "debtRepay"
+  | "loanGive"
+  | "loanCollect"
+  | "reversal";
+
+export interface CreateSplitItemBody {
+  personName: string | null;
+  personContact?: string | null;
+  amount: number;
+}
+
+export interface CreateTransactionBody {
+  smoduleId: string;
+  type: CreateTransactionBodyType;
+  amount: number;
+  sourceId: string;
+  categoryId?: string | null;
+  txnDate: string;
+  note?: string | null;
+  monthlyPeriodId?: string | null;
+  toSourceId?: string | null;
+  billingCycleId?: string | null;
+  personName?: string | null;
+  personContact?: string | null;
+  debtRecordId?: string | null;
+  dueDate?: string | null;
+  splits?: CreateSplitItemBody[] | null;
+}
+
+interface CreateTransactionEnvelope {
+  transaction: RemoteDetailDto;
+}
+
+export async function createTransaction(
+  body: CreateTransactionBody,
+): Promise<TransactionDetail> {
+  const envelope = await unwrap<CreateTransactionEnvelope>(
+    apiClient.post("/finance/transactions", body),
+  );
+  return mapDetailDto(envelope.transaction);
+}
+
+export async function deleteTransaction(
+  id: string,
+  reason?: string,
+): Promise<string> {
+  interface DelBody {
+    transactionId?: string;
+  }
+  const { data: body } = await apiClient.delete<ApiEnvelope<DelBody>>(
+    `/finance/transactions/${id}`,
+    {
+      data: reason ? { reason } : undefined,
+    },
+  );
+  assertData(body);
+  const tid = body.data.transactionId ?? id;
+  return tid;
+}

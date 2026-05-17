@@ -1,0 +1,30 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
+import {
+  AuthLogo,
+  ForgotPasswordForm,
+  RedirectIfAuthenticated,
+} from "@/features/auth/components";
+
+export default function ForgotPasswordPage() {
+  const t = useTranslations("auth");
+  return (
+    <>
+      <RedirectIfAuthenticated />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-warm-50 p-6">
+        <AuthLogo />
+        <div className="w-full max-w-md rounded-card border border-warm-200 bg-warm-25 p-6 shadow-sm">
+          <h1 className="mb-2 font-display text-xl font-semibold text-warm-900">
+            {t("forgotPasswordTitle")}
+          </h1>
+          <p className="mb-6 text-sm text-warm-600">
+            {t("forgotPasswordSubtitle")}
+          </p>
+          <ForgotPasswordForm />
+        </div>
+      </div>
+    </>
+  );
+}

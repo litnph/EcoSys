@@ -1,0 +1,122 @@
+import type { ApiResponse } from "@/shared/types/api";
+import { apiClient } from "@/shared/lib/axios";
+import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
+
+import type { CategoryKind, FinCategory, FinCategoryFlat } from "../types";
+
+type ApiEnvelope<T> = ApiResponse<T>;
+
+function assertData<T>(body: ApiEnvelope<T>): asserts body is ApiEnvelope<T> & {
+  success: true;
+  data: T;
+} {
+  if (!body.success) {
+    throw new Error(getFailureMessageFromApiBody(body));
+  }
+  if (body.data === null || body.data === undefined) {
+    throw new Error("Phản hồi API không hợp lệ");
+  }
+}
+
+async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> {
+  const { data: body } = await getter;
+  assertData(body);
+  return body.data;
+}
+
+interface RemoteCategoryTreeNodeDto {
+  id: string;
+  smoduleId: string;
+  name: string;
+  kind: CategoryKind;
+  parentId: string | null;
+  icon?: string | null;
+  color?: string | null;
+  sortOrder: number;
+  isDefault: boolean;
+  children: RemoteCategoryTreeNodeDto[];
+}
+
+interface RemoteCategoryFlatDto {
+  id: string;
+  smoduleId: string;
+  name: string;
+  kind: CategoryKind;
+  parentId: string | null;
+  icon?: string | null;
+  color?: string | null;
+  sortOrder: number;
+  isDefault: boolean;
+  depth: number;
+}
+
+interface GetCategoriesEnvelope {
+  roots: RemoteCategoryTreeNodeDto[];
+}
+
+interface GetFlatCategoriesEnvelope {
+  items: RemoteCategoryFlatDto[];
+}
+
+function mapTreeNode(row: RemoteCategoryTreeNodeDto): FinCategory {
+  return {
+    id: row.id,
+    smoduleId: row.smoduleId,
+    name: row.name,
+    kind: row.kind,
+    parentId: row.parentId,
+    icon: row.icon ?? null,
+    color: row.color ?? null,
+    sortOrder: row.sortOrder,
+    isDefault: row.isDefault,
+    children:
+      Array.isArray(row.children) && row.children.length > 0
+        ? row.children.map(mapTreeNode)
+        : undefined,
+  };
+}
+
+function mapFlatRow(row: RemoteCategoryFlatDto): FinCategoryFlat {
+  return {
+    id: row.id,
+    smoduleId: row.smoduleId,
+    name: row.name,
+    kind: row.kind,
+    parentId: row.parentId,
+    icon: row.icon ?? null,
+    color: row.color ?? null,
+    sortOrder: row.sortOrder,
+    isDefault: row.isDefault,
+    depth: row.depth,
+  };
+}
+
+/** Danh mục dạng cây (roots + children lồng nhau). Backend yêu cầu `kind`. */
+export async function getCategories(
+  smoduleId: string,
+  kind: CategoryKind,
+): Promise<FinCategory[]> {
+  const qs = new URLSearchParams({
+    smodule_id: smoduleId,
+    kind,
+  });
+  const envelope = await unwrap<GetCategoriesEnvelope>(
+    apiClient.get(`/finance/categories?${qs.toString()}`),
+  );
+  return envelope.roots.map(mapTreeNode);
+}
+
+/** Danh sách phẳng cho dropdown / autocomplete. */
+export async function getFlatCategories(
+  smoduleId: string,
+  kind: CategoryKind,
+): Promise<FinCategoryFlat[]> {
+  const qs = new URLSearchParams({
+    smodule_id: smoduleId,
+    kind,
+  });
+  const envelope = await unwrap<GetFlatCategoriesEnvelope>(
+    apiClient.get(`/finance/categories/flat?${qs.toString()}`),
+  );
+  return envelope.items.map(mapFlatRow);
+}
