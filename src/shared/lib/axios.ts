@@ -1,5 +1,8 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { NEXT_PUBLIC_API_URL } from "@/config/env";
+import {
+  getNgrokSkipBrowserWarningHeaders,
+  NEXT_PUBLIC_API_URL,
+} from "@/config/env";
 import { resolveApiUserMessage } from "@/shared/lib/errorMessages";
 import { REFRESH_TOKEN_KEY, TOKEN_KEY } from "@/config/constants";
 import { useAuthStore } from "@/features/auth/stores/authStore";
@@ -21,6 +24,7 @@ const baseURL = `${NEXT_PUBLIC_API_URL.replace(/\/$/, "")}/api/v1`;
 export const apiClient = axios.create({
   baseURL,
   timeout: 30_000,
+  headers: getNgrokSkipBrowserWarningHeaders(),
 });
 
 function attachUserFacingMessage(error: unknown): void {
@@ -66,6 +70,7 @@ async function postRefresh(refreshToken: string): Promise<AuthTokenPayload> {
     headers: {
       "Content-Type": "application/json",
       "Accept-Language": getPreferredLocale(),
+      ...getNgrokSkipBrowserWarningHeaders(),
     },
   });
 

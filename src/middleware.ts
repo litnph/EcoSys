@@ -6,6 +6,7 @@ import createMiddleware from "next-intl/middleware";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { getNgrokSkipBrowserWarningHeaders } from "@/config/env";
 import { REFRESH_TOKEN_KEY, TOKEN_KEY } from "@/config/constants";
 import { ROUTES } from "@/config/routes";
 import { routing } from "@/i18n/routing";
@@ -92,6 +93,7 @@ async function postRefresh(
       headers: {
         "Content-Type": "application/json",
         "Accept-Language": lang,
+        ...getNgrokSkipBrowserWarningHeaders(base),
       },
       body: JSON.stringify({ refreshToken }),
     });
