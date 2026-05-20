@@ -1,5 +1,6 @@
 import type { ApiResponse } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
+import { toApiWholeAmount } from "@/shared/lib/currencyUnits";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
 import { normalizeTxnType } from "@/features/transactions/utils/txnDisplay";
@@ -174,7 +175,7 @@ export async function payCycle(
   const envelope = await unwrap<CycleEnvelope>(
     apiClient.post(`/finance/billing-cycles/${id}/pay`, {
       paymentSourceId: body.paymentSourceId,
-      amount: body.amount,
+      amount: toApiWholeAmount(body.amount),
     }),
   );
   return mapCycle(envelope.cycle);

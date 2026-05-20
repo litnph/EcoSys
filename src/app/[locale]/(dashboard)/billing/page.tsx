@@ -21,8 +21,9 @@ import type { Transaction } from "@/features/transactions/types";
 import { useSources } from "@/features/sources/hooks";
 import type { FinSource } from "@/features/sources/types";
 
-import { NEXT_PUBLIC_FINANCE_SMODULE_ID } from "@/config/env";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
+import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
+import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
@@ -39,7 +40,7 @@ const tabTriggerClass = cn(
 );
 
 export default function BillingPage() {
-  const smoduleId = NEXT_PUBLIC_FINANCE_SMODULE_ID.trim();
+  const smoduleId = useFinanceSmoduleId();
   const missingModule = smoduleId.length === 0;
 
   const { data: sources, isLoading: sourcesLoading } = useSources(
@@ -127,13 +128,7 @@ export default function BillingPage() {
       />
 
       {missingModule ? (
-        <div className="mt-8 rounded-card border border-warm-200 bg-warm-25 p-8 text-center text-sm text-warm-600 shadow-sm">
-          Thiết lập biến{" "}
-          <code className="rounded px-1.5 py-0.5 font-mono text-warm-800">
-            NEXT_PUBLIC_FINANCE_SMODULE_ID
-          </code>{" "}
-          trong <strong>.env.local</strong>.
-        </div>
+        <MissingFinanceModule />
       ) : sourcesLoading ? (
         <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
           {[0, 1, 2].map((i) => (

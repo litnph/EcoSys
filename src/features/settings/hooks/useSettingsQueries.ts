@@ -8,22 +8,20 @@ import { useToastStore } from "@/shared/stores/toastStore";
 
 import {
   changePassword,
-  getLoginHistory,
   getNotificationPreferences,
   getPreferences,
   getUserProfileBundle,
-  listSessions,
   patchPreferences,
   putNotificationPreferences,
-  revokeAllOtherSessions,
-  revokeSession,
   updateProfileName,
   uploadProfileAvatar,
 } from "../api/settingsApi";
 import { settingsKeys } from "../api/settingsKeys";
 import type {
+  LoginHistoryRowDto,
   NotificationPreferencesDto,
   UserPreferencesDto,
+  UserSessionDto,
 } from "../types";
 
 export function useUserProfileBundle() {
@@ -45,19 +43,23 @@ export function usePreferencesQuery(enabled = true) {
   });
 }
 
+/** Session list API is not on the backend yet — keep query disabled until BE ships it. */
 export function useSessionsQuery() {
   return useQuery({
     queryKey: settingsKeys.sessions(),
-    queryFn: listSessions,
+    queryFn: async (): Promise<UserSessionDto[]> => [],
+    enabled: false,
     staleTime: 15_000,
     retry: false,
   });
 }
 
+/** Login history API is not on the backend yet — keep query disabled until BE ships it. */
 export function useLoginHistoryQuery() {
   return useQuery({
     queryKey: settingsKeys.loginHistory(),
-    queryFn: () => getLoginHistory(30),
+    queryFn: async (): Promise<LoginHistoryRowDto[]> => [],
+    enabled: false,
     staleTime: 60_000,
     retry: false,
   });
@@ -161,14 +163,12 @@ export function useChangePasswordMutation() {
 }
 
 export function useRevokeSessionMutation() {
-  const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
-    mutationFn: (sessionId: string) => revokeSession(sessionId),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: settingsKeys.sessions() });
-      addToast({ type: "success", title: "Đã đăng xuất thiết bị" });
+    mutationFn: async (_sessionId: string) => {
+      void _sessionId;
+      throw new Error("Quản lý phiên đăng nhập chưa được hỗ trợ trên máy chủ.");
     },
     onError: (e: Error) => {
       addToast({
@@ -181,17 +181,11 @@ export function useRevokeSessionMutation() {
 }
 
 export function useRevokeOthersMutation() {
-  const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
-    mutationFn: () => revokeAllOtherSessions(),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: settingsKeys.sessions() });
-      addToast({
-        type: "success",
-        title: "Đã đăng xuất các thiết bị khác",
-      });
+    mutationFn: async () => {
+      throw new Error("Quản lý phiên đăng nhập chưa được hỗ trợ trên máy chủ.");
     },
     onError: (e: Error) => {
       addToast({

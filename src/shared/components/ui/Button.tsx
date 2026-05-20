@@ -38,7 +38,7 @@ export interface ButtonProps extends NativeButtonProps {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-accent text-white hover:bg-accent-dark disabled:hover:bg-accent",
+    "bg-accent text-accent-foreground hover:bg-accent-dark disabled:hover:bg-accent",
   secondary:
     "bg-warm-100 text-warm-900 border border-warm-200 hover:bg-warm-200 disabled:hover:bg-warm-100",
   ghost:

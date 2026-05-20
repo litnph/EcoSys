@@ -6,18 +6,27 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import {
   ArrowLeftRight,
   BarChart2,
+  Bell,
   Calendar,
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  FolderTree,
   HandCoins,
+  Building2,
   LayoutDashboard,
+  PiggyBank,
   Settings,
+  Tags,
+  TrendingUp,
   Wallet,
+  Zap,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { ROUTES } from "@/config/routes";
+import { OrgSwitcher } from "@/features/organizations/components/OrgSwitcher";
+import { SpaceInfo } from "@/features/spaces/components/SpaceInfo";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/shared/lib/utils";
 
@@ -31,6 +40,12 @@ export type SidebarNavItem = {
     | "installments"
     | "debt"
     | "reports"
+    | "categories"
+    | "savings"
+    | "investments"
+    | "tags"
+    | "automation"
+    | "notifications"
     | "settings";
   icon: LucideIcon;
 };
@@ -70,6 +85,36 @@ const NAV_ITEM_DEFS: SidebarNavItem[] = [
     href: ROUTES.dashboard.reports,
     labelKey: "reports",
     icon: BarChart2,
+  },
+  {
+    href: ROUTES.dashboard.categories,
+    labelKey: "categories",
+    icon: FolderTree,
+  },
+  {
+    href: ROUTES.dashboard.savings,
+    labelKey: "savings",
+    icon: PiggyBank,
+  },
+  {
+    href: ROUTES.dashboard.investments,
+    labelKey: "investments",
+    icon: TrendingUp,
+  },
+  {
+    href: ROUTES.dashboard.tags,
+    labelKey: "tags",
+    icon: Tags,
+  },
+  {
+    href: ROUTES.dashboard.automation,
+    labelKey: "automation",
+    icon: Zap,
+  },
+  {
+    href: ROUTES.dashboard.notifications,
+    labelKey: "notifications",
+    icon: Bell,
   },
   {
     href: ROUTES.dashboard.settings,
@@ -112,7 +157,59 @@ export function Sidebar({
         )}
         aria-label={t("mainNav")}
       >
+        <div
+          className={cn(
+            "flex shrink-0 flex-col gap-2 border-b border-warm-200 px-2 py-3",
+            collapsed && "items-stretch",
+          )}
+        >
+          <OrgSwitcher compact={collapsed} />
+          <SpaceInfo compact={collapsed} />
+        </div>
+
         <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-3">
+          {(() => {
+            const orgHref = ROUTES.organizations.hub;
+            const orgActive =
+              pathname === orgHref || pathname.startsWith(`${orgHref}/`);
+            const orgLink = (
+              <Link
+                href={orgHref}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-warm-600 transition-colors",
+                  "hover:bg-warm-100 hover:text-warm-900",
+                  orgActive && "bg-accent/10 font-medium text-accent-emphasis",
+                  collapsed && "justify-center px-0",
+                )}
+              >
+                <Building2 className="size-5 shrink-0" aria-hidden />
+                <span
+                  className={cn(
+                    "truncate transition-opacity duration-200",
+                    collapsed ? "sr-only" : "opacity-100",
+                  )}
+                >
+                  Tổ chức
+                </span>
+              </Link>
+            );
+            return collapsed ? (
+              <Tooltip.Root key="orgs">
+                <Tooltip.Trigger asChild>{orgLink}</Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Content
+                    side="right"
+                    sideOffset={8}
+                    className="z-[200] rounded-md bg-warm-900 px-2 py-1 text-xs text-white"
+                  >
+                    Tổ chức
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+            ) : (
+              orgLink
+            );
+          })()}
           {NAV_ITEM_DEFS.map(({ href, labelKey, icon: Icon }) => {
             const label = t(labelKey);
             const active = isDashboardNavActive(pathname, href);
@@ -122,7 +219,7 @@ export function Sidebar({
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-warm-600 transition-colors",
                   "hover:bg-warm-100 hover:text-warm-900",
-                  active && "bg-accent/10 font-medium text-accent",
+                  active && "bg-accent/10 font-medium text-accent-emphasis",
                   collapsed && "justify-center px-0",
                 )}
               >

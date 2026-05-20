@@ -3,10 +3,15 @@
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 
-import { ROUTES } from "@/config/routes";
 import type { ApiResponse } from "@/shared/types/api";
+import { useSearchParams } from "next/navigation";
+
 import { useRouter } from "@/i18n/navigation";
 import { useToastStore } from "@/shared/stores/toastStore";
+import {
+  resolvePostAuthPath,
+  sanitizeReturnUrl,
+} from "@/shared/lib/returnUrl";
 
 import { login } from "../api/authApi";
 import { useAuthStore } from "../stores/authStore";
@@ -27,6 +32,7 @@ function getApiErrorMessage(error: unknown): string {
 
 export function useLogin() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const addToast = useToastStore((s) => s.addToast);
   const setAuth = useAuthStore((s) => s.setAuth);
 
@@ -39,7 +45,8 @@ export function useLogin() {
         type: "success",
         title: "Đăng nhập thành công",
       });
-      router.replace(ROUTES.dashboard.home);
+      const returnUrl = sanitizeReturnUrl(searchParams.get("returnUrl"));
+      router.replace(resolvePostAuthPath(returnUrl));
     },
     onError: (error) => {
       addToast({

@@ -1,8 +1,10 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-import { Link } from "@/i18n/navigation";
+import { getGoogleOAuthStartUrl } from "@/features/auth/api/authApi";
+import { getReturnUrlFromSearch } from "@/shared/lib/returnUrl";
 import { cn } from "@/shared/lib/utils";
 
 const googleIcon = (
@@ -37,9 +39,13 @@ type GoogleOAuthButtonProps = {
 
 export function GoogleOAuthButton({ className }: GoogleOAuthButtonProps) {
   const t = useTranslations("auth");
+  const searchParams = useSearchParams();
+  const returnUrl = getReturnUrlFromSearch(searchParams.toString());
+  const href = getGoogleOAuthStartUrl(returnUrl ?? undefined);
+
   return (
-    <Link
-      href="/auth/google"
+    <a
+      href={href}
       className={cn(
         "inline-flex h-11 w-full items-center justify-center gap-3 rounded-button border border-warm-200",
         "bg-warm-50 text-sm font-medium text-warm-900 shadow-sm",
@@ -49,6 +55,6 @@ export function GoogleOAuthButton({ className }: GoogleOAuthButtonProps) {
     >
       {googleIcon}
       {t("continueWithGoogle")}
-    </Link>
+    </a>
   );
 }

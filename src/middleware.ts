@@ -7,9 +7,14 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { getNgrokSkipBrowserWarningHeaders } from "@/config/env";
-import { REFRESH_TOKEN_KEY, TOKEN_KEY } from "@/config/constants";
+import {
+  REFRESH_TOKEN_KEY,
+  TOKEN_KEY,
+  WORKSPACE_SMODULE_KEY,
+} from "@/config/constants";
 import { ROUTES } from "@/config/routes";
 import { routing } from "@/i18n/routing";
+import { parseTokenPair } from "@/features/auth/api/parseAuthPayload";
 import {
   getJwtExpiryUnixSeconds,
   isAccessTokenValid,
@@ -22,7 +27,21 @@ const AUTH_PATHS = [
   ROUTES.auth.login,
   ROUTES.auth.register,
   ROUTES.auth.forgotPassword,
+  ROUTES.auth.resetPassword,
+  ROUTES.auth.verifyEmail,
+  ROUTES.auth.callback,
 ] as const;
+
+const ONBOARDING_PATHS = [ROUTES.onboarding.workspaceSetup] as const;
+
+const ORG_HUB_PREFIX = ROUTES.organizations.hub;
+
+function pathIsOrgHub(pathWithoutLocale: string): boolean {
+  return (
+    pathWithoutLocale === ORG_HUB_PREFIX ||
+    pathWithoutLocale.startsWith(`${ORG_HUB_PREFIX}/`)
+  );
+}
 
 function getLocaleAndPath(pathname: string): {
   locale: string;
@@ -45,6 +64,11 @@ function getLocaleAndPath(pathname: string): {
 function applyClearAuthCookies(res: NextResponse): void {
   res.cookies.set(TOKEN_KEY, "", { path: "/", maxAge: 0, sameSite: "lax" });
   res.cookies.set(REFRESH_TOKEN_KEY, "", {
+    path: "/",
+    maxAge: 0,
+    sameSite: "lax",
+  });
+  res.cookies.set(WORKSPACE_SMODULE_KEY, "", {
     path: "/",
     maxAge: 0,
     sameSite: "lax",
@@ -97,25 +121,11 @@ async function postRefresh(
       },
       body: JSON.stringify({ refreshToken }),
     });
-    const json = (await res.json()) as {
-      success?: boolean;
-      data?: {
-        accessToken?: string;
-        refreshToken?: string;
-        AccessToken?: string;
-        RefreshToken?: string;
-      };
-    };
-    if (!json.success || !json.data) {
+    const json: unknown = await res.json();
+    if (!res.ok) {
       return null;
     }
-    const d = json.data;
-    const accessToken = d.accessToken ?? d.AccessToken;
-    const nextRefresh = d.refreshToken ?? d.RefreshToken;
-    if (typeof accessToken !== "string" || typeof nextRefresh !== "string") {
-      return null;
-    }
-    return { accessToken, refreshToken: nextRefresh };
+    return parseTokenPair(json);
   } catch {
     return null;
   }
@@ -173,11 +183,18 @@ export default async function middleware(request: NextRequest) {
   const isAuthRoute = (AUTH_PATHS as readonly string[]).includes(
     pathWithoutLocale,
   );
+  const isOnboardingRoute = (ONBOARDING_PATHS as readonly string[]).includes(
+    pathWithoutLocale,
+  );
+  const isOrgHubRoute = pathIsOrgHub(pathWithoutLocale);
   const isProtectedRoute = !isAuthRoute;
 
   const session = await resolveSessionForMiddleware(request);
   const hasValidToken =
     session.access !== null && isAccessTokenValid(session.access);
+  const smoduleCookie =
+    request.cookies.get(WORKSPACE_SMODULE_KEY)?.value?.trim() ?? "";
+  const hasWorkspaceContext = smoduleCookie.length > 0;
 
   if (isProtectedRoute && !hasValidToken) {
     const url = request.nextUrl.clone();
@@ -193,8 +210,33 @@ export default async function middleware(request: NextRequest) {
 
   if (isAuthRoute && hasValidToken) {
     const url = request.nextUrl.clone();
+    url.pathname = `/${locale}${ROUTES.organizations.hub}`;
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  // Đã login + đã có workspace + đang ở /workspace-setup → tiến thẳng vào dashboard.
+  if (isOnboardingRoute && hasValidToken && hasWorkspaceContext) {
+    const url = request.nextUrl.clone();
     url.pathname = `/${locale}${ROUTES.dashboard.home}`;
     url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  // Finance dashboard cần smoduleId; trung tâm org (`/organizations`) thì không.
+  if (
+    isProtectedRoute &&
+    !isOnboardingRoute &&
+    !isOrgHubRoute &&
+    hasValidToken &&
+    !hasWorkspaceContext
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}${ROUTES.onboarding.workspaceSetup}`;
+    url.searchParams.set(
+      "returnUrl",
+      `${pathname}${request.nextUrl.search}`,
+    );
     return NextResponse.redirect(url);
   }
 

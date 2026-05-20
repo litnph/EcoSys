@@ -14,13 +14,10 @@ import { cn } from "@/shared/lib/utils";
 
 import type { UserSessionDto } from "../types";
 import {
-  useLoginHistoryQuery,
-  useRevokeOthersMutation,
   useRevokeSessionMutation,
   useSessionsQuery,
 } from "../hooks/useSettingsQueries";
 import { formatBrowserLabel, formatLocation } from "../lib/sessionDisplay";
-import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 
 function DeviceIcon({ type }: { type: string | null | undefined }) {
   const t = (type ?? "").toLowerCase();
@@ -103,9 +100,7 @@ function SessionCard({
 
 export function SecuritySettingsPanel() {
   const sessionsQ = useSessionsQuery();
-  const historyQ = useLoginHistoryQuery();
   const revokeOne = useRevokeSessionMutation();
-  const revokeOthers = useRevokeOthersMutation();
 
   const access = typeof window !== "undefined" ? getLocalStorageItem(TOKEN_KEY) : null;
   const currentSid = getSessionIdFromAccessToken(access);
@@ -129,21 +124,18 @@ export function SecuritySettingsPanel() {
             type="button"
             variant="danger"
             size="sm"
-            isLoading={revokeOthers.isPending}
-            disabled={sessionsQ.isFetching}
-            onClick={() => revokeOthers.mutate()}
+            disabled
+            title="Chưa hỗ trợ trên máy chủ"
           >
             Đăng xuất tất cả thiết bị khác
           </Button>
         </div>
 
-        {sessionsQ.isLoading ? (
-          <SkeletonCard className="mt-4" />
-        ) : sessionsQ.isError ? (
-          <p className="mt-4 text-sm text-danger">
-            Không tải được danh sách phiên. Kiểm tra API `/user/sessions`.
-          </p>
-        ) : (
+        <p className="mt-4 rounded-lg border border-warm-200 bg-warm-50 px-4 py-3 text-sm text-warm-700">
+          Quản lý phiên đăng nhập trên nhiều thiết bị sẽ có trong bản cập nhật tiếp theo.
+          Hiện bạn có thể đăng xuất tài khoản từ menu người dùng.
+        </p>
+        {(sessionsQ.data ?? []).length > 0 ? (
           <ul className="mt-4 flex flex-col gap-3">
             {(sessionsQ.data ?? []).map((s) => (
               <SessionCard
@@ -155,7 +147,7 @@ export function SecuritySettingsPanel() {
               />
             ))}
           </ul>
-        )}
+        ) : null}
       </section>
 
       <section>
@@ -164,46 +156,9 @@ export function SecuritySettingsPanel() {
         </h2>
         <p className="mt-1 text-sm text-warm-600">30 lần đăng nhập gần nhất.</p>
 
-        <div className="mt-4 overflow-x-auto rounded-card border border-warm-200 bg-surface">
-          {historyQ.isLoading ? (
-            <div className="p-6">
-              <SkeletonCard />
-            </div>
-          ) : historyQ.isError ? (
-            <p className="p-4 text-sm text-danger">
-              Không tải được lịch sử. Kiểm tra API `/user/login-history`.
-            </p>
-          ) : (
-            <table className="min-w-full border-collapse text-left text-sm">
-              <thead className="border-b border-warm-200 bg-warm-50 text-warm-700">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Thời gian</th>
-                  <th className="px-3 py-2 font-medium">IP</th>
-                  <th className="px-3 py-2 font-medium">Thiết bị</th>
-                  <th className="px-3 py-2 font-medium">Kết quả</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(historyQ.data ?? []).map((row) => (
-                  <tr key={row.id} className="border-b border-warm-100 last:border-0">
-                    <td className="px-3 py-2 text-warm-800 tabular-nums">
-                      {new Date(row.occurredAt).toLocaleString()}
-                    </td>
-                    <td className="px-3 py-2 text-warm-700">{row.ipAddress ?? "—"}</td>
-                    <td className="px-3 py-2 text-warm-700">
-                      {row.device?.trim() || "—"}
-                    </td>
-                    <td className="px-3 py-2">
-                      <Badge variant={row.success ? "success" : "danger"} size="sm">
-                        {row.success ? "Thành công" : "Thất bại"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+        <p className="mt-4 rounded-lg border border-warm-200 bg-warm-50 px-4 py-3 text-sm text-warm-700">
+          Lịch sử đăng nhập sẽ có trong bản cập nhật tiếp theo.
+        </p>
       </section>
     </div>
   );

@@ -25,6 +25,12 @@
   --color-accent: #c4a882;
   --color-accent-dark: #a68b65;
   --color-accent-light: #dbc9aa;
+  /* WCAG AA: ≥4.5:1 on --color-accent / --color-accent-dark */
+  --color-accent-foreground: #2c2416;
+  /* WCAG AA: ≥4.5:1 on accent/10 (~#f8f4ed over warm-25) */
+  --color-accent-emphasis: #524738;
+  /* WCAG AA: ≥3:1 UI on warm-25 / background */
+  --color-nav-inactive: #7a6b5c;
   --color-text-primary: #2c2416;
   --color-text-secondary: #6b5e4e;
   --color-text-muted: #9e8e7e;

@@ -9,7 +9,14 @@ const PATH_META: Record<string, string> = {
   [ROUTES.dashboard.installments]: "Installments",
   [ROUTES.dashboard.debt]: "Debt",
   [ROUTES.dashboard.reports]: "Reports",
+  [ROUTES.dashboard.categories]: "Danh mục",
+  [ROUTES.dashboard.savings]: "Tiết kiệm",
+  [ROUTES.dashboard.investments]: "Đầu tư",
+  [ROUTES.dashboard.tags]: "Thẻ",
+  [ROUTES.dashboard.automation]: "Tự động hóa",
+  [ROUTES.dashboard.notifications]: "Thông báo",
   [ROUTES.dashboard.settings]: "Settings",
+  [ROUTES.dashboard.settingsPrivacy]: "Quyền riêng tư",
 };
 
 export type BreadcrumbItem = {
@@ -25,22 +32,48 @@ function humanize(segment: string): string {
   return head + tail;
 }
 
-export function buildDashboardBreadcrumbs(pathname: string): BreadcrumbItem[] {
+export type BreadcrumbContext = {
+  /** Tên org hiện tại — sẽ hiển thị làm crumb đầu tiên. */
+  orgName?: string;
+  /** Tên space hiện tại — sẽ chèn vào sau org. */
+  spaceName?: string;
+};
+
+export function buildDashboardBreadcrumbs(
+  pathname: string,
+  ctx: BreadcrumbContext = {},
+): BreadcrumbItem[] {
   const raw = pathname === "" ? "/" : pathname.startsWith("/") ? pathname : `/${pathname}`;
   const normalized = raw.length > 1 ? raw.replace(/\/$/, "") : raw;
 
+  const prefix: BreadcrumbItem[] = [];
+  if (ctx.orgName && ctx.orgName.trim().length > 0) {
+    prefix.push({
+      href: ROUTES.dashboard.home,
+      label: ctx.orgName,
+      isCurrent: false,
+    });
+  }
+  if (ctx.spaceName && ctx.spaceName.trim().length > 0) {
+    prefix.push({
+      href: ROUTES.dashboard.home,
+      label: ctx.spaceName,
+      isCurrent: false,
+    });
+  }
+
   if (normalized === "/") {
-    return [
-      {
-        href: ROUTES.dashboard.home,
-        label: PATH_META[ROUTES.dashboard.home] ?? "Dashboard",
-        isCurrent: true,
-      },
-    ];
+    const home: BreadcrumbItem = {
+      href: ROUTES.dashboard.home,
+      label: PATH_META[ROUTES.dashboard.home] ?? "Dashboard",
+      isCurrent: true,
+    };
+    return prefix.length > 0 ? [...prefix, home] : [home];
   }
 
   const segments = normalized.split("/").filter(Boolean);
   const items: BreadcrumbItem[] = [
+    ...prefix,
     {
       href: ROUTES.dashboard.home,
       label: PATH_META[ROUTES.dashboard.home] ?? "Dashboard",

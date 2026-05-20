@@ -1,7 +1,8 @@
 "use client";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Bell, ChevronRight, Menu } from "lucide-react";
+import { NotificationBell } from "@/features/notifications";
+import { ChevronRight, Menu } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
@@ -9,6 +10,7 @@ import { ROUTES } from "@/config/routes";
 import { TOKEN_KEY } from "@/config/constants";
 import { Link, usePathname } from "@/i18n/navigation";
 import { buildDashboardBreadcrumbs } from "@/shared/lib/dashboard-breadcrumb";
+import { useWorkspaceStore } from "@/shared/stores/workspaceStore";
 import {
   initialsFromNameOrEmail,
   readJwtDisplayClaims,
@@ -39,8 +41,14 @@ export function TopNav({
   unreadNotificationCount = 0,
   bannerInsetPx = 0,
 }: TopNavProps) {
+  void unreadNotificationCount;
   const pathname = usePathname();
-  const crumbs = buildDashboardBreadcrumbs(pathname);
+  const currentOrg = useWorkspaceStore((s) => s.currentOrg);
+  const currentSpace = useWorkspaceStore((s) => s.currentSpace);
+  const crumbs = buildDashboardBreadcrumbs(pathname, {
+    orgName: currentOrg?.name,
+    spaceName: currentSpace?.name,
+  });
 
   const [name, setName] = useState(() => userProp?.name ?? "User");
   const [email, setEmail] = useState(() => userProp?.email ?? "");
@@ -116,22 +124,7 @@ export function TopNav({
       </nav>
 
       <div className="flex flex-1 items-center justify-end gap-2 md:flex-initial">
-        <button
-          type="button"
-          className={cn(
-            "relative inline-flex rounded-button p-2 text-warm-700 outline-none",
-            "hover:bg-warm-100 hover:text-warm-900",
-            "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-          )}
-          aria-label="Notifications"
-        >
-          <Bell className="size-5" aria-hidden />
-          {unreadNotificationCount > 0 ? (
-            <span className="absolute right-0.5 top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-white">
-              {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
-            </span>
-          ) : null}
-        </button>
+        <NotificationBell />
 
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>

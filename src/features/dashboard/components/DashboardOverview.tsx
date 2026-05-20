@@ -11,7 +11,8 @@ import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { staggerChildren } from "@/shared/lib/animations";
 
-import { NEXT_PUBLIC_FINANCE_SMODULE_ID } from "@/config/env";
+import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
+import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 
 import {
   useDashboardSources,
@@ -53,7 +54,7 @@ const MonthlyTrendChart = dynamic(
 
 export function DashboardOverview() {
   const t = useTranslations("dashboard");
-  const moduleIdRaw = NEXT_PUBLIC_FINANCE_SMODULE_ID.trim();
+  const moduleIdRaw = useFinanceSmoduleId();
 
   const { year: reportYear, month: reportMonth } = useMemo(() => {
     const d = new Date();
@@ -87,11 +88,7 @@ export function DashboardOverview() {
     <div className="w-full max-w-[1400px]">
       <PageHeader title={t("title")} description={t("description")} />
       {missingModule ? (
-        <div className="rounded-card border border-warm-200 bg-warm-25 p-8 text-center text-sm text-warm-600 shadow-sm">
-          {t("missingModule", {
-            envKey: "NEXT_PUBLIC_FINANCE_SMODULE_ID",
-          })}
-        </div>
+        <MissingFinanceModule />
       ) : (
         <AnimatePresence mode="wait">
           <motion.div

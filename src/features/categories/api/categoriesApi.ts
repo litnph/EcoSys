@@ -120,3 +120,71 @@ export async function getFlatCategories(
   );
   return envelope.items.map(mapFlatRow);
 }
+
+interface CategoryOneEnvelope {
+  category: RemoteCategoryTreeNodeDto;
+}
+
+export interface CreateCategoryRequest {
+  smoduleId: string;
+  name: string;
+  kind: CategoryKind;
+  parentId?: string | null;
+  icon?: string | null;
+  color?: string | null;
+  sortOrder?: number | null;
+  isDefault?: boolean;
+}
+
+export interface UpdateCategoryRequest {
+  name: string;
+  kind: CategoryKind;
+  parentId?: string | null;
+  icon?: string | null;
+  color?: string | null;
+  sortOrder?: number | null;
+  isDefault?: boolean;
+}
+
+export async function createCategory(
+  data: CreateCategoryRequest,
+): Promise<FinCategory> {
+  const envelope = await unwrap<CategoryOneEnvelope>(
+    apiClient.post("/finance/categories", {
+      smoduleId: data.smoduleId,
+      name: data.name,
+      kind: data.kind,
+      parentId: data.parentId ?? null,
+      icon: data.icon ?? null,
+      color: data.color ?? null,
+      sortOrder: data.sortOrder ?? null,
+      isDefault: data.isDefault ?? false,
+    }),
+  );
+  return mapTreeNode(envelope.category);
+}
+
+export async function updateCategory(
+  id: string,
+  data: UpdateCategoryRequest,
+): Promise<FinCategory> {
+  const envelope = await unwrap<CategoryOneEnvelope>(
+    apiClient.put(`/finance/categories/${id}`, {
+      name: data.name,
+      kind: data.kind,
+      parentId: data.parentId ?? null,
+      icon: data.icon ?? null,
+      color: data.color ?? null,
+      sortOrder: data.sortOrder ?? null,
+      isDefault: data.isDefault ?? false,
+    }),
+  );
+  return mapTreeNode(envelope.category);
+}
+
+export async function deleteCategory(id: string): Promise<string> {
+  const envelope = await unwrap<{ id: string }>(
+    apiClient.delete(`/finance/categories/${id}`),
+  );
+  return envelope.id;
+}

@@ -9,13 +9,21 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { cn } from "@/shared/lib/utils";
 
-const TABS: { href: string; labelKey: "tabProfile" | "tabSecurity" | "tabNotifications" | "tabPreferences" }[] =
-  [
-    { href: ROUTES.dashboard.settingsProfile, labelKey: "tabProfile" },
-    { href: ROUTES.dashboard.settingsSecurity, labelKey: "tabSecurity" },
-    { href: ROUTES.dashboard.settingsNotifications, labelKey: "tabNotifications" },
-    { href: ROUTES.dashboard.settingsPreferences, labelKey: "tabPreferences" },
-  ];
+const TABS: {
+  href: string;
+  labelKey:
+    | "tabProfile"
+    | "tabSecurity"
+    | "tabNotifications"
+    | "tabPreferences"
+    | "tabPrivacy";
+}[] = [
+  { href: ROUTES.dashboard.settingsProfile, labelKey: "tabProfile" },
+  { href: ROUTES.dashboard.settingsSecurity, labelKey: "tabSecurity" },
+  { href: ROUTES.dashboard.settingsNotifications, labelKey: "tabNotifications" },
+  { href: ROUTES.dashboard.settingsPreferences, labelKey: "tabPreferences" },
+  { href: ROUTES.dashboard.settingsPrivacy, labelKey: "tabPrivacy" },
+];
 
 export type SettingsSectionLayoutProps = {
   children: ReactNode;

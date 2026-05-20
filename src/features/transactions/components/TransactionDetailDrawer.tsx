@@ -1,12 +1,14 @@
 "use client";
 
 import * as Tabs from "@radix-ui/react-tabs";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Download,
   FileText,
   History as HistoryIcon,
   Pencil,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import * as React from "react";
@@ -16,6 +18,9 @@ import { Button } from "@/shared/components/ui/Button";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
+
+import { deleteFile, getFileUrl, uploadFile } from "@/features/files";
+import { useToastStore } from "@/shared/stores/toastStore";
 
 import { getTransactionAttachments, getTransactionById } from "../api/transactionsApi";
 import { transactionKeys } from "../api/transactionKeys";
@@ -27,6 +32,7 @@ import {
 } from "../utils/txnDisplay";
 
 import { DeleteTransactionModal } from "./DeleteTransactionModal";
+import { TransactionEditModal } from "./TransactionEditModal";
 import { TransactionHistoryTimeline } from "./TransactionHistoryTimeline";
 
 export interface TransactionDetailDrawerProps {
@@ -86,13 +92,41 @@ export function TransactionDetailDrawer({
   const tFilters = useTranslations("filters");
   const tCommon = useTranslations("common");
   const del = useDeleteTransaction();
+  const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [detailTab, setDetailTab] = React.useState("attachments");
   const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
+
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => {
+      if (!transactionId) throw new Error("Missing transaction");
+      return uploadFile({
+        moduleCode: "finance",
+        entityType: "FinTransaction",
+        entityId: transactionId,
+        file,
+      });
+    },
+    onSuccess: () => {
+      if (transactionId) {
+        void queryClient.invalidateQueries({
+          queryKey: transactionKeys.attachments(transactionId),
+        });
+      }
+      addToast({ type: "success", title: "Đã tải file lên" });
+    },
+    onError: () => {
+      addToast({ type: "error", title: "Không tải file lên được" });
+    },
+  });
 
   React.useEffect(() => {
     if (!isOpen) {
       setDetailTab("attachments");
       setDeleteOpen(false);
+      setEditOpen(false);
     }
   }, [isOpen]);
 
@@ -239,6 +273,28 @@ export function TransactionDetailDrawer({
                 </Tabs.Trigger>
               </Tabs.List>
               <Tabs.Content value="attachments" className="mt-4 outline-none">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadMutation.mutate(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    leftIcon={<Upload className="size-4" />}
+                    disabled={!transactionId || uploadMutation.isPending}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {t("uploadAttachment")}
+                  </Button>
+                </div>
                 {attachQ.isLoading ? (
                   <div className="space-y-2" aria-busy="true">
                     <SkeletonText className="h-14 w-full rounded-lg" />
@@ -249,12 +305,45 @@ export function TransactionDetailDrawer({
                     {attachQ.data.map((a) => (
                       <li
                         key={a.id}
-                        className="rounded-lg border border-warm-100 bg-warm-25 px-3 py-2 text-sm"
+                        className="flex items-start justify-between gap-2 rounded-lg border border-warm-100 bg-warm-25 px-3 py-2 text-sm"
                       >
-                        <p className="font-medium text-warm-900">{a.fileName}</p>
-                        <p className="text-xs text-warm-500">
-                          {a.mimeType} · {formatFileSize(a.fileSize)}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="font-medium text-warm-900">{a.fileName}</p>
+                          <p className="text-xs text-warm-500">
+                            {a.mimeType} · {formatFileSize(a.fileSize)}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <button
+                            type="button"
+                            className="rounded p-1.5 text-warm-600 hover:bg-warm-100"
+                            aria-label={t("downloadAttachment")}
+                            onClick={() => {
+                              void getFileUrl(a.id).then(({ url }) => {
+                                window.open(url, "_blank", "noopener,noreferrer");
+                              });
+                            }}
+                          >
+                            <Download className="size-4" />
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded p-1.5 text-warm-500 hover:bg-warm-100 hover:text-danger"
+                            aria-label={tCommon("delete")}
+                            onClick={() => {
+                              void deleteFile(a.id).then(() => {
+                                if (transactionId) {
+                                  void queryClient.invalidateQueries({
+                                    queryKey: transactionKeys.attachments(transactionId),
+                                  });
+                                }
+                                addToast({ type: "success", title: "Đã xóa file" });
+                              });
+                            }}
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -276,8 +365,8 @@ export function TransactionDetailDrawer({
                 variant="secondary"
                 size="sm"
                 leftIcon={<Pencil className="size-4" />}
-                disabled
-                title={t("editDisabledTitle")}
+                disabled={!detail}
+                onClick={() => setEditOpen(true)}
               >
                 {tCommon("edit")}
               </Button>
@@ -295,6 +384,14 @@ export function TransactionDetailDrawer({
           </div>
         ) : null}
       </Drawer>
+
+      {detail ? (
+        <TransactionEditModal
+          transaction={detail}
+          isOpen={editOpen}
+          onClose={() => setEditOpen(false)}
+        />
+      ) : null}
 
       <DeleteTransactionModal
         isOpen={deleteOpen}

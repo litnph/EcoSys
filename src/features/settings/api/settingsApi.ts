@@ -4,11 +4,10 @@ import type { ApiResponse } from "@/shared/types/api";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
 import type {
-  LoginHistoryRowDto,
+  NotificationChannelKey,
   NotificationPreferencesDto,
   UserPreferencesDto,
   UserProfileBundleDto,
-  UserSessionDto,
 } from "../types";
 
 function assertSuccess<T>(res: ApiResponse<T>): asserts res is ApiResponse<T> & {
@@ -18,6 +17,29 @@ function assertSuccess<T>(res: ApiResponse<T>): asserts res is ApiResponse<T> & 
     throw new Error(getFailureMessageFromApiBody(res));
   }
 }
+
+type BeUserProfileDto = {
+  userId: string;
+  fullName: string;
+  email: string;
+  isEmailVerified: boolean;
+  languageCode: string;
+  timezone: string;
+  dateFormat: string;
+  theme: string;
+  displayName?: string | null;
+  phoneNumber?: string | null;
+  dateOfBirth?: string | null;
+  avatarUrl?: string | null;
+};
+
+type BeNotificationPrefDto = {
+  id: string;
+  moduleCode: number | string;
+  channel: number | string;
+  eventType: string;
+  isEnabled: boolean;
+};
 
 function normalizePreferences(raw: Partial<UserPreferencesDto>): UserPreferencesDto {
   return {
@@ -33,135 +55,183 @@ function normalizePreferences(raw: Partial<UserPreferencesDto>): UserPreferences
   };
 }
 
-function normalizeSessionsPayload(body: unknown): UserSessionDto[] {
-  if (!body || typeof body !== "object") {
-    return [];
-  }
-  const root = body as Record<string, unknown>;
-  if (Array.isArray(root)) {
-    return root as UserSessionDto[];
-  }
-  const list = root.sessions ?? root.items;
-  if (Array.isArray(list)) {
-    return list as UserSessionDto[];
-  }
-  return [];
+function mapProfileToUser(profile: BeUserProfileDto): UserDto {
+  return {
+    id: profile.userId,
+    email: profile.email,
+    fullName: profile.fullName,
+    avatarUrl: profile.avatarUrl ?? null,
+    isVerified: profile.isEmailVerified,
+  };
 }
 
-function normalizeHistoryPayload(body: unknown): LoginHistoryRowDto[] {
-  if (!body || typeof body !== "object") {
-    return [];
+function mapProfileToPreferences(profile: BeUserProfileDto): UserPreferencesDto {
+  return normalizePreferences({
+    languageCode: profile.languageCode === "en" ? "en" : "vi",
+    timezone: profile.timezone,
+    dateFormat: profile.dateFormat === "MM/dd/yyyy" ? "MM/dd/yyyy" : "dd/MM/yyyy",
+    theme:
+      profile.theme === "light" || profile.theme === "dark" || profile.theme === "system"
+        ? profile.theme
+        : "system",
+  });
+}
+
+function mapChannelFromBe(channel: number | string): NotificationChannelKey {
+  const normalized = String(channel).toLowerCase();
+  if (normalized === "email" || normalized === "2") {
+    return "email";
   }
-  const root = body as Record<string, unknown>;
-  const list = root.items ?? root.history ?? root;
-  if (Array.isArray(list)) {
-    return list as LoginHistoryRowDto[];
-  }
-  return [];
+  return "inApp";
+}
+
+function mapChannelToBe(channel: NotificationChannelKey): "inApp" | "email" {
+  return channel === "email" ? "email" : "inApp";
+}
+
+async function fetchProfileDto(): Promise<BeUserProfileDto> {
+  const { data: body } =
+    await apiClient.get<ApiResponse<{ profile: BeUserProfileDto }>>("/user/profile");
+  assertSuccess(body);
+  return body.data.profile;
+}
+
+async function putProfileDto(payload: {
+  fullName: string;
+  displayName?: string | null;
+  phoneNumber?: string | null;
+  dateOfBirth?: string | null;
+  languageCode: string;
+  timezone: string;
+  dateFormat: string;
+  theme: string;
+}): Promise<BeUserProfileDto> {
+  const { data: body } = await apiClient.put<ApiResponse<{ profile: BeUserProfileDto }>>(
+    "/user/profile",
+    payload,
+  );
+  assertSuccess(body);
+  return body.data.profile;
+}
+
+function profilePayloadFromDto(
+  profile: BeUserProfileDto,
+  overrides: Partial<{
+    fullName: string;
+    languageCode: string;
+    timezone: string;
+    dateFormat: string;
+    theme: string;
+  }> = {},
+) {
+  return {
+    fullName: overrides.fullName ?? profile.fullName,
+    displayName: profile.displayName ?? null,
+    phoneNumber: profile.phoneNumber ?? null,
+    dateOfBirth: profile.dateOfBirth ?? null,
+    languageCode: overrides.languageCode ?? profile.languageCode,
+    timezone: overrides.timezone ?? profile.timezone,
+    dateFormat: overrides.dateFormat ?? profile.dateFormat,
+    theme: overrides.theme ?? profile.theme,
+  };
 }
 
 export async function getUserProfileBundle(): Promise<UserProfileBundleDto> {
-  const { data: body } =
-    await apiClient.get<ApiResponse<UserProfileBundleDto>>("/user/profile");
-  assertSuccess(body);
-  return body.data;
+  const profile = await fetchProfileDto();
+  return {
+    user: mapProfileToUser(profile),
+    preferences: mapProfileToPreferences(profile),
+  };
 }
 
 export async function updateProfileName(fullName: string): Promise<UserDto> {
-  const { data: body } = await apiClient.patch<ApiResponse<{ user: UserDto }>>(
-    "/user/profile",
-    { fullName },
-  );
-  assertSuccess(body);
-  return body.data.user;
+  const current = await fetchProfileDto();
+  const updated = await putProfileDto({
+    ...profilePayloadFromDto(current, { fullName }),
+  });
+  return mapProfileToUser(updated);
 }
 
 export async function uploadProfileAvatar(file: File): Promise<{ avatarUrl: string }> {
   const fd = new FormData();
   fd.append("file", file);
-  const { data: body } = await apiClient.post<ApiResponse<{ avatarUrl: string }>>(
-    "/user/profile/avatar",
-    fd,
-    { headers: { "Content-Type": "multipart/form-data" } },
-  );
+  const { data: body } = await apiClient.post<
+    ApiResponse<{ avatarId: string; storageKey: string; storageUrl: string }>
+  >("/user/avatar", fd, { headers: { "Content-Type": "multipart/form-data" } });
   assertSuccess(body);
-  return body.data;
+  return { avatarUrl: body.data.storageUrl };
 }
 
 export async function changePassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
-  const { data: body } = await apiClient.post<ApiResponse<unknown>>(
-    "/user/profile/change-password",
-    { currentPassword, newPassword },
-  );
+  const { data: body } = await apiClient.put<ApiResponse<unknown>>("/user/password", {
+    currentPassword,
+    newPassword,
+  });
   assertSuccess(body);
 }
 
 export async function getPreferences(): Promise<UserPreferencesDto> {
-  const { data: body } =
-    await apiClient.get<ApiResponse<UserPreferencesDto>>("/user/preferences");
-  assertSuccess(body);
-  return normalizePreferences(body.data);
+  const profile = await fetchProfileDto();
+  return mapProfileToPreferences(profile);
 }
 
 export async function patchPreferences(
   patch: Partial<UserPreferencesDto>,
 ): Promise<UserPreferencesDto> {
-  const { data: body } = await apiClient.patch<ApiResponse<UserPreferencesDto>>(
-    "/user/preferences",
-    patch,
-  );
-  assertSuccess(body);
-  return normalizePreferences(body.data);
-}
-
-export async function listSessions(): Promise<UserSessionDto[]> {
-  const { data: body } = await apiClient.get<ApiResponse<unknown>>("/user/sessions");
-  assertSuccess(body);
-  return normalizeSessionsPayload(body.data);
-}
-
-export async function revokeSession(sessionId: string): Promise<void> {
-  const { data: body } = await apiClient.delete<ApiResponse<unknown>>(
-    `/user/sessions/${sessionId}`,
-  );
-  assertSuccess(body);
-}
-
-export async function revokeAllOtherSessions(): Promise<void> {
-  const { data: body } = await apiClient.post<ApiResponse<unknown>>(
-    "/user/sessions/revoke-others",
-    {},
-  );
-  assertSuccess(body);
-}
-
-export async function getLoginHistory(take = 30): Promise<LoginHistoryRowDto[]> {
-  const { data: body } = await apiClient.get<ApiResponse<unknown>>(
-    `/user/login-history`,
-    { params: { take } },
-  );
-  assertSuccess(body);
-  return normalizeHistoryPayload(body.data).slice(0, take);
+  const current = await fetchProfileDto();
+  const merged = normalizePreferences({
+    ...mapProfileToPreferences(current),
+    ...patch,
+  });
+  const updated = await putProfileDto({
+    ...profilePayloadFromDto(current, {
+      languageCode: merged.languageCode,
+      timezone: merged.timezone,
+      dateFormat: merged.dateFormat,
+      theme: merged.theme,
+    }),
+  });
+  return mapProfileToPreferences(updated);
 }
 
 export async function getNotificationPreferences(): Promise<NotificationPreferencesDto> {
-  const { data: body } = await apiClient.get<ApiResponse<NotificationPreferencesDto>>(
-    "/user/notification-preferences",
-  );
+  const { data: body } = await apiClient.get<
+    ApiResponse<{ preferences: BeNotificationPrefDto[] }>
+  >("/user/notification-prefs");
   assertSuccess(body);
-  return body.data;
+  return {
+    cells: body.data.preferences.map((p) => ({
+      moduleCode: typeof p.moduleCode === "number" ? p.moduleCode : 1,
+      eventType: p.eventType,
+      channel: mapChannelFromBe(p.channel),
+      enabled: p.isEnabled,
+    })),
+  };
 }
 
 export async function putNotificationPreferences(
   prefs: NotificationPreferencesDto,
 ): Promise<NotificationPreferencesDto> {
-  const { data: body } = await apiClient.put<ApiResponse<NotificationPreferencesDto>>(
-    "/user/notification-preferences",
-    prefs,
-  );
+  const { data: body } = await apiClient.put<
+    ApiResponse<{ preferences: BeNotificationPrefDto[] }>
+  >("/user/notification-prefs", {
+    preferences: prefs.cells.map((c) => ({
+      moduleCode: c.moduleCode,
+      channel: mapChannelToBe(c.channel),
+      eventType: c.eventType,
+      isEnabled: c.enabled,
+    })),
+  });
   assertSuccess(body);
-  return body.data;
+  return {
+    cells: body.data.preferences.map((p) => ({
+      moduleCode: typeof p.moduleCode === "number" ? p.moduleCode : 1,
+      eventType: p.eventType,
+      channel: mapChannelFromBe(p.channel),
+      enabled: p.isEnabled,
+    })),
+  };
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { DashboardAuthGate } from "@/features/auth/components/DashboardAuthGate";
+import { RequireWorkspace } from "@/features/spaces/components/RequireWorkspace";
 import { DashboardLayout } from "@/shared/components/layouts/DashboardLayout";
 
 type DashboardRouteLayoutProps = {
@@ -12,7 +13,9 @@ export default function DashboardRouteLayout({
 }: DashboardRouteLayoutProps) {
   return (
     <DashboardAuthGate>
-      <DashboardLayout>{children}</DashboardLayout>
+      <RequireWorkspace>
+        <DashboardLayout>{children}</DashboardLayout>
+      </RequireWorkspace>
     </DashboardAuthGate>
   );
 }

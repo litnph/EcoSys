@@ -20,8 +20,9 @@ import {
 import type { FinSource } from "@/features/sources/types";
 import { useSources } from "@/features/sources/hooks";
 
-import { NEXT_PUBLIC_FINANCE_SMODULE_ID } from "@/config/env";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
+import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
+import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { cn } from "@/shared/lib/utils";
@@ -44,7 +45,7 @@ const statusTriggerClass = cn(
 );
 
 export default function DebtPage() {
-  const smoduleId = NEXT_PUBLIC_FINANCE_SMODULE_ID.trim();
+  const smoduleId = useFinanceSmoduleId();
   const missingModule = smoduleId.length === 0;
 
   const [directionTab, setDirectionTab] = React.useState<DebtDirection>("borrowed");
@@ -135,13 +136,7 @@ export default function DebtPage() {
       />
 
       {missingModule ? (
-        <div className="mt-8 rounded-card border border-warm-200 bg-warm-25 p-8 text-center text-sm text-warm-600 shadow-sm">
-          Thiếu{" "}
-          <code className="rounded bg-warm-100 px-1 py-0.5 text-warm-800">
-            NEXT_PUBLIC_FINANCE_SMODULE_ID
-          </code>{" "}
-          trong môi trường.
-        </div>
+        <MissingFinanceModule />
       ) : (
         <>
           <div className="mt-6">

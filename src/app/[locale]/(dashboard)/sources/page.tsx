@@ -10,7 +10,8 @@ import {
 import { useSources } from "@/features/sources/hooks";
 import type { FinSource } from "@/features/sources/types";
 
-import { NEXT_PUBLIC_FINANCE_SMODULE_ID } from "@/config/env";
+import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
+import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
@@ -21,7 +22,7 @@ import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
 
 export default function SourcesPage() {
-  const smoduleId = NEXT_PUBLIC_FINANCE_SMODULE_ID.trim();
+  const smoduleId = useFinanceSmoduleId();
   const { data: sources, isLoading, isError } = useSources(
     smoduleId.length ? smoduleId : undefined,
   );
@@ -74,14 +75,7 @@ export default function SourcesPage() {
       </div>
 
       {missingModule ? (
-        <div className="mt-8 rounded-card border border-warm-200 bg-warm-25 p-8 text-center text-sm text-warm-600 shadow-sm">
-          Thiết lập biến{" "}
-          <code className="rounded px-1.5 py-0.5 font-mono text-warm-800">
-            NEXT_PUBLIC_FINANCE_SMODULE_ID
-          </code>{" "}
-          trong <strong>.env.local</strong> (UUID module tài chính) để quản lý
-          nguồn.
-        </div>
+        <MissingFinanceModule />
       ) : isError ? (
         <div className="mt-8 rounded-card border border-danger/30 bg-danger/5 p-6 text-sm text-danger">
           Không tải được danh sách nguồn. Kiểm tra kết nối API và quyền truy cập.

@@ -12,8 +12,9 @@ import { useMonthlyReport } from "@/features/reports/hooks/useMonthlyReport";
 import { currentUtcYearMonth } from "@/features/reports/utils/months";
 
 import { useBillingCycles } from "@/features/billing-cycles/hooks/useBillingCycles";
-import { NEXT_PUBLIC_FINANCE_SMODULE_ID } from "@/config/env";
 import { ROUTES } from "@/config/routes";
+import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
+import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 import { useRouter } from "@/i18n/navigation";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
@@ -49,7 +50,7 @@ const DailyBreakdownChart = dynamic(
 );
 
 export default function ReportsPage() {
-  const smoduleIdRaw = NEXT_PUBLIC_FINANCE_SMODULE_ID.trim();
+  const smoduleIdRaw = useFinanceSmoduleId();
   const missingModule = smoduleIdRaw.length === 0;
   const start = currentUtcYearMonth();
   const [ym, setYm] = useState(start);
@@ -90,13 +91,7 @@ export default function ReportsPage() {
       />
 
       {missingModule ? (
-        <div className="mt-8 rounded-card border border-warm-200 bg-warm-25 p-8 text-center text-sm text-warm-600 shadow-sm">
-          Thiết lập biến{" "}
-          <code className="rounded px-1.5 py-0.5 font-mono text-warm-800">
-            NEXT_PUBLIC_FINANCE_SMODULE_ID
-          </code>{" "}
-          trong <strong>.env.local</strong> để xem báo cáo.
-        </div>
+        <MissingFinanceModule />
       ) : (
         <>
           <div className="mt-8 flex flex-col gap-10">

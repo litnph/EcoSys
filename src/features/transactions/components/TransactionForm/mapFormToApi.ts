@@ -1,3 +1,5 @@
+import { toApiWholeAmount } from "@/shared/lib/currencyUnits";
+
 import type { CreateTransactionBody } from "../../api/transactionsApi";
 
 import type { TransactionCreateFormType, TransactionFormValues } from "./transactionFormSchema";
@@ -33,7 +35,7 @@ export function mapFormValuesToCreateBody(
   const base: CreateTransactionBody = {
     smoduleId,
     type: apiTypeFromForm(v.type),
-    amount: v.amount,
+    amount: toApiWholeAmount(v.amount),
     sourceId: v.sourceId.trim(),
     txnDate: v.txnDate.trim(),
     note: cleanNote(v.note),
@@ -59,7 +61,7 @@ export function mapFormValuesToCreateBody(
         categoryId: null,
         splits: (v.splits ?? []).map((r) => ({
           personName: r.personName.trim(),
-          amount: r.amount,
+          amount: toApiWholeAmount(r.amount),
         })),
       };
     case "debt_borrow":

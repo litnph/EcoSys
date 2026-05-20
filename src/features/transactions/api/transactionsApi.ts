@@ -1,5 +1,6 @@
-import type { ApiResponse } from "@/shared/types/api";
+import type { ApiResponse, PaginationMeta } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
+import { toApiWholeAmount } from "@/shared/lib/currencyUnits";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
 import type {
@@ -206,10 +207,30 @@ function buildQueryParams(filters: TransactionFilters): URLSearchParams {
   if (filters.dateFrom) qs.set("date_from", filters.dateFrom);
   if (filters.dateTo) qs.set("date_to", filters.dateTo);
   if (typeof filters.amountMin === "number")
-    qs.set("amount_min", String(filters.amountMin));
+    qs.set("amount_min", String(toApiWholeAmount(filters.amountMin)));
   if (typeof filters.amountMax === "number")
-    qs.set("amount_max", String(filters.amountMax));
+    qs.set("amount_max", String(toApiWholeAmount(filters.amountMax)));
   return qs;
+}
+
+function paginationFromResponse(
+  envelope: RemoteListEnvelope,
+  meta?: PaginationMeta | null,
+): Pick<TransactionsPage, "page" | "pageSize" | "totalCount" | "totalPages"> {
+  if (meta) {
+    return {
+      page: meta.page,
+      pageSize: meta.pageSize,
+      totalCount: meta.totalCount,
+      totalPages: meta.totalPages,
+    };
+  }
+  return {
+    page: envelope.page,
+    pageSize: envelope.pageSize,
+    totalCount: envelope.totalCount,
+    totalPages: envelope.totalPages,
+  };
 }
 
 /** Backend nhận giá trị enum .NET (camelCase) trên query, ví dụ debtBorrow. */
@@ -238,12 +259,10 @@ export async function getTransactions(
   );
   assertData(body);
   const envelope = body.data;
+  const paging = paginationFromResponse(envelope, body.meta ?? null);
   return {
     items: envelope.items.map(mapListItem),
-    page: envelope.page,
-    pageSize: envelope.pageSize,
-    totalCount: envelope.totalCount,
-    totalPages: envelope.totalPages,
+    ...paging,
   };
 }
 
@@ -332,13 +351,52 @@ interface CreateTransactionEnvelope {
   transaction: RemoteDetailDto;
 }
 
+function serializeCreateTransactionBody(
+  body: CreateTransactionBody,
+): CreateTransactionBody {
+  return {
+    ...body,
+    amount: toApiWholeAmount(body.amount),
+    splits: body.splits?.map((row) => ({
+      ...row,
+      amount: toApiWholeAmount(row.amount),
+    })),
+  };
+}
+
 export async function createTransaction(
   body: CreateTransactionBody,
 ): Promise<TransactionDetail> {
   const envelope = await unwrap<CreateTransactionEnvelope>(
-    apiClient.post("/finance/transactions", body),
+    apiClient.post("/finance/transactions", serializeCreateTransactionBody(body)),
   );
   return mapDetailDto(envelope.transaction);
+}
+
+export type UpdateTransactionPayload = {
+  categoryId?: string | null;
+  txnDate: string;
+  description: string;
+  note?: string | null;
+  monthlyPeriodId?: string | null;
+};
+
+export async function updateTransaction(
+  id: string,
+  payload: UpdateTransactionPayload,
+): Promise<TransactionDetail> {
+  const { data: body } = await apiClient.put<ApiEnvelope<RemoteDetailEnvelope>>(
+    `/finance/transactions/${id}`,
+    {
+      categoryId: payload.categoryId ?? null,
+      txnDate: payload.txnDate,
+      description: payload.description,
+      note: payload.note ?? null,
+      monthlyPeriodId: payload.monthlyPeriodId ?? null,
+    },
+  );
+  assertData(body);
+  return mapDetailDto(body.data.transaction);
 }
 
 export async function deleteTransaction(

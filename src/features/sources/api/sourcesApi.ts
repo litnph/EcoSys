@@ -1,5 +1,6 @@
 import type { ApiResponse } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
+import { toApiWholeAmountOrNull } from "@/shared/lib/currencyUnits";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
 import type {
@@ -91,10 +92,14 @@ function buildCreateBody(data: CreateSourceRequest) {
     icon: data.icon ?? null,
     color: data.color ?? null,
     sortOrder: data.sortOrder ?? null,
-    creditLimit: isCard ? data.creditLimit ?? null : null,
+    creditLimit: isCard
+      ? toApiWholeAmountOrNull(data.creditLimit ?? null)
+      : null,
     statementDay: isCard ? data.statementDay ?? null : null,
     paymentDueDay: isCard ? data.paymentDueDay ?? null : null,
-    minInstallmentAmt: isCard ? data.minInstallmentAmt ?? null : null,
+    minInstallmentAmt: isCard
+      ? toApiWholeAmountOrNull(data.minInstallmentAmt ?? null)
+      : null,
   };
 }
 
@@ -107,10 +112,14 @@ function buildUpdateBody(data: UpdateSourceRequest) {
     icon: data.icon ?? null,
     color: data.color ?? null,
     sortOrder: data.sortOrder ?? null,
-    creditLimit: isCard ? data.creditLimit ?? null : null,
+    creditLimit: isCard
+      ? toApiWholeAmountOrNull(data.creditLimit ?? null)
+      : null,
     statementDay: isCard ? data.statementDay ?? null : null,
     paymentDueDay: isCard ? data.paymentDueDay ?? null : null,
-    minInstallmentAmt: isCard ? data.minInstallmentAmt ?? null : null,
+    minInstallmentAmt: isCard
+      ? toApiWholeAmountOrNull(data.minInstallmentAmt ?? null)
+      : null,
   };
 }
 

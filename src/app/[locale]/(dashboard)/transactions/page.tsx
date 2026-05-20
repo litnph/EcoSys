@@ -19,7 +19,8 @@ import { useTransactions, useDeleteTransaction } from "@/features/transactions/h
 import type { Transaction } from "@/features/transactions/types";
 import { useSources } from "@/features/sources/hooks";
 
-import { NEXT_PUBLIC_FINANCE_SMODULE_ID } from "@/config/env";
+import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
+import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
@@ -42,7 +43,7 @@ function calendarMonthIsoRange(year: number, month: number): {
 
 function TransactionsPageInner() {
   const t = useTranslations("transaction");
-  const smoduleId = NEXT_PUBLIC_FINANCE_SMODULE_ID.trim();
+  const smoduleId = useFinanceSmoduleId();
   const missingModule = smoduleId.length === 0;
 
   const searchParams = useSearchParams();
@@ -61,7 +62,10 @@ function TransactionsPageInner() {
       typeof monthStr === "string" &&
       monthStr.length > 0;
 
-    if (!hasCat && !hasYm) return;
+    if (!hasCat && !hasYm) {
+      setFilterState(defaultTransactionFilterState());
+      return;
+    }
 
     const next = defaultTransactionFilterState();
     next.categoryKind = "expense";
@@ -138,9 +142,7 @@ function TransactionsPageInner() {
       </div>
 
       {missingModule ? (
-        <div className="mt-8 rounded-card border border-warm-200 bg-warm-25 p-8 text-center text-sm text-warm-600 shadow-sm">
-          {t("missingModule", { envKey: "NEXT_PUBLIC_FINANCE_SMODULE_ID" })}
-        </div>
+        <MissingFinanceModule />
       ) : (
         <>
           <ErrorBoundary fallbackTitle="Không tải được bộ lọc">

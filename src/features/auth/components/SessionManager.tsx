@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { ROUTES } from "@/config/routes";
 import { REFRESH_TOKEN_KEY, TOKEN_KEY } from "@/config/constants";
 import { refreshToken as refreshTokenRequest } from "@/features/auth/api/authApi";
+import { useBootstrapUser } from "@/features/auth/hooks/useBootstrapUser";
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { useRouter } from "@/i18n/navigation";
 import { setAuthCookies } from "@/shared/lib/auth-cookies";
@@ -42,6 +43,7 @@ async function silentRefresh(): Promise<boolean> {
 export function SessionManager() {
   const router = useRouter();
   const loggedSync = useRef(false);
+  useBootstrapUser();
 
   useEffect(() => {
     if (loggedSync.current) {

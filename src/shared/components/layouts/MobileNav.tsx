@@ -97,7 +97,7 @@ export function MobileNav() {
               href={href}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs font-medium transition-colors duration-150",
-                active ? "text-accent" : "text-warm-400",
+                active ? "text-accent-emphasis" : "text-nav-inactive",
               )}
             >
               <Icon className="size-5 shrink-0" aria-hidden />
@@ -111,7 +111,7 @@ export function MobileNav() {
             type="button"
             onClick={() => setCreateOpen(true)}
             className={cn(
-              "relative -top-2 flex size-12 items-center justify-center rounded-full bg-accent text-white shadow-lg outline-none transition-transform active:scale-95",
+              "relative -top-2 flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg outline-none transition-transform active:scale-95",
               "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
             )}
             aria-label={tTx("addTransactionAria")}
@@ -128,7 +128,7 @@ export function MobileNav() {
               href={href}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs font-medium transition-colors duration-150",
-                active ? "text-accent" : "text-warm-400",
+                active ? "text-accent-emphasis" : "text-nav-inactive",
               )}
             >
               <Icon className="size-5 shrink-0" aria-hidden />

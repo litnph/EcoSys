@@ -22,6 +22,11 @@ const config: Config = {
           DEFAULT: "var(--color-accent)",
           dark: "var(--color-accent-dark)",
           light: "var(--color-accent-light)",
+          foreground: "var(--color-accent-foreground)",
+          emphasis: "var(--color-accent-emphasis)",
+        },
+        nav: {
+          inactive: "var(--color-nav-inactive)",
         },
         foreground: {
           DEFAULT: "var(--color-text-primary)",
