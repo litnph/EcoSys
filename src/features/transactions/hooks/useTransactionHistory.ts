@@ -11,8 +11,7 @@ export interface UseTransactionHistoryOptions {
 
 export function useTransactionHistory(
   transactionId: string | null | undefined,
-  options?: UseTransactionHistoryOptions,
-) {
+  options?: UseTransactionHistoryOptions) {
   const enabled = options?.enabled !== false;
 
   return useQuery({

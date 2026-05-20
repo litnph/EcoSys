@@ -10,7 +10,6 @@ import { ROUTES } from "@/config/routes";
 import { TOKEN_KEY } from "@/config/constants";
 import { Link, usePathname } from "@/i18n/navigation";
 import { buildDashboardBreadcrumbs } from "@/shared/lib/dashboard-breadcrumb";
-import { useWorkspaceStore } from "@/shared/stores/workspaceStore";
 import {
   initialsFromNameOrEmail,
   readJwtDisplayClaims,
@@ -43,18 +42,12 @@ export function TopNav({
 }: TopNavProps) {
   void unreadNotificationCount;
   const pathname = usePathname();
-  const currentOrg = useWorkspaceStore((s) => s.currentOrg);
-  const currentSpace = useWorkspaceStore((s) => s.currentSpace);
-  const crumbs = buildDashboardBreadcrumbs(pathname, {
-    orgName: currentOrg?.name,
-    spaceName: currentSpace?.name,
-  });
+  const crumbs = buildDashboardBreadcrumbs(pathname);
 
   const [name, setName] = useState(() => userProp?.name ?? "User");
   const [email, setEmail] = useState(() => userProp?.email ?? "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(
-    () => userProp?.avatarUrl ?? null,
-  );
+    () => userProp?.avatarUrl ?? null);
 
   useEffect(() => {
     if (userProp !== undefined) {
@@ -77,16 +70,14 @@ export function TopNav({
       style={{ top: bannerInsetPx }}
       className={cn(
         "fixed left-0 right-0 z-40 flex h-14 items-center gap-3 border-b border-warm-200 bg-warm-25/80 px-4 backdrop-blur transition-[left] duration-200 ease-out md:px-6",
-        sidebarCollapsed ? "md:left-16" : "md:left-[240px]",
-      )}
+        sidebarCollapsed ? "md:left-16" : "md:left-[240px]")}
     >
       <button
         type="button"
         className={cn(
           "inline-flex rounded-button p-2 text-warm-700 outline-none md:hidden",
           "hover:bg-warm-100 hover:text-warm-900",
-          "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-        )}
+          "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2")}
         aria-label="Open menu"
         onClick={onOpenMobileDrawer}
       >
@@ -132,8 +123,7 @@ export function TopNav({
               type="button"
               className={cn(
                 "flex items-center gap-2 rounded-full outline-none",
-                "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-              )}
+                "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2")}
               aria-label="Account menu"
             >
               {avatarUrl ? (
@@ -159,8 +149,7 @@ export function TopNav({
               align="end"
               sideOffset={8}
               className={cn(
-                "z-[200] min-w-[220px] rounded-card border border-warm-200 bg-surface p-1 shadow-lg outline-none",
-              )}
+                "z-[200] min-w-[220px] rounded-card border border-warm-200 bg-surface p-1 shadow-lg outline-none")}
             >
               <div className="px-2 py-2">
                 <p className="truncate text-sm font-semibold text-warm-900">
@@ -176,8 +165,7 @@ export function TopNav({
                   href={ROUTES.dashboard.profile}
                   className={cn(
                     "flex cursor-pointer select-none rounded-md px-2 py-2 text-sm text-warm-800 outline-none",
-                    "hover:bg-warm-100 focus:bg-warm-100",
-                  )}
+                    "hover:bg-warm-100 focus:bg-warm-100")}
                 >
                   Profile
                 </Link>
@@ -187,8 +175,7 @@ export function TopNav({
                   href={ROUTES.dashboard.settings}
                   className={cn(
                     "flex cursor-pointer select-none rounded-md px-2 py-2 text-sm text-warm-800 outline-none",
-                    "hover:bg-warm-100 focus:bg-warm-100",
-                  )}
+                    "hover:bg-warm-100 focus:bg-warm-100")}
                 >
                   Settings
                 </Link>
@@ -197,8 +184,7 @@ export function TopNav({
               <DropdownMenu.Item
                 className={cn(
                   "flex cursor-pointer select-none rounded-md px-2 py-2 text-sm text-danger outline-none",
-                  "hover:bg-warm-100 focus:bg-warm-100",
-                )}
+                  "hover:bg-warm-100 focus:bg-warm-100")}
                 onSelect={(e) => {
                   e.preventDefault();
                   logout();

@@ -28,8 +28,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       id,
       ...props
     },
-    ref,
-  ) {
+    ref) {
     const {
       onFocus: onFocusProp,
       onBlur: onBlurProp,
@@ -61,8 +60,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             aria-hidden
             className={cn(
               "pointer-events-none absolute inset-0 z-0 rounded-button ring-2",
-              error ? "ring-danger/35" : "ring-accent/35",
-            )}
+              error ? "ring-danger/35" : "ring-accent/35")}
             initial={false}
             animate={{
               scale: focused ? 1 : 0.92,
@@ -88,8 +86,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 : "border-warm-200",
               leftIcon && "pl-10",
               rightIcon && "pr-10",
-              className,
-            )}
+              className)}
             onFocus={(e) => {
               setFocused(true);
               onFocusProp?.(e);
@@ -104,8 +101,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <span
               className={cn(
                 "absolute right-3 top-1/2 z-[2] flex -translate-y-1/2 text-warm-600",
-                !rightIconInteractive && "pointer-events-none",
-              )}
+                !rightIconInteractive && "pointer-events-none")}
             >
               {rightIcon}
             </span>
@@ -141,7 +137,6 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         </AnimatePresence>
       </div>
     );
-  },
-);
+  });
 
 Input.displayName = "Input";

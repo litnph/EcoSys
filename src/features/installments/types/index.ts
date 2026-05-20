@@ -23,9 +23,7 @@ export interface InstallmentPay {
 
 /** Kế hoạch trả góp đầy đủ (từ GET …/installment-plans/:id). */
 export interface InstallmentPlan {
-  id: string;
-  smoduleId: string;
-  originalTxnId: string;
+  id: string;  originalTxnId: string;
   sourceId: string;
   sourceName: string | null;
   originalTxnDescription: string | null;
@@ -45,9 +43,7 @@ export interface InstallmentPlan {
 
 /** Bản tóm tắt danh sách (GET …/installment-plans). */
 export interface InstallmentPlanListItem {
-  id: string;
-  smoduleId: string;
-  sourceId: string;
+  id: string;  sourceId: string;
   sourceName: string | null;
   originalTxnDescription: string | null;
   status: InstallmentStatus;

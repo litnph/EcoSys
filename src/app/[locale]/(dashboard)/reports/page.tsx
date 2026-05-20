@@ -13,8 +13,6 @@ import { currentUtcYearMonth } from "@/features/reports/utils/months";
 
 import { useBillingCycles } from "@/features/billing-cycles/hooks/useBillingCycles";
 import { ROUTES } from "@/config/routes";
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 import { useRouter } from "@/i18n/navigation";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
@@ -22,8 +20,7 @@ import { SkeletonText } from "@/shared/components/ui/Skeleton";
 const CategoryBreakdownChart = dynamic(
   () =>
     import("@/features/reports/components/CategoryBreakdownChart").then(
-      (m) => m.CategoryBreakdownChart,
-    ),
+      (m) => m.CategoryBreakdownChart),
   {
     ssr: false,
     loading: () => (
@@ -31,14 +28,12 @@ const CategoryBreakdownChart = dynamic(
         <SkeletonText className="h-48 w-full rounded-lg" />
       </div>
     ),
-  },
-);
+  });
 
 const DailyBreakdownChart = dynamic(
   () =>
     import("@/features/reports/components/DailyBreakdownChart").then(
-      (m) => m.DailyBreakdownChart,
-    ),
+      (m) => m.DailyBreakdownChart),
   {
     ssr: false,
     loading: () => (
@@ -46,25 +41,19 @@ const DailyBreakdownChart = dynamic(
         <SkeletonText className="h-48 w-full rounded-lg" />
       </div>
     ),
-  },
-);
+  });
 
 export default function ReportsPage() {
-  const smoduleIdRaw = useFinanceSmoduleId();
-  const missingModule = smoduleIdRaw.length === 0;
   const start = currentUtcYearMonth();
   const [ym, setYm] = useState(start);
 
   const router = useRouter();
 
   const reportQ = useMonthlyReport(
-    missingModule ? undefined : smoduleIdRaw,
     ym.year,
-    ym.month,
-  );
+    ym.month);
 
   const cyclesQ = useBillingCycles(
-    missingModule ? undefined : smoduleIdRaw,
   );
 
   const report = reportQ.data;
@@ -80,8 +69,7 @@ export default function ReportsPage() {
       });
       router.push(`${ROUTES.dashboard.transactions}?${qs.toString()}`);
     },
-    [router],
-  );
+    [router]);
 
   return (
     <div className="w-full max-w-[1400px] pb-24 md:pb-8">
@@ -90,9 +78,7 @@ export default function ReportsPage() {
         description="Tổng quan thu chi theo danh mục, dòng tiền hằng ngày và chốt sổ tháng."
       />
 
-      {missingModule ? (
-        <MissingFinanceModule />
-      ) : (
+      {(
         <>
           <div className="mt-8 flex flex-col gap-10">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -123,7 +109,7 @@ export default function ReportsPage() {
 
             {report ? (
               <CloseMonthSection
-                smoduleId={smoduleIdRaw}
+                
                 year={ym.year}
                 month={ym.month}
                 status={report.status}

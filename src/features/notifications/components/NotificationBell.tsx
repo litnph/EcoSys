@@ -38,8 +38,7 @@ export function NotificationBell() {
           className={cn(
             "relative inline-flex rounded-button p-2 text-warm-700 outline-none",
             "hover:bg-warm-100 hover:text-warm-900",
-            "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-          )}
+            "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2")}
           aria-label="Thông báo"
         >
           <Bell className="size-5" aria-hidden />
@@ -86,8 +85,7 @@ export function NotificationBell() {
                   key={n.id}
                   className={cn(
                     "group flex gap-2 border-b border-warm-100 px-3 py-2 last:border-0",
-                    !n.isRead && "bg-accent/5",
-                  )}
+                    !n.isRead && "bg-accent/5")}
                 >
                   <button
                     type="button"

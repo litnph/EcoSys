@@ -1,4 +1,4 @@
-import type { UserDto } from "@/features/auth/types";
+import type { UserDto, UserRole } from "@/features/auth/types";
 import { apiClient } from "@/shared/lib/axios";
 import type { ApiResponse } from "@/shared/types/api";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
@@ -22,6 +22,7 @@ type BeUserProfileDto = {
   userId: string;
   fullName: string;
   email: string;
+  role?: string;
   isEmailVerified: boolean;
   languageCode: string;
   timezone: string;
@@ -56,12 +57,15 @@ function normalizePreferences(raw: Partial<UserPreferencesDto>): UserPreferences
 }
 
 function mapProfileToUser(profile: BeUserProfileDto): UserDto {
+  const role: UserRole =
+    profile.role?.toLowerCase() === "admin" ? "admin" : "member";
   return {
     id: profile.userId,
     email: profile.email,
     fullName: profile.fullName,
     avatarUrl: profile.avatarUrl ?? null,
     isVerified: profile.isEmailVerified,
+    role,
   };
 }
 
@@ -108,8 +112,7 @@ async function putProfileDto(payload: {
 }): Promise<BeUserProfileDto> {
   const { data: body } = await apiClient.put<ApiResponse<{ profile: BeUserProfileDto }>>(
     "/user/profile",
-    payload,
-  );
+    payload);
   assertSuccess(body);
   return body.data.profile;
 }
@@ -122,8 +125,7 @@ function profilePayloadFromDto(
     timezone: string;
     dateFormat: string;
     theme: string;
-  }> = {},
-) {
+  }> = {}) {
   return {
     fullName: overrides.fullName ?? profile.fullName,
     displayName: profile.displayName ?? null,
@@ -164,8 +166,7 @@ export async function uploadProfileAvatar(file: File): Promise<{ avatarUrl: stri
 
 export async function changePassword(
   currentPassword: string,
-  newPassword: string,
-): Promise<void> {
+  newPassword: string): Promise<void> {
   const { data: body } = await apiClient.put<ApiResponse<unknown>>("/user/password", {
     currentPassword,
     newPassword,
@@ -179,8 +180,7 @@ export async function getPreferences(): Promise<UserPreferencesDto> {
 }
 
 export async function patchPreferences(
-  patch: Partial<UserPreferencesDto>,
-): Promise<UserPreferencesDto> {
+  patch: Partial<UserPreferencesDto>): Promise<UserPreferencesDto> {
   const current = await fetchProfileDto();
   const merged = normalizePreferences({
     ...mapProfileToPreferences(current),
@@ -213,8 +213,7 @@ export async function getNotificationPreferences(): Promise<NotificationPreferen
 }
 
 export async function putNotificationPreferences(
-  prefs: NotificationPreferencesDto,
-): Promise<NotificationPreferencesDto> {
+  prefs: NotificationPreferencesDto): Promise<NotificationPreferencesDto> {
   const { data: body } = await apiClient.put<
     ApiResponse<{ preferences: BeNotificationPrefDto[] }>
   >("/user/notification-prefs", {

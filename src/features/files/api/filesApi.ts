@@ -71,15 +71,13 @@ export async function uploadFile(params: {
   const row = await unwrap<RemoteFileDto>(
     apiClient.post("/files/upload", fd, {
       headers: { "Content-Type": "multipart/form-data" },
-    }),
-  );
+    }));
   return mapFile(row);
 }
 
 export async function getFileUrl(id: string): Promise<SignedFileUrl> {
   const row = await unwrap<RemoteSignedUrlDto>(
-    apiClient.get(`/files/${id}/url`),
-  );
+    apiClient.get(`/files/${id}/url`));
   return { url: row.url, expiresAtUtc: row.expiresAtUtc };
 }
 

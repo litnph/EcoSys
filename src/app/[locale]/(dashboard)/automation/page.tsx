@@ -10,25 +10,17 @@ import {
   useToggleAutomationRule,
 } from "@/features/automation";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
 import { Button } from "@/shared/components/ui/Button";
 import { Input } from "@/shared/components/ui/Input";
 import { Modal } from "@/shared/components/ui/Modal";
 import { cn } from "@/shared/lib/utils";
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 
-export default function AutomationPage() {
-  const smoduleId = useFinanceSmoduleId();
-  const { data: items, isLoading, isError } = useAutomationRules(
-    smoduleId || undefined,
-  );
+export default function AutomationPage() {  const { data: items, isLoading, isError } = useAutomationRules();
   const toggle = useToggleAutomationRule();
   const del = useDeleteAutomationRule();
   const create = useCreateAutomationRule();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const missing = !smoduleId;
-
   return (
     <div className="w-full max-w-4xl">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -39,15 +31,13 @@ export default function AutomationPage() {
         <Button
           type="button"
           leftIcon={<Plus className="size-4" />}
-          disabled={missing}
+          
           onClick={() => setOpen(true)}
         >
           Thêm quy tắc
         </Button>
       </div>
-      {missing ? (
-        <MissingFinanceModule />
-      ) : isError ? (
+      {isError ? (
         <p className="mt-8 text-sm text-danger">Không tải được danh sách.</p>
       ) : isLoading ? (
         <p className="mt-8 text-sm text-warm-500">Đang tải…</p>
@@ -71,8 +61,7 @@ export default function AutomationPage() {
                     "rounded-badge px-2 py-0.5 text-xs font-medium",
                     r.isActive
                       ? "bg-accent/15 text-accent"
-                      : "bg-warm-100 text-warm-600",
-                  )}
+                      : "bg-warm-100 text-warm-600")}
                 >
                   {r.isActive ? "Bật" : "Tắt"}
                 </span>
@@ -102,10 +91,9 @@ export default function AutomationPage() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!smoduleId || !name.trim()) return;
+            if (! !name.trim()) return;
             create.mutate(
               {
-                smoduleId,
                 name: name.trim(),
                 triggerType: 3,
                 triggerValue: new Date().toISOString().slice(0, 10),
@@ -117,8 +105,7 @@ export default function AutomationPage() {
                   setOpen(false);
                   setName("");
                 },
-              },
-            );
+              });
           }}
         >
           <Input label="Tên" value={name} onChange={(e) => setName(e.target.value)} />

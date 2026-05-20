@@ -7,14 +7,10 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { ROUTES } from "@/config/routes";
-import { Link } from "@/i18n/navigation";
 import { Button } from "@/shared/components/ui/Button";
 import { Input } from "@/shared/components/ui/Input";
 
 import { useLogin } from "../hooks/useLogin";
-
-import { GoogleOAuthButton } from "./GoogleOAuthButton";
 
 function buildLoginSchema(tVal: ReturnType<typeof useTranslations>) {
   return z.object({
@@ -92,47 +88,18 @@ export function LoginForm() {
         {...register("password")}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-warm-700">
-          <input
-            type="checkbox"
-            className="size-4 rounded border-warm-300 text-accent focus:ring-accent"
-            {...register("rememberMe")}
-          />
-          {tAuth("rememberMe")}
-        </label>
-        <Link
-          href={ROUTES.auth.forgotPassword}
-          className="text-sm font-medium text-accent hover:text-accent-dark"
-        >
-          {tAuth("forgotPassword")}
-        </Link>
-      </div>
+      <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-warm-700">
+        <input
+          type="checkbox"
+          className="size-4 rounded border-warm-300 text-accent focus:ring-accent"
+          {...register("rememberMe")}
+        />
+        {tAuth("rememberMe")}
+      </label>
 
       <Button type="submit" className="w-full" size="lg" isLoading={isPending}>
         {tAuth("login")}
       </Button>
-
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center" aria-hidden>
-          <div className="w-full border-t border-warm-200" />
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="bg-warm-25 px-3 text-warm-500">{tAuth("orDivider")}</span>
-        </div>
-      </div>
-
-      <GoogleOAuthButton />
-
-      <p className="text-center text-sm text-warm-600">
-        {tAuth("noAccount")}{" "}
-        <Link
-          href={ROUTES.auth.register}
-          className="font-medium text-accent hover:text-accent-dark"
-        >
-          {tAuth("register")}
-        </Link>
-      </p>
     </form>
   );
 }

@@ -15,8 +15,7 @@ function parsePeriodEndYm(isoDate: string): { year: number; month: number } {
 export function billingCyclesBlockingCloseMonth(
   year: number,
   month: number,
-  cycles: BillingCycle[],
-): BillingCycle[] {
+  cycles: BillingCycle[]): BillingCycle[] {
   return cycles.filter((c) => {
     const { year: cy, month: cm } = parsePeriodEndYm(c.periodEnd);
     if (cy !== year || cm !== month) return false;

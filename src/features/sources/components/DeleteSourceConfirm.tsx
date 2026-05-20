@@ -13,23 +13,19 @@ import type { FinSource } from "../types";
 
 export type DeleteSourceConfirmProps = {
   source: FinSource | null;
-  smoduleId: string;
   isOpen: boolean;
   onClose: () => void;
 };
 
 export function DeleteSourceConfirm({
   source,
-  smoduleId,
   isOpen,
   onClose,
 }: DeleteSourceConfirmProps) {
   const deleteM = useDeleteSource();
   const countQ = useSourceTransactionCount(
-    smoduleId,
     source?.id,
-    isOpen && source != null,
-  );
+    isOpen && source != null);
 
   const txnCount = countQ.data ?? 0;
   const showTxnWarning = txnCount > 0;
@@ -37,7 +33,7 @@ export function DeleteSourceConfirm({
   const handleDelete = async () => {
     if (!source) return;
     try {
-      await deleteM.mutateAsync({ id: source.id, smoduleId });
+      await deleteM.mutateAsync({ id: source.id });
       onClose();
     } catch {
       /* toast handled in hook */
@@ -62,8 +58,7 @@ export function DeleteSourceConfirm({
         ) : showTxnWarning ? (
           <div
             className={cn(
-              "flex gap-3 rounded-button border border-warning/35 bg-warning/10 p-3 text-sm text-warm-800",
-            )}
+              "flex gap-3 rounded-button border border-warning/35 bg-warning/10 p-3 text-sm text-warm-800")}
             role="alert"
           >
             <AlertTriangle

@@ -44,8 +44,7 @@ function UserAvatar({
       className={cn(
         "relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-warm-200 bg-warm-100 text-xl font-semibold text-warm-700",
         "outline-none transition hover:border-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-        disabled && "pointer-events-none opacity-60",
-      )}
+        disabled && "pointer-events-none opacity-60")}
       aria-label="Đổi ảnh đại diện"
     >
       {url ? (
@@ -147,8 +146,7 @@ export function ProfileSettingsPanel() {
           setNewPw("");
           setConfirmPw("");
         },
-      },
-    );
+      });
   };
 
   if (!user) {
@@ -201,8 +199,7 @@ export function ProfileSettingsPanel() {
                   value={user.email}
                   aria-readonly
                   className={cn(
-                    "h-10 w-full max-w-md rounded-input border border-warm-200 bg-warm-50 px-3 text-sm text-warm-700",
-                  )}
+                    "h-10 w-full max-w-md rounded-input border border-warm-200 bg-warm-50 px-3 text-sm text-warm-700")}
                 />
                 <Link
                   href={ROUTES.dashboard.settingsChangeEmail}

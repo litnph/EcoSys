@@ -27,8 +27,6 @@ import { useSources } from "@/features/sources/hooks";
 import type { FinSource } from "@/features/sources/types";
 
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 import { Button } from "@/shared/components/ui/Button";
 import { Drawer } from "@/shared/components/ui/Drawer";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
@@ -43,13 +41,11 @@ const tabListClass =
 const tabTriggerClass = cn(
   "shrink-0 rounded-md px-3 py-2 font-medium transition outline-none whitespace-nowrap",
   "data-[state=active]:bg-surface data-[state=active]:text-warm-900 data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-warm-500 hover:text-warm-800",
-);
+  "data-[state=inactive]:text-warm-500 hover:text-warm-800");
 
 function pickCurrencyForPlan(
   listItem: InstallmentPlanListItem,
-  sources: FinSource[] | undefined,
-): string {
+  sources: FinSource[] | undefined): string {
   const s = sources?.find((x) => x.id === listItem.sourceId);
   return s?.currency ?? "VND";
 }
@@ -57,14 +53,10 @@ function pickCurrencyForPlan(
 function paymentSourceOptions(sources: FinSource[] | undefined): FinSource[] {
   return (sources ?? []).filter(
     (s) =>
-      s.type === "bankAccount" || s.type === "cash" || s.type === "eWallet",
-  );
+      s.type === "bankAccount" || s.type === "cash" || s.type === "eWallet");
 }
 
-export default function InstallmentsPage() {
-  const smoduleId = useFinanceSmoduleId();
-  const missingModule = smoduleId.length === 0;
-  const mdUp = useMediaMd();
+export default function InstallmentsPage() {  const mdUp = useMediaMd();
 
   const [tab, setTab] = React.useState<InstallmentStatus>("active");
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
@@ -77,9 +69,7 @@ export default function InstallmentsPage() {
   } | null>(null);
 
   const listQ = useInstallmentPlans(
-    missingModule ? undefined : smoduleId,
-    tab,
-  );
+    tab);
 
   const ids = listQ.data?.map((p) => p.id) ?? [];
 
@@ -87,8 +77,7 @@ export default function InstallmentsPage() {
     queries: ids.map((id) => ({
       queryKey: installmentKeys.detail(id),
       queryFn: () => getInstallmentPlanDetail(id),
-      enabled: !missingModule && ids.length > 0,
-      staleTime: 12_000,
+            staleTime: 12_000,
     })),
   });
 
@@ -101,9 +90,7 @@ export default function InstallmentsPage() {
     return m;
   }, [detailQueries]);
 
-  const { data: sources } = useSources(
-    missingModule ? undefined : smoduleId,
-  );
+  const { data: sources } = useSources();
 
   const drawerPlan = drawerPlanId ? planById.get(drawerPlanId) : undefined;
 
@@ -139,15 +126,13 @@ export default function InstallmentsPage() {
           className="hidden shrink-0 sm:inline-flex"
           leftIcon={<Plus className="size-4" aria-hidden />}
           onClick={() => setCreateOpen(true)}
-          disabled={missingModule}
+          
         >
           Tạo kế hoạch
         </Button>
       </div>
 
-      {missingModule ? (
-        <MissingFinanceModule />
-      ) : (
+      {(
         <>
           <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <Tabs.Root
@@ -286,7 +271,7 @@ export default function InstallmentsPage() {
       )}
 
       <CreateInstallmentPlanModal
-        smoduleId={smoduleId}
+        
         sources={sources}
         isOpen={createOpen}
         onClose={() => setCreateOpen(false)}

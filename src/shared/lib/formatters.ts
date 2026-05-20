@@ -34,8 +34,7 @@ export function formatCurrency(amount: number, currency = "VND"): string {
 
 export function formatDate(
   date: string | Date,
-  formatStr?: string,
-): string {
+  formatStr?: string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const locale = getDateFnsLocale();
   const pattern =
@@ -56,8 +55,7 @@ export function formatNumber(num: number): string {
 
 export function formatPercentage(
   num: number,
-  decimals = 1,
-): string {
+  decimals = 1): string {
   const fixed = num.toFixed(decimals);
   return `${fixed}%`;
 }

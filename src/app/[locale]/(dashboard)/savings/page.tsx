@@ -11,20 +11,15 @@ import {
 } from "@/features/savings";
 import { useSources } from "@/features/sources/hooks";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
 import { Button } from "@/shared/components/ui/Button";
 import { Drawer } from "@/shared/components/ui/Drawer";
 import { Input } from "@/shared/components/ui/Input";
 import { Modal } from "@/shared/components/ui/Modal";
 import { formatCurrency } from "@/shared/lib/formatters";
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 
 export default function SavingsPage() {
-  const smoduleId = useFinanceSmoduleId();
-  const { data: items, isLoading, isError } = useSavings(
-    smoduleId || undefined,
-  );
-  const { data: sources } = useSources(smoduleId || undefined);
+  const { data: items, isLoading, isError } = useSavings();
+  const { data: sources } = useSources();
   const del = useDeleteSaving();
   const deposit = useDepositSaving();
   const withdraw = useWithdrawSaving();
@@ -37,8 +32,6 @@ export default function SavingsPage() {
   const [note, setNote] = useState("");
 
   const selected = items?.find((s) => s.id === selectedId);
-  const missing = !smoduleId;
-
   return (
     <div className="w-full max-w-4xl">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -46,16 +39,14 @@ export default function SavingsPage() {
         <Button
           type="button"
           leftIcon={<Plus className="size-4" />}
-          disabled={missing}
+          
           onClick={() => setCreateOpen(true)}
         >
           Thêm sổ
         </Button>
       </div>
 
-      {missing ? (
-        <MissingFinanceModule />
-      ) : isError ? (
+      {isError ? (
         <p className="mt-8 text-sm text-danger">Không tải được danh sách.</p>
       ) : isLoading ? (
         <p className="mt-8 text-sm text-warm-500">Đang tải…</p>
@@ -121,8 +112,7 @@ export default function SavingsPage() {
                         note: note || null,
                       },
                     },
-                    { onSuccess: () => setAmount("") },
-                  );
+                    { onSuccess: () => setAmount("") });
                 }}
               >
                 Gửi tiền
@@ -143,8 +133,7 @@ export default function SavingsPage() {
                         note: note || null,
                       },
                     },
-                    { onSuccess: () => setAmount("") },
-                  );
+                    { onSuccess: () => setAmount("") });
                 }}
               >
                 Rút tiền

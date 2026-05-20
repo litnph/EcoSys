@@ -5,11 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { sourceKeys } from "../api/sourceKeys";
 import { getSources } from "../api/sourcesApi";
 
-export function useSources(smoduleId: string | undefined) {
+export function useSources() {
   return useQuery({
-    queryKey: smoduleId ? sourceKeys.list(smoduleId) : ["sources", "__"],
-    queryFn: () => getSources(smoduleId ?? ""),
-    enabled: Boolean(smoduleId && smoduleId.length > 0),
+    queryKey: sourceKeys.list(),
+    queryFn: () => getSources(),
     staleTime: 30_000,
   });
 }

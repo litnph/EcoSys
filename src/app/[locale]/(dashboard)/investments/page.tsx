@@ -4,27 +4,18 @@ import { Trash2 } from "lucide-react";
 
 import { useDeleteInvestment, useInvestments } from "@/features/investments";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
 import { formatCurrency } from "@/shared/lib/formatters";
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 
 export default function InvestmentsPage() {
-  const smoduleId = useFinanceSmoduleId();
-  const { data: items, isLoading, isError } = useInvestments(
-    smoduleId || undefined,
-  );
+  const { data: items, isLoading, isError } = useInvestments();
   const del = useDeleteInvestment();
-  const missing = !smoduleId;
-
   return (
     <div className="w-full max-w-4xl">
       <PageHeader
         title="Đầu tư"
         description="Danh sách khoản đầu tư trong module tài chính."
       />
-      {missing ? (
-        <MissingFinanceModule />
-      ) : isError ? (
+      {isError ? (
         <p className="mt-8 text-sm text-danger">Không tải được danh sách.</p>
       ) : isLoading ? (
         <p className="mt-8 text-sm text-warm-500">Đang tải…</p>

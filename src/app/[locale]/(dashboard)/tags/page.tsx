@@ -5,22 +5,16 @@ import { useState } from "react";
 
 import { useCreateTag, useDeleteTag, useTags } from "@/features/tags";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
 import { Button } from "@/shared/components/ui/Button";
 import { Input } from "@/shared/components/ui/Input";
 import { Modal } from "@/shared/components/ui/Modal";
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 
-export default function TagsPage() {
-  const smoduleId = useFinanceSmoduleId();
-  const { data: items, isLoading, isError } = useTags(smoduleId || undefined);
+export default function TagsPage() {  const { data: items, isLoading, isError } = useTags();
   const create = useCreateTag();
   const del = useDeleteTag();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState("#6366f1");
-  const missing = !smoduleId;
-
   return (
     <div className="w-full max-w-4xl">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -28,15 +22,13 @@ export default function TagsPage() {
         <Button
           type="button"
           leftIcon={<Plus className="size-4" />}
-          disabled={missing}
+          
           onClick={() => setOpen(true)}
         >
           Thêm thẻ
         </Button>
       </div>
-      {missing ? (
-        <MissingFinanceModule />
-      ) : isError ? (
+      {isError ? (
         <p className="mt-8 text-sm text-danger">Không tải được danh sách.</p>
       ) : isLoading ? (
         <p className="mt-8 text-sm text-warm-500">Đang tải…</p>
@@ -71,16 +63,15 @@ export default function TagsPage() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!smoduleId || !name.trim()) return;
+            if (! !name.trim()) return;
             create.mutate(
-              { smoduleId, name: name.trim(), color },
+              { name: name.trim(), color },
               {
                 onSuccess: () => {
                   setOpen(false);
                   setName("");
                 },
-              },
-            );
+              });
           }}
         >
           <Input label="Tên" value={name} onChange={(e) => setName(e.target.value)} />

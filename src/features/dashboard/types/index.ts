@@ -13,9 +13,7 @@ export type TransactionType =
 export type TxnStatus = "pending" | "completed" | "cancelled";
 
 export interface Transaction {
-  id: string;
-  smoduleId: string;
-  type: TransactionType;
+  id: string;  type: TransactionType;
   status: TxnStatus;
   amount: number;
   currency: string;

@@ -24,9 +24,7 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 
 function mapInvestment(row: Record<string, unknown>): Investment {
   return {
-    id: String(row.id),
-    smoduleId: String(row.smoduleId),
-    name: String(row.name),
+    id: String(row.id),    name: String(row.name),
     type: String(row.type),
     currentValue: Number(row.currentValue ?? 0),
     totalInvested: Number(row.totalInvested ?? 0),
@@ -37,30 +35,24 @@ function mapInvestment(row: Record<string, unknown>): Investment {
   };
 }
 
-export async function getInvestments(smoduleId: string): Promise<Investment[]> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+export async function getInvestments(): Promise<Investment[]> {
   const envelope = await unwrap<{ items: Record<string, unknown>[] }>(
-    apiClient.get(`/finance/investments?${qs.toString()}`),
-  );
+    apiClient.get("/finance/investments"));
   return envelope.items.map(mapInvestment);
 }
 
 export async function createInvestment(
-  body: Record<string, unknown>,
-): Promise<Investment> {
+  body: Record<string, unknown>): Promise<Investment> {
   const envelope = await unwrap<{ investment: Record<string, unknown> }>(
-    apiClient.post("/finance/investments", body),
-  );
+    apiClient.post("/finance/investments", body));
   return mapInvestment(envelope.investment);
 }
 
 export async function updateInvestment(
   id: string,
-  body: Record<string, unknown>,
-): Promise<Investment> {
+  body: Record<string, unknown>): Promise<Investment> {
   const envelope = await unwrap<{ investment: Record<string, unknown> }>(
-    apiClient.put(`/finance/investments/${id}`, body),
-  );
+    apiClient.put(`/finance/investments/${id}`, body));
   return mapInvestment(envelope.investment);
 }
 

@@ -24,8 +24,7 @@ export function DebtSummaryBar({
     <section
       className={cn(
         "grid gap-4 rounded-card border border-warm-200 bg-surface p-4 shadow-sm sm:grid-cols-2 sm:p-6",
-        className,
-      )}
+        className)}
     >
       <div>
         <p className="text-sm font-medium text-danger">Tôi đang nợ</p>

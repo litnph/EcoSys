@@ -31,14 +31,12 @@ export function formatHistoryValue(val: unknown): string {
 
 function shallowSnapshotDiff(
   prev: Record<string, unknown>,
-  cur: Record<string, unknown>,
-): { field: string; oldDisplay: string; newDisplay: string }[] {
+  cur: Record<string, unknown>): { field: string; oldDisplay: string; newDisplay: string }[] {
   const keys = Array.from(
     new Set<string>([
       ...Object.keys(prev),
       ...Object.keys(cur),
-    ]),
-  );
+    ]));
   const rows: { field: string; oldDisplay: string; newDisplay: string }[] = [];
   for (const field of keys) {
     const oldDisplay = formatHistoryValue(prev[field]);

@@ -1,6 +1,6 @@
 import { ROUTES } from "@/config/routes";
 
-const BLOCKED_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/auth/callback"];
+const BLOCKED_PREFIXES = ["/login"];
 
 /** Reads `returnUrl` from the current page query (client-only). */
 export function getReturnUrlFromSearch(search?: string): string | null {
@@ -33,7 +33,7 @@ export function sanitizeReturnUrl(path: string | null | undefined): string | nul
   return p;
 }
 
-/** Sau đăng nhập/đăng ký mặc định vào trung tâm quản lý tổ chức. */
+/** After login, default to finance dashboard. */
 export function resolvePostAuthPath(returnUrl: string | null): string {
-  return returnUrl ?? ROUTES.organizations.hub;
+  return returnUrl ?? ROUTES.dashboard.home;
 }

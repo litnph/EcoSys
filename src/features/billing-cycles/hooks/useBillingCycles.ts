@@ -10,16 +10,13 @@ import {
 import type { BillingCycleStatus } from "../types";
 
 export function useBillingCycles(
-  smoduleId: string | undefined,
   sourceId?: string,
   status?: BillingCycleStatus,
 ) {
   return useQuery({
-    queryKey: smoduleId
-      ? billingCycleKeys.list(smoduleId, sourceId, status)
-      : billingCycleKeys.list("__", sourceId, status),
-    queryFn: () => getBillingCycles(smoduleId ?? "", sourceId, status),
-    enabled: Boolean(smoduleId && smoduleId.length > 0),
+    queryKey: billingCycleKeys.list(sourceId, status),
+    queryFn: () => getBillingCycles(sourceId, status),
+    enabled: true,
     staleTime: 15_000,
   });
 }

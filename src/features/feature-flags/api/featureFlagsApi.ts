@@ -44,8 +44,7 @@ function mapFlag(row: RemoteFlagDto): FeatureFlag {
 
 export async function getFeatureFlags(): Promise<FeatureFlag[]> {
   const { data: body } = await apiClient.get<ApiEnvelope<RemoteFlagDto[]>>(
-    "/feature-flags",
-  );
+    "/feature-flags");
   assertData(body);
   return body.data.map(mapFlag);
 }

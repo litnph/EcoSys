@@ -38,8 +38,7 @@ export function TimezoneSelect({ value, onChange, disabled }: TimezoneSelectProp
             "flex h-10 w-full items-center justify-between rounded-input border border-warm-200 bg-surface px-3 text-left text-sm text-warm-900",
             "outline-none transition hover:border-warm-300",
             "focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30",
-            disabled && "cursor-not-allowed opacity-60",
-          )}
+            disabled && "cursor-not-allowed opacity-60")}
         >
           <span className="truncate">{value || "Chọn múi giờ"}</span>
           <ChevronsUpDown className="size-4 shrink-0 text-warm-400" aria-hidden />
@@ -51,8 +50,7 @@ export function TimezoneSelect({ value, onChange, disabled }: TimezoneSelectProp
           align="start"
           className={cn(
             "z-[120] w-[var(--radix-popover-trigger-width)] rounded-card border border-warm-200 bg-surface shadow-lg",
-            "max-h-72 overflow-hidden",
-          )}
+            "max-h-72 overflow-hidden")}
         >
           <div className="border-b border-warm-200 p-2">
             <input
@@ -62,8 +60,7 @@ export function TimezoneSelect({ value, onChange, disabled }: TimezoneSelectProp
               placeholder="Tìm múi giờ…"
               className={cn(
                 "h-9 w-full rounded-input border border-warm-200 bg-warm-50 px-3 text-sm text-warm-900",
-                "outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25",
-              )}
+                "outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25")}
             />
           </div>
           <ul
@@ -79,8 +76,7 @@ export function TimezoneSelect({ value, onChange, disabled }: TimezoneSelectProp
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-2 text-left text-warm-800",
                       "hover:bg-warm-100",
-                      selected && "bg-accent/10 font-medium text-warm-900",
-                    )}
+                      selected && "bg-accent/10 font-medium text-warm-900")}
                     onClick={() => {
                       onChange(z);
                       setOpen(false);

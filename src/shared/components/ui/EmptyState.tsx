@@ -31,8 +31,7 @@ export function EmptyState({
       role="region"
       className={cn(
         "mx-auto flex max-w-lg flex-col items-center justify-center text-center px-4 py-10",
-        className,
-      )}
+        className)}
     >
       <div className="mb-4 inline-flex shrink-0 text-warm-300 [&>svg]:size-14">
         {icon}

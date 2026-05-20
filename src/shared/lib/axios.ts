@@ -12,10 +12,6 @@ import {
   clearAuthTokens,
   redirectToLogin,
 } from "@/shared/lib/auth-session";
-import { ROUTES } from "@/config/routes";
-import { parseApiErrorPayload } from "@/shared/lib/errorMessages";
-import { useWorkspaceStore } from "@/shared/stores/workspaceStore";
-
 declare module "axios" {
   export interface InternalAxiosRequestConfig {
     _retry?: boolean;
@@ -42,38 +38,6 @@ function attachUserFacingMessage(error: unknown): void {
 function clearAuthAndRedirectToLogin(): void {
   clearAuthTokens();
   redirectToLogin();
-}
-
-const MODULE_ERROR_CODES = new Set([
-  "MODULE_NOT_FOUND",
-  "MODULE_DISABLED",
-  "SPACE_MODULE_DISABLED",
-  "SPACE_MODULE_NOT_FOUND",
-]);
-
-function isWorkspaceModuleError(data: unknown): boolean {
-  const err = parseApiErrorPayload(data);
-  if (!err || typeof err.code !== "string") return false;
-  const code = err.code.trim().toUpperCase();
-  return MODULE_ERROR_CODES.has(code);
-}
-
-function handleWorkspaceModuleError(): void {
-  try {
-    useWorkspaceStore.getState().resetWorkspace();
-  } catch {
-    /* ignore */
-  }
-  if (typeof window === "undefined") {
-    return;
-  }
-  const locale =
-    (getLocalStorageItem("pfp_locale")?.trim() || "vi").replace(/[^a-z\-]/gi, "") ||
-    "vi";
-  const reason = encodeURIComponent("module-disabled");
-  window.location.assign(
-    `/${locale}${ROUTES.onboarding.workspaceSetup}?reason=${reason}`,
-  );
 }
 
 type AuthTokenPayload = {
@@ -140,24 +104,13 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (!error.response) {
       return Promise.reject(
-        new Error("Không thể kết nối đến server"),
-      );
+        new Error("Không thể kết nối đến server"));
     }
 
     attachUserFacingMessage(error);
 
     const originalRequest = error.config as InternalAxiosRequestConfig &
       { _retry?: boolean };
-
-    // Edge case 2 — smoduleId trong store/cookie không còn hợp lệ.
-    const status = error.response?.status;
-    if (
-      (status === 403 || status === 404) &&
-      isWorkspaceModuleError(error.response?.data)
-    ) {
-      handleWorkspaceModuleError();
-      return Promise.reject(error);
-    }
 
     if (
       error.response?.status === 401 &&
@@ -183,5 +136,4 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  },
-);
+  });

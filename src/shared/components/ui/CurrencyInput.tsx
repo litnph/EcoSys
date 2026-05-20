@@ -124,8 +124,7 @@ export function CurrencyInput({
           aria-hidden
           className={cn(
             "pointer-events-none absolute inset-0 z-0 rounded-button ring-2",
-            error ? "ring-danger/35" : "ring-accent/35",
-          )}
+            error ? "ring-danger/35" : "ring-accent/35")}
           initial={false}
           animate={{
             scale: focused ? 1 : 0.92,
@@ -154,8 +153,7 @@ export function CurrencyInput({
             "focus:border-accent focus:outline-none focus:ring-0",
             error
               ? "border-danger focus:border-danger"
-              : "border-warm-200",
-          )}
+              : "border-warm-200")}
         />
       </div>
       <AnimatePresence mode="wait">

@@ -11,8 +11,7 @@ export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
 
 function styleFromDim(
   w?: string | number,
-  h?: string | number,
-): React.CSSProperties | undefined {
+  h?: string | number): React.CSSProperties | undefined {
   const style: React.CSSProperties = {};
   if (w !== undefined) style.width = typeof w === "number" ? `${w}px` : w;
   if (h !== undefined) style.height = typeof h === "number" ? `${h}px` : h;
@@ -71,8 +70,7 @@ export function SkeletonCard({
     <div
       className={cn(
         "flex w-full flex-col gap-3 rounded-card border border-warm-200 bg-surface p-4 shadow-sm",
-        className,
-      )}
+        className)}
     >
       {showHeader && (
         <div className="flex items-center gap-3">
@@ -111,8 +109,7 @@ export function SkeletonTable({
     <div
       className={cn(
         "w-full overflow-hidden rounded-card border border-warm-200 bg-surface",
-        className,
-      )}
+        className)}
     >
       {showHeaderRow && (
         <div className="border-b border-warm-200 bg-warm-50 p-4 sm:p-5">

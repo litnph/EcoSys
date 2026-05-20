@@ -100,7 +100,7 @@ interface MonthlyPeriodEnvelope {
 
 function mapDaily(row: DailyCashflowSlice): DailyPoint | null {
   const head = row.date.slice(0, 10);
-  const [, , ds] = head.split("-");
+  const [, ds] = head.split("-");
   const day = Number(ds);
   if (!Number.isFinite(day)) return null;
   return {
@@ -111,12 +111,9 @@ function mapDaily(row: DailyCashflowSlice): DailyPoint | null {
 }
 
 export async function getMonthlyPeriods(
-  smoduleId: string,
-): Promise<MonthlyPeriodListItem[]> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+  ): Promise<MonthlyPeriodListItem[]> {
   const data = await unwrap<PeriodsEnvelope>(
-    apiClient.get(`/finance/monthly-periods?${qs.toString()}`),
-  );
+    apiClient.get("/finance/monthly-periods"));
   return data.periods.map((p) => ({
     year: p.year,
     month: p.month,
@@ -172,34 +169,30 @@ function mapComparison(dto: MonthOverMonthComparisonDto | null): Comparison {
   };
 }
 
-async function fetchReportPayload(year: number, month: number, smoduleId: string) {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+async function fetchReportPayload(year: number, month: number) {
   const data = await unwrap<ReportEnvelope>(
     apiClient.get(
-      `/finance/monthly-periods/${String(year)}/${String(month)}/report?${qs.toString()}`,
+      `/finance/monthly-periods/${String(year)}/${String(month)}/report`,
     ),
   );
   return data.report;
 }
 
-async function fetchPeriodMeta(year: number, month: number, smoduleId: string) {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+async function fetchPeriodMeta(year: number, month: number) {
   const data = await unwrap<MonthlyPeriodEnvelope>(
     apiClient.get(
-      `/finance/monthly-periods/${String(year)}/${String(month)}?${qs.toString()}`,
+      `/finance/monthly-periods/${String(year)}/${String(month)}`,
     ),
   );
   return data.summary;
 }
 
 export async function getMonthlyReport(
-  smoduleId: string,
   year: number,
-  month: number,
-): Promise<MonthlyReport> {
+  month: number): Promise<MonthlyReport> {
   const [reportSlice, summary] = await Promise.all([
-    fetchReportPayload(year, month, smoduleId),
-    fetchPeriodMeta(year, month, smoduleId),
+    fetchReportPayload(year, month),
+    fetchPeriodMeta(year, month),
   ]);
 
   const dailyRaw = reportSlice.dailyBreakdown ?? [];
@@ -244,15 +237,11 @@ function fillEmptyDaily(year: number, month: number): DailyPoint[] {
 }
 
 export async function closeMonth(
-  smoduleId: string,
   year: number,
-  month: number,
-): Promise<void> {
+  month: number): Promise<void> {
   await unwrap<unknown>(
     apiClient.post(`/finance/monthly-periods/close`, {
-      smoduleId,
       year,
       month,
-    }),
-  );
+    }));
 }

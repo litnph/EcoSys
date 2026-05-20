@@ -86,8 +86,7 @@ export function TransactionHistoryTimeline({
 
   function diffForRow(
     h: FinTransactionHistory,
-    index: number,
-  ): { field: string; oldDisplay: string; newDisplay: string }[] {
+    index: number): { field: string; oldDisplay: string; newDisplay: string }[] {
     const prevSnap = index > 0 ? rows[index - 1]?.snapshot : null;
     return computeHistoryRowFieldDiff({
       previousSnapshotJson: prevSnap ?? null,
@@ -117,8 +116,7 @@ export function TransactionHistoryTimeline({
               <span
                 className={cn(
                   "rounded-md border px-2 py-0.5 text-xs font-medium",
-                  changeTypeBadgeClass(h.changeType),
-                )}
+                  changeTypeBadgeClass(h.changeType))}
               >
                 {changeTypeLabel(h.changeType)}
               </span>
@@ -139,8 +137,7 @@ export function TransactionHistoryTimeline({
                 type="button"
                 className={cn(
                   "mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:text-accent-dark",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-                )}
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2")}
                 onClick={() =>
                   setOpenId((prev) => (prev === h.id ? null : h.id))
                 }

@@ -11,7 +11,6 @@ import type { FinSource, UpdateSourceRequest } from "../types";
 
 type UpdateVars = {
   id: string;
-  smoduleId: string;
   body: UpdateSourceRequest;
 };
 
@@ -22,7 +21,7 @@ export function useUpdateSource() {
   return useMutation({
     mutationFn: ({ id, body }: UpdateVars) => updateSource(id, body),
     onMutate: async (variables) => {
-      const listKey = sourceKeys.list(variables.smoduleId);
+      const listKey = sourceKeys.list();
       await queryClient.cancelQueries({ queryKey: listKey });
       const previous = queryClient.getQueryData<FinSource[]>(listKey);
 
@@ -64,14 +63,13 @@ export function useUpdateSource() {
         message: getFinanceApiErrorMessage(error),
       });
     },
-    onSuccess: (server, variables) => {
+    onSuccess: (server) => {
       queryClient.setQueryData<FinSource[]>(
-        sourceKeys.list(variables.smoduleId),
+        sourceKeys.list(),
         (old) => {
           if (!old) return [server];
           return old.map((r) => (r.id === server.id ? server : r));
-        },
-      );
+        });
       queryClient.setQueryData(sourceKeys.detail(server.id), server);
       addToast({
         type: "success",

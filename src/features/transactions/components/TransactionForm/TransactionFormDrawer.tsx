@@ -20,22 +20,18 @@ function TransactionFormSkeleton() {
 const TransactionForm = dynamic(
   () =>
     import("@/features/transactions/components/TransactionForm").then(
-      (m) => m.TransactionForm,
-    ),
+      (m) => m.TransactionForm),
   {
     loading: () => <TransactionFormSkeleton />,
     ssr: false,
-  },
-);
+  });
 
 export interface TransactionFormDrawerProps {
-  smoduleId: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export function TransactionFormDrawer({
-  smoduleId,
   isOpen,
   onClose,
 }: TransactionFormDrawerProps) {
@@ -48,7 +44,7 @@ export function TransactionFormDrawer({
       description="Nhập nhanh giao dịch trên thiết bị nhỏ."
       size="lg"
     >
-      <TransactionForm smoduleId={smoduleId} onSucceeded={onClose} />
+      <TransactionForm  onSucceeded={onClose} />
     </Drawer>
   );
 }

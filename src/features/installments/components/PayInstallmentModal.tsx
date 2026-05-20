@@ -13,8 +13,7 @@ import type { InstallmentPay } from "../types";
 
 const selectClassName = cn(
   "h-10 w-full rounded-button border border-warm-200 bg-warm-50 px-3 text-sm text-warm-900",
-  "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-);
+  "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30");
 
 export interface PayInstallmentModalProps {
   planId: string | null;

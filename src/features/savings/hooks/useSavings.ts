@@ -16,11 +16,11 @@ import {
   withdrawFromSaving,
 } from "../api/savingsApi";
 
-export function useSavings(smoduleId: string | undefined) {
+export function useSavings() {
   return useQuery({
-    queryKey: smoduleId ? savingsKeys.list(smoduleId) : ["savings", "__"],
-    queryFn: () => getSavings(smoduleId ?? ""),
-    enabled: Boolean(smoduleId),
+    queryKey: ["savings", "__"],
+    queryFn: () => getSavings(),
+    enabled: true,
     staleTime: 30_000,
   });
 }

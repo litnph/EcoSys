@@ -95,8 +95,7 @@ export function TypeSelector({
               "flex h-11 w-full items-center justify-between gap-2 rounded-button border bg-warm-50 px-3 text-sm text-warm-900",
               "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
               "disabled:cursor-not-allowed disabled:opacity-60",
-              "border-warm-200",
-            )}
+              "border-warm-200")}
           >
             <span className="flex min-w-0 items-center gap-2">
               <Icon className="size-4 shrink-0 text-warm-600" aria-hidden />
@@ -108,8 +107,7 @@ export function TypeSelector({
             <SelectPrimitive.Content
               position="popper"
               className={cn(
-                "z-[120] max-h-[min(400px,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg",
-              )}
+                "z-[120] max-h-[min(400px,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg")}
               sideOffset={4}
             >
               <SelectPrimitive.Viewport className="max-h-[320px] overflow-y-auto p-1">
@@ -121,8 +119,7 @@ export function TypeSelector({
                       key={txType}
                       value={txType}
                       className={cn(
-                        "relative flex cursor-pointer select-none items-center gap-2 rounded-md px-3 py-2.5 text-sm outline-none data-[highlighted]:bg-warm-100 data-[state=checked]:bg-accent/15",
-                      )}
+                        "relative flex cursor-pointer select-none items-center gap-2 rounded-md px-3 py-2.5 text-sm outline-none data-[highlighted]:bg-warm-100 data-[state=checked]:bg-accent/15")}
                     >
                       <SelectPrimitive.ItemText className="flex items-center gap-2">
                         <I className="size-4 text-warm-600" aria-hidden />
@@ -166,8 +163,7 @@ export function TypeSelector({
                     ? "bg-surface text-warm-900 shadow-sm ring-1 ring-accent/30"
                     : "bg-transparent text-warm-600 hover:bg-warm-50 hover:text-warm-900",
                   "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-                  "disabled:cursor-not-allowed disabled:opacity-50",
-                )}
+                  "disabled:cursor-not-allowed disabled:opacity-50")}
               >
                 <I className="size-4 shrink-0 text-warm-600" aria-hidden />
                 <span className="whitespace-nowrap">{labelFor(txType)}</span>

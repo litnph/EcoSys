@@ -8,11 +8,11 @@ import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 import { tagKeys } from "../api/tagKeys";
 import { createTag, deleteTag, getTags, updateTag } from "../api/tagsApi";
 
-export function useTags(smoduleId: string | undefined) {
+export function useTags() {
   return useQuery({
-    queryKey: smoduleId ? tagKeys.list(smoduleId) : ["tags", "__"],
-    queryFn: () => getTags(smoduleId ?? ""),
-    enabled: Boolean(smoduleId),
+    queryKey: ["tags", "__"],
+    queryFn: () => getTags(),
+    enabled: true,
     staleTime: 30_000,
   });
 }

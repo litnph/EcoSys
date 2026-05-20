@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 
 import {
@@ -19,7 +20,9 @@ export default function LoginPage() {
           <h1 className="mb-6 font-display text-xl font-semibold text-warm-900">
             {t("loginTitle")}
           </h1>
-          <LoginForm />
+          <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-warm-100" />}>
+            <LoginForm />
+          </Suspense>
         </div>
       </div>
     </>

@@ -73,8 +73,7 @@ export function BaseFields({
                   "flex h-11 w-full items-center justify-between gap-2 rounded-button border px-3 text-left text-sm",
                   sourceErr ? "border-danger" : "border-warm-200",
                   "bg-warm-50 text-warm-900 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-                  "disabled:cursor-not-allowed disabled:opacity-60",
-                )}
+                  "disabled:cursor-not-allowed disabled:opacity-60")}
               >
                 <span className="min-w-0 flex-1 truncate">
                   {!field.value?.length ? (
@@ -103,15 +102,13 @@ export function BaseFields({
                   sideOffset={4}
                   position="popper"
                   className={cn(
-                    "z-[120] max-h-[280px] w-[var(--radix-select-trigger-width)] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg",
-                  )}
+                    "z-[120] max-h-[280px] w-[var(--radix-select-trigger-width)] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg")}
                 >
                   <SelectPrimitive.Viewport className="max-h-[260px] overflow-y-auto p-1">
                     <SelectPrimitive.Item
                       value="__none__"
                       className={cn(
-                        "relative cursor-pointer rounded-md px-3 py-2 text-sm outline-none data-[highlighted]:bg-warm-100 data-[disabled]:opacity-60",
-                      )}
+                        "relative cursor-pointer rounded-md px-3 py-2 text-sm outline-none data-[highlighted]:bg-warm-100 data-[disabled]:opacity-60")}
                     >
                       <SelectPrimitive.ItemText>
                         Chọn nguồn
@@ -125,8 +122,7 @@ export function BaseFields({
                           value={s.id}
                           className={cn(
                             "relative cursor-pointer rounded-md px-3 py-2 text-sm outline-none data-[highlighted]:bg-warm-100 data-[state=checked]:bg-accent/10",
-                            sel && "font-semibold text-accent-dark",
-                          )}
+                            sel && "font-semibold text-accent-dark")}
                         >
                           <SelectPrimitive.ItemText>
                             <span className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
@@ -196,8 +192,7 @@ export function BaseFields({
               className={cn(
                 "h-11 w-full rounded-button border bg-warm-50 px-3 text-sm font-mono text-warm-900",
                 dateErr ? "border-danger" : "border-warm-200",
-                "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60",
-              )}
+                "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60")}
               aria-invalid={dateErr ? true : undefined}
             />
           )}
@@ -230,8 +225,7 @@ export function BaseFields({
               className={cn(
                 "w-full resize-y rounded-button border px-3 py-2 text-sm text-warm-900 placeholder:text-warm-400",
                 errors.note?.message ? "border-danger" : "border-warm-200",
-                "bg-warm-50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60",
-              )}
+                "bg-warm-50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60")}
             />
           )}
         />

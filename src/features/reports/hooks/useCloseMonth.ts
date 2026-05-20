@@ -10,7 +10,6 @@ import { reportKeys } from "../api/reportKeys";
 import { closeMonth } from "../api/reportsApi";
 
 export interface CloseMonthPayload {
-  smoduleId: string;
   year: number;
   month: number;
 }
@@ -20,14 +19,14 @@ export function useCloseMonth() {
   const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
-    mutationFn: ({ smoduleId, year, month }: CloseMonthPayload) =>
-      closeMonth(smoduleId, year, month),
-    onSuccess: (_data, { smoduleId, year, month }) => {
+    mutationFn: ({ year, month }: CloseMonthPayload) =>
+      closeMonth( year, month),
+    onSuccess: (_data, { year, month }) => {
       void queryClient.invalidateQueries({
-        queryKey: reportKeys.detail(smoduleId, year, month),
+        queryKey: reportKeys.detail(year, month),
       });
       void queryClient.invalidateQueries({
-        queryKey: reportKeys.list(smoduleId),
+        queryKey: reportKeys.list(),
       });
       void queryClient.invalidateQueries({ queryKey: billingCycleKeys.lists() });
       addToast({ type: "success", title: "Đã chốt tháng" });

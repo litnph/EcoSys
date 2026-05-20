@@ -13,11 +13,11 @@ import {
   updateInvestment,
 } from "../api/investmentsApi";
 
-export function useInvestments(smoduleId: string | undefined) {
+export function useInvestments() {
   return useQuery({
-    queryKey: smoduleId ? investmentKeys.list(smoduleId) : ["investments", "__"],
-    queryFn: () => getInvestments(smoduleId ?? ""),
-    enabled: Boolean(smoduleId),
+    queryKey: ["investments", "__"],
+    queryFn: () => getInvestments(),
+    enabled: true,
     staleTime: 30_000,
   });
 }

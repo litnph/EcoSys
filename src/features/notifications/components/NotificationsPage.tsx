@@ -74,8 +74,7 @@ export function NotificationsPage() {
               key={n.id}
               className={cn(
                 "flex gap-3 rounded-card border border-warm-200 bg-surface p-4 shadow-sm",
-                !n.isRead && "border-accent/30 bg-accent/5",
-              )}
+                !n.isRead && "border-accent/30 bg-accent/5")}
             >
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-warm-900">{n.title}</p>

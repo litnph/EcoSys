@@ -26,7 +26,6 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 
 interface RemoteCategoryTreeNodeDto {
   id: string;
-  smoduleId: string;
   name: string;
   kind: CategoryKind;
   parentId: string | null;
@@ -39,7 +38,6 @@ interface RemoteCategoryTreeNodeDto {
 
 interface RemoteCategoryFlatDto {
   id: string;
-  smoduleId: string;
   name: string;
   kind: CategoryKind;
   parentId: string | null;
@@ -61,7 +59,6 @@ interface GetFlatCategoriesEnvelope {
 function mapTreeNode(row: RemoteCategoryTreeNodeDto): FinCategory {
   return {
     id: row.id,
-    smoduleId: row.smoduleId,
     name: row.name,
     kind: row.kind,
     parentId: row.parentId,
@@ -79,7 +76,6 @@ function mapTreeNode(row: RemoteCategoryTreeNodeDto): FinCategory {
 function mapFlatRow(row: RemoteCategoryFlatDto): FinCategoryFlat {
   return {
     id: row.id,
-    smoduleId: row.smoduleId,
     name: row.name,
     kind: row.kind,
     parentId: row.parentId,
@@ -93,31 +89,19 @@ function mapFlatRow(row: RemoteCategoryFlatDto): FinCategoryFlat {
 
 /** Danh mục dạng cây (roots + children lồng nhau). Backend yêu cầu `kind`. */
 export async function getCategories(
-  smoduleId: string,
-  kind: CategoryKind,
-): Promise<FinCategory[]> {
-  const qs = new URLSearchParams({
-    smodule_id: smoduleId,
-    kind,
-  });
+  kind: CategoryKind): Promise<FinCategory[]> {
+  const qs = new URLSearchParams({ kind });
   const envelope = await unwrap<GetCategoriesEnvelope>(
-    apiClient.get(`/finance/categories?${qs.toString()}`),
-  );
+    apiClient.get(`/finance/categories?${qs.toString()}`));
   return envelope.roots.map(mapTreeNode);
 }
 
 /** Danh sách phẳng cho dropdown / autocomplete. */
 export async function getFlatCategories(
-  smoduleId: string,
-  kind: CategoryKind,
-): Promise<FinCategoryFlat[]> {
-  const qs = new URLSearchParams({
-    smodule_id: smoduleId,
-    kind,
-  });
+  kind: CategoryKind): Promise<FinCategoryFlat[]> {
+  const qs = new URLSearchParams({ kind });
   const envelope = await unwrap<GetFlatCategoriesEnvelope>(
-    apiClient.get(`/finance/categories/flat?${qs.toString()}`),
-  );
+    apiClient.get(`/finance/categories/flat?${qs.toString()}`));
   return envelope.items.map(mapFlatRow);
 }
 
@@ -126,7 +110,6 @@ interface CategoryOneEnvelope {
 }
 
 export interface CreateCategoryRequest {
-  smoduleId: string;
   name: string;
   kind: CategoryKind;
   parentId?: string | null;
@@ -147,11 +130,9 @@ export interface UpdateCategoryRequest {
 }
 
 export async function createCategory(
-  data: CreateCategoryRequest,
-): Promise<FinCategory> {
+  data: CreateCategoryRequest): Promise<FinCategory> {
   const envelope = await unwrap<CategoryOneEnvelope>(
     apiClient.post("/finance/categories", {
-      smoduleId: data.smoduleId,
       name: data.name,
       kind: data.kind,
       parentId: data.parentId ?? null,
@@ -159,15 +140,13 @@ export async function createCategory(
       color: data.color ?? null,
       sortOrder: data.sortOrder ?? null,
       isDefault: data.isDefault ?? false,
-    }),
-  );
+    }));
   return mapTreeNode(envelope.category);
 }
 
 export async function updateCategory(
   id: string,
-  data: UpdateCategoryRequest,
-): Promise<FinCategory> {
+  data: UpdateCategoryRequest): Promise<FinCategory> {
   const envelope = await unwrap<CategoryOneEnvelope>(
     apiClient.put(`/finance/categories/${id}`, {
       name: data.name,
@@ -177,14 +156,12 @@ export async function updateCategory(
       color: data.color ?? null,
       sortOrder: data.sortOrder ?? null,
       isDefault: data.isDefault ?? false,
-    }),
-  );
+    }));
   return mapTreeNode(envelope.category);
 }
 
 export async function deleteCategory(id: string): Promise<string> {
   const envelope = await unwrap<{ id: string }>(
-    apiClient.delete(`/finance/categories/${id}`),
-  );
+    apiClient.delete(`/finance/categories/${id}`));
   return envelope.id;
 }

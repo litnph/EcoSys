@@ -10,8 +10,6 @@ import {
 import { useSources } from "@/features/sources/hooks";
 import type { FinSource } from "@/features/sources/types";
 
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
@@ -21,20 +19,13 @@ import { staggerChildren, staggerItem } from "@/shared/lib/animations";
 import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
 
-export default function SourcesPage() {
-  const smoduleId = useFinanceSmoduleId();
-  const { data: sources, isLoading, isError } = useSources(
-    smoduleId.length ? smoduleId : undefined,
-  );
+export default function SourcesPage() {  const { data: sources, isLoading, isError } = useSources();
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editing, setEditing] = useState<FinSource | null>(null);
 
   const [deleteTarget, setDeleteTarget] = useState<FinSource | null>(null);
-
-  const missingModule = smoduleId.length === 0;
-
   const openCreate = useCallback(() => {
     setFormMode("create");
     setEditing(null);
@@ -67,16 +58,14 @@ export default function SourcesPage() {
           type="button"
           leftIcon={<Plus className="size-4" aria-hidden />}
           onClick={openCreate}
-          disabled={missingModule}
+          
           className="shrink-0"
         >
           Thêm nguồn
         </Button>
       </div>
 
-      {missingModule ? (
-        <MissingFinanceModule />
-      ) : isError ? (
+      {isError ? (
         <div className="mt-8 rounded-card border border-danger/30 bg-danger/5 p-6 text-sm text-danger">
           Không tải được danh sách nguồn. Kiểm tra kết nối API và quyền truy cập.
         </div>
@@ -122,7 +111,7 @@ export default function SourcesPage() {
       >
         <SourceForm
           key={formMode === "edit" ? editing?.id ?? "edit" : "create"}
-          smoduleId={smoduleId}
+          
           mode={formMode}
           initial={editing}
           onFinished={closeForm}
@@ -131,7 +120,7 @@ export default function SourcesPage() {
 
       <DeleteSourceConfirm
         source={deleteTarget}
-        smoduleId={smoduleId}
+        
         isOpen={deleteTarget != null}
         onClose={() => setDeleteTarget(null)}
       />

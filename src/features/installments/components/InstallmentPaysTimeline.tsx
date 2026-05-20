@@ -82,16 +82,14 @@ export function InstallmentPaysTimeline({
                       ? "border-danger bg-danger"
                       : pay.status === "due"
                         ? "border-accent bg-accent"
-                        : "border-warm-300",
-                )}
+                        : "border-warm-300")}
               />
               <div
                 className={cn(
                   "rounded-card border bg-surface p-4 shadow-sm",
                   pay.status === "due" &&
                     "border-accent ring-2 ring-accent/20",
-                  pay.status === "overdue" && "border-danger/50 bg-danger/[0.03]",
-                )}
+                  pay.status === "overdue" && "border-danger/50 bg-danger/[0.03]")}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="space-y-0.5">
@@ -109,8 +107,7 @@ export function InstallmentPaysTimeline({
                     size="sm"
                     className={cn(
                       "capitalize",
-                      payStatusBadgeClasses(pay.status),
-                    )}
+                      payStatusBadgeClasses(pay.status))}
                   >
                     {payStatusLabel(pay.status)}
                   </Badge>

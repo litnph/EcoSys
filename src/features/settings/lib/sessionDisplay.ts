@@ -21,8 +21,7 @@ function pickBrowserLabel(ua: string | null | undefined): string {
 
 export function formatBrowserLabel(
   browser: string | null | undefined,
-  userAgent: string | null | undefined,
-): string {
+  userAgent: string | null | undefined): string {
   if (browser && browser.trim().length > 0) {
     return browser;
   }
@@ -30,8 +29,7 @@ export function formatBrowserLabel(
 }
 
 export function formatLocation(
-  location: { city?: string | null; country?: string | null } | null | undefined,
-): string {
+  location: { city?: string | null; country?: string | null } | null | undefined): string {
   if (!location) {
     return "—";
   }

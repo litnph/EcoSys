@@ -67,8 +67,7 @@ export function MonthlySummaryCard({
               "font-mono font-medium",
               summary.monthlySavingsRate >= 0
                 ? "text-accent"
-                : "text-danger",
-            )}
+                : "text-danger")}
           >
             {formatPercentage(summary.monthlySavingsRate)}
           </span>
@@ -87,8 +86,7 @@ export function MonthlySummaryCard({
               "h-full rounded-full bg-gradient-to-r",
               summary.monthlySavingsRate >= 0
                 ? "from-accent to-accent-light"
-                : "bg-danger",
-            )}
+                : "bg-danger")}
             style={{ width: `${String(barMagn)}%` }}
           />
         </div>

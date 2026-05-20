@@ -9,7 +9,6 @@ import { cn } from "@/shared/lib/utils";
 import { useCloseMonth } from "../hooks/useCloseMonth";
 
 export interface CloseMonthConfirmModalProps {
-  smoduleId: string | null | undefined;
   year: number;
   month: number;
   open: boolean;
@@ -17,7 +16,6 @@ export interface CloseMonthConfirmModalProps {
 }
 
 export function CloseMonthConfirmModal({
-  smoduleId,
   year,
   month,
   open,
@@ -26,10 +24,8 @@ export function CloseMonthConfirmModal({
   const closeM = useCloseMonth();
 
   const handleConfirm = async () => {
-    if (!smoduleId?.trim()) return;
     try {
       await closeM.mutateAsync({
-        smoduleId: smoduleId.trim(),
         year,
         month,
       });
@@ -50,8 +46,7 @@ export function CloseMonthConfirmModal({
       <div className="flex flex-col gap-4">
         <div
           className={cn(
-            "flex gap-3 rounded-button border border-warning/35 bg-warning/10 p-3 text-sm text-warm-800",
-          )}
+            "flex gap-3 rounded-button border border-warning/35 bg-warning/10 p-3 text-sm text-warm-800")}
           role="alert"
         >
           <AlertTriangle

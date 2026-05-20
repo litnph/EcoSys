@@ -63,8 +63,7 @@ function DebtRecordCardInner({
       originalFmt: formatCurrency(original, currency),
       remainingFmt: formatCurrency(remaining, currency),
     }),
-    [original, remaining, currency],
-  );
+    [original, remaining, currency]);
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const overdueActive =
@@ -95,15 +94,13 @@ function DebtRecordCardInner({
       {...cardHoverMotion}
       className={cn(
         "flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-4 shadow-sm transition",
-        isExpanded ? "ring-1 ring-accent/20" : "hover:border-warm-300",
-      )}
+        isExpanded ? "ring-1 ring-accent/20" : "hover:border-warm-300")}
     >
       <div className="flex flex-wrap items-start gap-3">
         <div
           className={cn(
             "flex size-12 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white",
-            isBorrowed ? "bg-danger" : "bg-success",
-          )}
+            isBorrowed ? "bg-danger" : "bg-success")}
           aria-hidden
         >
           {initials(item.personName)}
@@ -149,8 +146,7 @@ function DebtRecordCardInner({
           <div
             className={cn(
               "h-2 rounded-full transition-all",
-              isBorrowed ? "bg-danger/80" : "bg-success/80",
-            )}
+              isBorrowed ? "bg-danger/80" : "bg-success/80")}
             style={{ width: `${Math.min(100, progress.pct)}%` }}
           />
         </div>
@@ -215,8 +211,7 @@ function DebtRecordCardInner({
           <ChevronDown
             className={cn(
               "size-4 transition-transform",
-              isExpanded ? "rotate-180" : "",
-            )}
+              isExpanded ? "rotate-180" : "")}
             aria-hidden
           />
         </Button>

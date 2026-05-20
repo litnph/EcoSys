@@ -11,7 +11,6 @@ import type { FinSource } from "../types";
 
 type DeleteVars = {
   id: string;
-  smoduleId: string;
 };
 
 export function useDeleteSource() {
@@ -21,13 +20,12 @@ export function useDeleteSource() {
   return useMutation({
     mutationFn: ({ id }: DeleteVars) => deleteSource(id),
     onMutate: async (variables) => {
-      const listKey = sourceKeys.list(variables.smoduleId);
+      const listKey = sourceKeys.list();
       await queryClient.cancelQueries({ queryKey: listKey });
       const previous = queryClient.getQueryData<FinSource[]>(listKey);
 
       queryClient.setQueryData<FinSource[]>(listKey, (old) =>
-        old ? old.filter((s) => s.id !== variables.id) : old,
-      );
+        old ? old.filter((s) => s.id !== variables.id) : old);
 
       return { previous, listKey };
     },
@@ -47,7 +45,7 @@ export function useDeleteSource() {
         queryKey: sourceKeys.detail(variables.id),
       });
       void queryClient.removeQueries({
-        queryKey: sourceKeys.txCount(variables.smoduleId, variables.id),
+        queryKey: sourceKeys.txCount( variables.id),
       });
       addToast({
         type: "success",

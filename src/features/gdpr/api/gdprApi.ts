@@ -37,27 +37,23 @@ function mapExport(row: Record<string, unknown>): DataExportStatus {
 
 export async function requestDataExport(): Promise<string> {
   const envelope = await unwrap<{ exportId: string }>(
-    apiClient.post("/user/data-export"),
-  );
+    apiClient.post("/user/data-export"));
   return envelope.exportId;
 }
 
 export async function getDataExportStatus(id: string): Promise<DataExportStatus> {
   const row = await unwrap<Record<string, unknown>>(
-    apiClient.get(`/user/data-export/${id}`),
-  );
+    apiClient.get(`/user/data-export/${id}`));
   return mapExport(row);
 }
 
 export async function requestAccountDeletion(reason?: string): Promise<string> {
   const envelope = await unwrap<{ requestId: string }>(
-    apiClient.post("/user/deletion-request", { reason: reason ?? null }),
-  );
+    apiClient.post("/user/deletion-request", { reason: reason ?? null }));
   return envelope.requestId;
 }
 
 export async function cancelAccountDeletion(): Promise<void> {
   await unwrap<{ cancelled: boolean }>(
-    apiClient.post("/user/deletion-request/cancel"),
-  );
+    apiClient.post("/user/deletion-request/cancel"));
 }

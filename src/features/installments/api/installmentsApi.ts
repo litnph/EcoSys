@@ -42,9 +42,7 @@ interface RemotePayDto {
 }
 
 interface RemotePlanDetailDto {
-  id: string;
-  smoduleId: string;
-  sourceId: string;
+  id: string;  sourceId: string;
   sourceName?: string | null;
   originalTxnId: string;
   originalTxnDescription?: string | null;
@@ -67,9 +65,7 @@ interface RemoteDetailEnvelope {
 }
 
 interface RemoteListItemDto {
-  id: string;
-  smoduleId: string;
-  sourceId: string;
+  id: string;  sourceId: string;
   sourceName?: string | null;
   originalTxnDescription?: string | null;
   status: InstallmentStatus;
@@ -85,8 +81,7 @@ interface RemoteListEnvelope {
 
 function mapPay(
   row: RemotePayDto,
-  planId: string,
-): InstallmentPlan["pays"][number] {
+  planId: string): InstallmentPlan["pays"][number] {
   return {
     id: `${planId}-${String(row.installmentNumber)}`,
     planId,
@@ -103,9 +98,7 @@ function mapPay(
 function mapPlan(dto: RemotePlanDetailDto): InstallmentPlan {
   const pays = (dto.pays ?? []).map((p) => mapPay(p, dto.id));
   return {
-    id: dto.id,
-    smoduleId: dto.smoduleId,
-    sourceId: dto.sourceId,
+    id: dto.id,    sourceId: dto.sourceId,
     sourceName: dto.sourceName ?? null,
     originalTxnId: dto.originalTxnId,
     originalTxnDescription: dto.originalTxnDescription ?? null,
@@ -133,9 +126,7 @@ function mapPlan(dto: RemotePlanDetailDto): InstallmentPlan {
 
 function mapListItem(row: RemoteListItemDto): InstallmentPlanListItem {
   return {
-    id: row.id,
-    smoduleId: row.smoduleId,
-    sourceId: row.sourceId,
+    id: row.id,    sourceId: row.sourceId,
     sourceName: row.sourceName ?? null,
     originalTxnDescription: row.originalTxnDescription ?? null,
     status: row.status,
@@ -147,42 +138,35 @@ function mapListItem(row: RemoteListItemDto): InstallmentPlanListItem {
 }
 
 export async function getInstallmentPlans(
-  smoduleId: string,
-  status?: InstallmentStatus,
-): Promise<InstallmentPlanListItem[]> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+  status?: InstallmentStatus): Promise<InstallmentPlanListItem[]> {
+  const qs = new URLSearchParams();
   if (status) qs.set("status", status);
   const envelope = await unwrap<RemoteListEnvelope>(
-    apiClient.get(`/finance/installment-plans?${qs.toString()}`),
-  );
+    apiClient.get("/finance/installment-plans"));
   return (envelope.items ?? []).map(mapListItem);
 }
 
 export async function getInstallmentPlanDetail(id: string): Promise<InstallmentPlan> {
   const envelope = await unwrap<RemoteDetailEnvelope>(
-    apiClient.get(`/finance/installment-plans/${id}`),
-  );
+    apiClient.get(`/finance/installment-plans/${id}`));
   return mapPlan(envelope.plan);
 }
 
 export async function createInstallmentPlan(
-  data: CreateInstallmentPlanPayload,
-): Promise<{ planId: string }> {
+  data: CreateInstallmentPlanPayload): Promise<{ planId: string }> {
   const envelope = await unwrap<{ planId: string }>(
     apiClient.post(`/finance/installment-plans`, {
       originalTxnId: data.originalTxnId,
       totalMonths: data.totalMonths,
       interestRate: data.interestRate,
       conversionFeeRate: data.conversionFeeRate,
-    }),
-  );
+    }));
   return envelope;
 }
 
 export async function cancelInstallmentPlan(
   id: string,
-  reason?: string,
-): Promise<void> {
+  reason?: string): Promise<void> {
   const { data: body } = await apiClient.post<
     ApiEnvelope<Record<string, never>>
   >(`/finance/installment-plans/${id}/cancel`, { reason: reason ?? null });
@@ -192,13 +176,10 @@ export async function cancelInstallmentPlan(
 export async function recordInstallmentPayment(
   planId: string,
   installmentNumber: number,
-  paymentSourceId: string,
-): Promise<{ transactionId: string }> {
+  paymentSourceId: string): Promise<{ transactionId: string }> {
   const envelope = await unwrap<{ transactionId: string }>(
     apiClient.post(
       `/finance/installment-plans/${planId}/pays/${String(installmentNumber)}/payment`,
-      { paymentSourceId },
-    ),
-  );
+      { paymentSourceId }));
   return envelope;
 }

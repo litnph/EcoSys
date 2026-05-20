@@ -64,8 +64,7 @@ function ToastItem({ toast }: { toast: ToastRecord }) {
       }}
       className={cn(
         "relative flex gap-3 rounded-card border p-4 pr-10 text-sm",
-        surfaceByType[toast.type],
-      )}
+        surfaceByType[toast.type])}
       role="status"
       aria-live="polite"
     >
@@ -84,8 +83,7 @@ function ToastItem({ toast }: { toast: ToastRecord }) {
         className={cn(
           "absolute right-2 top-2 rounded-button p-1 text-warm-500",
           "hover:bg-warm-100 hover:text-warm-900",
-          "outline-none focus-visible:ring-2 focus-visible:ring-accent",
-        )}
+          "outline-none focus-visible:ring-2 focus-visible:ring-accent")}
         aria-label="Đóng thông báo"
         onClick={() => removeToast(toast.id)}
       >
@@ -155,6 +153,5 @@ export function useToast(): {
           ...(duration !== undefined ? { duration } : {}),
         }),
     }),
-    [addToast],
-  );
+    [addToast]);
 }

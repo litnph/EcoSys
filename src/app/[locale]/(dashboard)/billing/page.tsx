@@ -22,8 +22,6 @@ import { useSources } from "@/features/sources/hooks";
 import type { FinSource } from "@/features/sources/types";
 
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
@@ -36,21 +34,14 @@ const tabListClass =
 const tabTriggerClass = cn(
   "shrink-0 rounded-md px-3 py-2 font-medium transition outline-none whitespace-nowrap",
   "data-[state=active]:bg-surface data-[state=active]:text-warm-900 data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-warm-500 hover:text-warm-800",
-);
+  "data-[state=inactive]:text-warm-500 hover:text-warm-800");
 
 export default function BillingPage() {
-  const smoduleId = useFinanceSmoduleId();
-  const missingModule = smoduleId.length === 0;
-
-  const { data: sources, isLoading: sourcesLoading } = useSources(
-    smoduleId.length ? smoduleId : undefined,
-  );
+  const { data: sources, isLoading: sourcesLoading } = useSources();
 
   const creditCards = useMemo(
     () => (sources ?? []).filter((s) => s.type === "creditCard"),
-    [sources],
-  );
+    [sources]);
 
   const [tab, setTab] = useState("");
 
@@ -66,10 +57,7 @@ export default function BillingPage() {
     return found ?? creditCards[0];
   }, [creditCards, tab]);
 
-  const cyclesQ = useBillingCycles(
-    smoduleId.length ? smoduleId : undefined,
-    activeCard?.id,
-  );
+  const cyclesQ = useBillingCycles(activeCard?.id);
 
   const sortedCycles = useMemo(() => {
     const rows = cyclesQ.data ?? [];
@@ -127,9 +115,7 @@ export default function BillingPage() {
         description="Theo dõi kỳ hoạch toán, đóng sao kê và thanh toán cho từng thẻ tín dụng."
       />
 
-      {missingModule ? (
-        <MissingFinanceModule />
-      ) : sourcesLoading ? (
+      {sourcesLoading ? (
         <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
           {[0, 1, 2].map((i) => (
             <SkeletonCard key={`sk-${String(i)}`} lines={3} />

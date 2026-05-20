@@ -1,6 +1,6 @@
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
-import type { AuthResponse, UserDto } from "../types";
+import type { AuthResponse, UserDto, UserRole } from "../types";
 
 type LooseRecord = Record<string, unknown>;
 
@@ -14,14 +14,21 @@ function readString(obj: LooseRecord, ...keys: string[]): string | undefined {
   return undefined;
 }
 
+function parseRole(source: LooseRecord): UserRole {
+  const raw = readString(source, "role", "Role");
+  if (raw?.toLowerCase() === "admin") {
+    return "admin";
+  }
+  return "member";
+}
+
 function parseUser(source: LooseRecord): UserDto {
   const id = readString(source, "id", "userId", "UserId") ?? "";
   const email = readString(source, "email", "Email") ?? "";
   const fullName = readString(source, "fullName", "FullName") ?? "";
   const avatarRaw = readString(source, "avatarUrl", "AvatarUrl");
   const isVerified = Boolean(
-    source.isVerified ?? source.isEmailVerified ?? source.IsEmailVerified,
-  );
+    source.isVerified ?? source.isEmailVerified ?? source.IsEmailVerified);
 
   return {
     id,
@@ -29,6 +36,7 @@ function parseUser(source: LooseRecord): UserDto {
     fullName,
     avatarUrl: avatarRaw ?? null,
     isVerified,
+    role: parseRole(source),
   };
 }
 
@@ -60,7 +68,7 @@ function parseTokenPairFromPayload(payload: LooseRecord): {
   return { accessToken, refreshToken };
 }
 
-/** Login/register — requires user profile in the payload. */
+/** Login — requires user profile in the payload. */
 export function parseAuthPayload(body: unknown): AuthResponse {
   const payload = unwrapApiPayload(body);
   const { accessToken, refreshToken } = parseTokenPairFromPayload(payload);
@@ -78,9 +86,8 @@ export function parseAuthPayload(body: unknown): AuthResponse {
   return { accessToken, refreshToken, user };
 }
 
-/** Refresh / switch-organization — tokens only (no email on the wire). */
+/** Refresh — tokens only. */
 export function parseTokenPair(
-  body: unknown,
-): { accessToken: string; refreshToken: string } {
+  body: unknown): { accessToken: string; refreshToken: string } {
   return parseTokenPairFromPayload(unwrapApiPayload(body));
 }

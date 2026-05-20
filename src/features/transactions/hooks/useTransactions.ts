@@ -11,14 +11,12 @@ import {
 } from "../utils/filterState";
 
 function stableInfiniteKey(
-  smoduleId: string,
   state: TransactionFilterState,
   pageSize: number,
 ): unknown[] {
   return [
     ...transactionKeys.all,
     "infinite",
-    smoduleId,
     pageSize,
     state.sourceIds.slice().sort().join(","),
     state.types.slice().sort().join(","),
@@ -32,22 +30,14 @@ function stableInfiniteKey(
 }
 
 export function useTransactions(
-  smoduleId: string | undefined,
   state: TransactionFilterState,
   pageSize = 20,
 ) {
   return useInfiniteQuery({
-    queryKey: smoduleId
-      ? stableInfiniteKey(smoduleId, state, pageSize)
-      : [...transactionKeys.all, "infinite", "__"],
+    queryKey: stableInfiniteKey(state, pageSize),
     queryFn: async ({ pageParam }) => {
       const page = typeof pageParam === "number" ? pageParam : 1;
-      const filters = transactionFiltersFromState(
-        smoduleId ?? "",
-        state,
-        page,
-        pageSize,
-      );
+      const filters = transactionFiltersFromState(state, page, pageSize);
       const raw = await getTransactions(filters);
       return {
         ...raw,
@@ -57,7 +47,7 @@ export function useTransactions(
     initialPageParam: 1,
     getNextPageParam: (last) =>
       last.page < last.totalPages ? last.page + 1 : undefined,
-    enabled: Boolean(smoduleId && smoduleId.length > 0),
+    enabled: true,
     staleTime: 20_000,
   });
 }

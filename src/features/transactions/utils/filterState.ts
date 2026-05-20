@@ -14,13 +14,10 @@ export function defaultTransactionFilterState(): TransactionFilterState {
 }
 
 export function transactionFiltersFromState(
-  smoduleId: string,
   state: TransactionFilterState,
   page: number,
-  pageSize: number,
-): TransactionFilters {
+  pageSize: number): TransactionFilters {
   return {
-    smoduleId,
     sourceId: state.sourceIds.length === 1 ? state.sourceIds[0] : undefined,
     type: state.types.length === 1 ? state.types[0] : undefined,
     categoryId: state.categoryId,
@@ -36,8 +33,7 @@ export function transactionFiltersFromState(
 /** Khi chọn nhiều nguồn / nhiều loại, backend không lọc OR — lọc phía client trên từng trang đã tải. */
 export function passesClientTxnFilters(
   tx: Transaction,
-  state: TransactionFilterState,
-): boolean {
+  state: TransactionFilterState): boolean {
   if (state.types.length > 1 && !state.types.includes(tx.type)) {
     return false;
   }

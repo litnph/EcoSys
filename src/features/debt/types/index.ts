@@ -16,9 +16,7 @@ export interface DebtTransaction {
 
 /** Bản ghi từ API chi tiết (ledger đầy đủ). */
 export interface DebtRecord {
-  id: string;
-  smoduleId: string;
-  direction: DebtDirection;
+  id: string;  direction: DebtDirection;
   personName: string | null;
   personContact: string | null;
   originalTxnId: string | null;
@@ -36,9 +34,7 @@ export interface DebtRecord {
 
 /** Bản ghi từ API danh sách. */
 export interface DebtRecordListItem {
-  id: string;
-  smoduleId: string;
-  direction: DebtDirection;
+  id: string;  direction: DebtDirection;
   personName: string | null;
   personContact: string | null;
   originalAmount: number;

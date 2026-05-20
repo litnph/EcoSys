@@ -7,11 +7,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { getNgrokSkipBrowserWarningHeaders } from "@/config/env";
-import {
-  REFRESH_TOKEN_KEY,
-  TOKEN_KEY,
-  WORKSPACE_SMODULE_KEY,
-} from "@/config/constants";
+import { REFRESH_TOKEN_KEY, TOKEN_KEY } from "@/config/constants";
 import { ROUTES } from "@/config/routes";
 import { routing } from "@/i18n/routing";
 import { parseTokenPair } from "@/features/auth/api/parseAuthPayload";
@@ -23,25 +19,7 @@ import {
 
 const intlMiddleware = createMiddleware(routing);
 
-const AUTH_PATHS = [
-  ROUTES.auth.login,
-  ROUTES.auth.register,
-  ROUTES.auth.forgotPassword,
-  ROUTES.auth.resetPassword,
-  ROUTES.auth.verifyEmail,
-  ROUTES.auth.callback,
-] as const;
-
-const ONBOARDING_PATHS = [ROUTES.onboarding.workspaceSetup] as const;
-
-const ORG_HUB_PREFIX = ROUTES.organizations.hub;
-
-function pathIsOrgHub(pathWithoutLocale: string): boolean {
-  return (
-    pathWithoutLocale === ORG_HUB_PREFIX ||
-    pathWithoutLocale.startsWith(`${ORG_HUB_PREFIX}/`)
-  );
-}
+const AUTH_PATHS = [ROUTES.auth.login] as const;
 
 function getLocaleAndPath(pathname: string): {
   locale: string;
@@ -68,18 +46,12 @@ function applyClearAuthCookies(res: NextResponse): void {
     maxAge: 0,
     sameSite: "lax",
   });
-  res.cookies.set(WORKSPACE_SMODULE_KEY, "", {
-    path: "/",
-    maxAge: 0,
-    sameSite: "lax",
-  });
 }
 
 function applyAuthCookies(
   res: NextResponse,
   accessToken: string,
-  refreshToken: string,
-): void {
+  refreshToken: string): void {
   const now = Math.floor(Date.now() / 1000);
   const accessExp = getJwtExpiryUnixSeconds(accessToken);
   const accessMax = accessExp ? Math.max(60, accessExp - now) : 900;
@@ -103,8 +75,7 @@ type RefreshPair = { accessToken: string; refreshToken: string };
 
 async function postRefresh(
   refreshToken: string,
-  request: NextRequest,
-): Promise<RefreshPair | null> {
+  request: NextRequest): Promise<RefreshPair | null> {
   const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
   if (!base) {
     return null;
@@ -181,28 +152,19 @@ export default async function middleware(request: NextRequest) {
   const { locale, pathWithoutLocale } = getLocaleAndPath(pathname);
 
   const isAuthRoute = (AUTH_PATHS as readonly string[]).includes(
-    pathWithoutLocale,
-  );
-  const isOnboardingRoute = (ONBOARDING_PATHS as readonly string[]).includes(
-    pathWithoutLocale,
-  );
-  const isOrgHubRoute = pathIsOrgHub(pathWithoutLocale);
+    pathWithoutLocale);
   const isProtectedRoute = !isAuthRoute;
 
   const session = await resolveSessionForMiddleware(request);
   const hasValidToken =
     session.access !== null && isAccessTokenValid(session.access);
-  const smoduleCookie =
-    request.cookies.get(WORKSPACE_SMODULE_KEY)?.value?.trim() ?? "";
-  const hasWorkspaceContext = smoduleCookie.length > 0;
 
   if (isProtectedRoute && !hasValidToken) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}${ROUTES.auth.login}`;
     url.searchParams.set(
       "returnUrl",
-      `${pathname}${request.nextUrl.search}`,
-    );
+      `${pathname}${request.nextUrl.search}`);
     const res = NextResponse.redirect(url);
     applyClearAuthCookies(res);
     return res;
@@ -210,33 +172,8 @@ export default async function middleware(request: NextRequest) {
 
   if (isAuthRoute && hasValidToken) {
     const url = request.nextUrl.clone();
-    url.pathname = `/${locale}${ROUTES.organizations.hub}`;
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
-
-  // Đã login + đã có workspace + đang ở /workspace-setup → tiến thẳng vào dashboard.
-  if (isOnboardingRoute && hasValidToken && hasWorkspaceContext) {
-    const url = request.nextUrl.clone();
     url.pathname = `/${locale}${ROUTES.dashboard.home}`;
     url.search = "";
-    return NextResponse.redirect(url);
-  }
-
-  // Finance dashboard cần smoduleId; trung tâm org (`/organizations`) thì không.
-  if (
-    isProtectedRoute &&
-    !isOnboardingRoute &&
-    !isOrgHubRoute &&
-    hasValidToken &&
-    !hasWorkspaceContext
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}${ROUTES.onboarding.workspaceSetup}`;
-    url.searchParams.set(
-      "returnUrl",
-      `${pathname}${request.nextUrl.search}`,
-    );
     return NextResponse.redirect(url);
   }
 

@@ -113,8 +113,7 @@ export function BillingCycleDetail({
 
           <footer
             className={cn(
-              "sticky bottom-0 flex flex-col gap-1 border-t border-warm-200 bg-surface pt-4 text-sm",
-            )}
+              "sticky bottom-0 flex flex-col gap-1 border-t border-warm-200 bg-surface pt-4 text-sm")}
           >
             <div className="flex items-center justify-between font-medium text-warm-700">
               <span>Tổng phát sinh</span>

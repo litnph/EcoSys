@@ -50,8 +50,7 @@ function formatFileSize(bytes: number): string {
 
 function kindBadgeLabel(
   kind: string | undefined,
-  tFilters: (key: "categoryKindIncome" | "categoryKindTransfer" | "categoryKindExpense") => string,
-): string {
+  tFilters: (key: "categoryKindIncome" | "categoryKindTransfer" | "categoryKindExpense") => string): string {
   if (!kind) return "";
   const k = kind.toLowerCase();
   if (k.includes("income")) return tFilters("categoryKindIncome");
@@ -65,8 +64,7 @@ const tabListClass =
 const tabTriggerClass = cn(
   "flex-1 rounded-md px-3 py-2 font-medium transition outline-none",
   "data-[state=active]:bg-surface data-[state=active]:text-warm-900 data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-warm-500 hover:text-warm-800",
-);
+  "data-[state=inactive]:text-warm-500 hover:text-warm-800");
 
 function DetailDrawerSkeleton() {
   return (
@@ -193,14 +191,12 @@ export function TransactionDetailDrawer({
               <p
                 className={cn(
                   "mt-3 font-mono text-3xl font-bold tabular-nums",
-                  amountPres.className,
-                )}
+                  amountPres.className)}
               >
                 {amountPres.sign}
                 {formatCurrency(
                   Math.abs(mergedDisplay.amount),
-                  mergedDisplay.currency,
-                )}
+                  mergedDisplay.currency)}
               </p>
             </div>
 
@@ -397,7 +393,7 @@ export function TransactionDetailDrawer({
         isOpen={deleteOpen}
         onClose={() => setDeleteOpen(false)}
         transactionId={transactionId}
-        smoduleId={mergedDisplay?.smoduleId}
+        
         mutation={del}
         onDeleted={() => {
           onClose();

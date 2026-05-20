@@ -58,15 +58,15 @@ export async function getNotifications(params: {
   pageSize?: number;
   isRead?: boolean | null;
 }): Promise<NotificationsPage> {
-  const qs = new URLSearchParams({
-    page: String(params.page ?? 1),
-    page_size: String(params.pageSize ?? 20),
-  });
+  const qs = new URLSearchParams();
+  if (params.page) qs.set("page", String(params.page));
+  if (params.pageSize) qs.set("page_size", String(params.pageSize));
   if (params.isRead !== undefined && params.isRead !== null) {
     qs.set("is_read", String(params.isRead));
   }
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
   const envelope = await unwrap<RemoteListEnvelope>(
-    apiClient.get(`/notifications?${qs.toString()}`),
+    apiClient.get(`/notifications${suffix}`),
   );
   return {
     items: envelope.items.map(mapNotification),
@@ -84,8 +84,7 @@ export async function markNotificationRead(id: string): Promise<void> {
 
 export async function markAllNotificationsRead(): Promise<number> {
   const envelope = await unwrap<{ updated: number }>(
-    apiClient.put("/notifications/read-all"),
-  );
+    apiClient.put("/notifications/read-all"));
   return envelope.updated ?? 0;
 }
 

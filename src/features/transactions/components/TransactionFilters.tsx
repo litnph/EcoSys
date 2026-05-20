@@ -40,8 +40,7 @@ import {
 const LazyTransactionDateRangePicker = dynamic(
   () =>
     import("./TransactionDateRangePicker").then(
-      (m) => m.TransactionDateRangePicker,
-    ),
+      (m) => m.TransactionDateRangePicker),
   {
     ssr: false,
     loading: () => (
@@ -49,11 +48,9 @@ const LazyTransactionDateRangePicker = dynamic(
         <SkeletonText className="h-52 w-full max-w-[280px] rounded-lg" />
       </div>
     ),
-  },
-);
+  });
 
 export interface TransactionFiltersProps {
-  smoduleId: string | undefined;
   sources: FinSource[] | undefined;
   value: TransactionFilterState;
   onChange: (next: TransactionFilterState) => void;
@@ -61,7 +58,6 @@ export interface TransactionFiltersProps {
 }
 
 export function TransactionFilters({
-  smoduleId,
   sources,
   value,
   onChange,
@@ -124,8 +120,7 @@ export function TransactionFilters({
     <section
       className={cn(
         "rounded-card border border-warm-200 bg-surface shadow-sm",
-        className,
-      )}
+        className)}
     >
       <button
         type="button"
@@ -159,8 +154,7 @@ export function TransactionFilters({
                     "flex h-10 w-full items-center gap-2 rounded-button border bg-warm-50 px-3 text-left text-sm",
                     value.dateFrom || value.dateTo
                       ? "border-accent text-warm-900"
-                      : "border-warm-200 text-warm-700",
-                  )}
+                      : "border-warm-200 text-warm-700")}
                 >
                   <CalendarRange className="size-4 shrink-0 text-warm-500" />
                   <span className="truncate">
@@ -171,8 +165,7 @@ export function TransactionFilters({
                             date: format(
                               new Date(`${value.dateFrom}T00:00:00`),
                               "dd/MM/yyyy",
-                              { locale: dateLocale },
-                            ),
+                              { locale: dateLocale }),
                           })
                         : t("dateRange")}
                   </span>
@@ -316,15 +309,14 @@ export function TransactionFilters({
                     "rounded-full px-3 py-1 text-xs font-medium transition",
                     value.categoryKind === k
                       ? "bg-accent text-white"
-                      : "bg-warm-100 text-warm-600 hover:bg-warm-200",
-                  )}
+                      : "bg-warm-100 text-warm-600 hover:bg-warm-200")}
                 >
                   {t(l)}
                 </button>
               ))}
             </div>
             <CategorySelector
-              smoduleId={smoduleId}
+              
               value={value.categoryId}
               onChange={(id) =>
                 onChange({

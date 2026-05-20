@@ -60,8 +60,7 @@ function SourceCardInner({ source, onEdit, onDelete }: SourceCardProps) {
 
   const balanceLabel = React.useMemo(
     () => formatCurrency(source.balance, source.currency),
-    [source.balance, source.currency],
-  );
+    [source.balance, source.currency]);
 
   const handleEdit = React.useCallback(() => {
     onEdit(source);
@@ -77,8 +76,7 @@ function SourceCardInner({ source, onEdit, onDelete }: SourceCardProps) {
       {...cardHoverMotion}
       className={cn(
         "group flex h-full flex-col rounded-card border border-warm-200 p-5 shadow-sm",
-        "transition-shadow duration-200 hover:shadow-md",
-      )}
+        "transition-shadow duration-200 hover:shadow-md")}
       style={{ backgroundColor: cardTintColor(source) }}
     >
       <div className="flex items-start justify-between gap-2">
@@ -109,8 +107,7 @@ function SourceCardInner({ source, onEdit, onDelete }: SourceCardProps) {
               className={cn(
                 "rounded-button p-1.5 text-warm-500 outline-none",
                 "hover:bg-warm-100/80 hover:text-warm-900",
-                "focus-visible:ring-2 focus-visible:ring-accent",
-              )}
+                "focus-visible:ring-2 focus-visible:ring-accent")}
               aria-label="Thao tác"
             >
               <MoreVertical className="size-5" aria-hidden />
@@ -121,14 +118,12 @@ function SourceCardInner({ source, onEdit, onDelete }: SourceCardProps) {
               align="end"
               sideOffset={6}
               className={cn(
-                "z-[120] min-w-[160px] rounded-card border border-warm-200 bg-surface p-1 shadow-lg outline-none",
-              )}
+                "z-[120] min-w-[160px] rounded-card border border-warm-200 bg-surface p-1 shadow-lg outline-none")}
             >
               <DropdownMenu.Item
                 className={cn(
                   "cursor-pointer select-none rounded-md px-2 py-2 text-sm text-warm-800 outline-none",
-                  "hover:bg-warm-100 focus:bg-warm-100",
-                )}
+                  "hover:bg-warm-100 focus:bg-warm-100")}
                 onSelect={handleEdit}
               >
                 Sửa
@@ -136,8 +131,7 @@ function SourceCardInner({ source, onEdit, onDelete }: SourceCardProps) {
               <DropdownMenu.Item
                 className={cn(
                   "cursor-pointer select-none rounded-md px-2 py-2 text-sm text-danger outline-none",
-                  "hover:bg-warm-100 focus:bg-warm-100",
-                )}
+                  "hover:bg-warm-100 focus:bg-warm-100")}
                 onSelect={handleDelete}
               >
                 Xóa
@@ -163,8 +157,7 @@ function SourceCardInner({ source, onEdit, onDelete }: SourceCardProps) {
             <div
               className={cn(
                 "h-full rounded-full transition-all",
-                utilizationTone(usedPct),
-              )}
+                utilizationTone(usedPct))}
               style={{
                 width: `${String(Math.min(100, usedPct ?? 0))}%`,
               }}

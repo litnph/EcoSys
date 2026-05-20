@@ -54,8 +54,7 @@ export function Drawer({
     (open: boolean) => {
       if (!open) onClose();
     },
-    [onClose],
-  );
+    [onClose]);
 
   const bottomMotion =
     effectiveSide === "bottom"
@@ -92,8 +91,7 @@ export function Drawer({
                 <motion.div
                   aria-hidden="true"
                   className={cn(
-                    "fixed inset-0 z-[100] bg-warm-900/40 backdrop-blur-sm",
-                  )}
+                    "fixed inset-0 z-[100] bg-warm-900/40 backdrop-blur-sm")}
                   role="presentation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -110,15 +108,12 @@ export function Drawer({
                     effectiveSide === "bottom" &&
                       cn(
                         "inset-x-0 bottom-0 max-h-[min(92vh,900px)] w-full rounded-t-card",
-                        "pb-[max(1rem,env(safe-area-inset-bottom))] pt-0",
-                      ),
+                        "pb-[max(1rem,env(safe-area-inset-bottom))] pt-0"),
                     effectiveSide === "right" &&
                       cn(
                         "inset-y-0 right-0 rounded-l-card",
                         "h-full max-h-none max-w-none",
-                        sizeClassDesktop[size],
-                      ),
-                  )}
+                        sizeClassDesktop[size]))}
                   {...bottomMotion}
                   {...rightMotion}
                 >
@@ -144,8 +139,7 @@ export function Drawer({
                           "absolute right-3 top-4 rounded-button p-1.5 text-warm-600 md:right-5",
                           "outline-none hover:bg-warm-100 hover:text-warm-900",
                           "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-                          "disabled:pointer-events-none",
-                        )}
+                          "disabled:pointer-events-none")}
                         aria-label="Đóng"
                       >
                         <X className="size-5" aria-hidden />

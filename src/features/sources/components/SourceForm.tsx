@@ -118,19 +118,16 @@ const EMOJI_PRESETS = [
 
 const selectClassName = cn(
   "h-10 w-full rounded-button border border-warm-200 bg-warm-50 px-3 text-sm text-warm-900",
-  "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-);
+  "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30");
 
 export type SourceFormProps = {
-  smoduleId: string;
   mode: "create" | "edit";
   initial?: FinSource | null;
   onFinished: () => void;
 };
 
 function defaultValuesFromSource(
-  row: FinSource | null | undefined,
-): SourceFormValues {
+  row: FinSource | null | undefined): SourceFormValues {
   if (!row) {
     return {
       name: "",
@@ -158,7 +155,6 @@ function defaultValuesFromSource(
 }
 
 export function SourceForm({
-  smoduleId,
   mode,
   initial,
   onFinished,
@@ -168,8 +164,7 @@ export function SourceForm({
 
   const defaults = useMemo(
     () => defaultValuesFromSource(mode === "edit" ? initial : null),
-    [mode, initial],
-  );
+    [mode, initial]);
 
   const form = useForm<SourceFormValues>({
     resolver: zodResolver(sourceFormSchema),
@@ -200,7 +195,6 @@ export function SourceForm({
       const isCard = values.type === "creditCard";
       if (mode === "create") {
         await createM.mutateAsync({
-          smoduleId,
           name: values.name,
           type: values.type,
           currency: values.currency,
@@ -219,7 +213,6 @@ export function SourceForm({
       } else if (initial) {
         await updateM.mutateAsync({
           id: initial.id,
-          smoduleId,
           body: {
             name: values.name,
             type: values.type,
@@ -240,8 +233,7 @@ export function SourceForm({
       }
       onFinished();
     },
-    (errs) => scrollFirstHookFormErrorIntoView(errs, form),
-  );
+    (errs) => scrollFirstHookFormErrorIntoView(errs, form));
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -306,8 +298,7 @@ export function SourceForm({
                 "flex size-10 items-center justify-center rounded-button border text-lg transition-colors",
                 iconValue === e
                   ? "border-accent bg-accent/10"
-                  : "border-warm-200 bg-warm-50 hover:border-warm-300",
-              )}
+                  : "border-warm-200 bg-warm-50 hover:border-warm-300")}
               aria-label={e}
             >
               {e}
@@ -331,8 +322,7 @@ export function SourceForm({
                 "size-8 rounded-full border-2 shadow-sm transition-transform",
                 colorValue === hex
                   ? "border-warm-900 scale-110"
-                  : "border-transparent ring-1 ring-warm-200",
-              )}
+                  : "border-transparent ring-1 ring-warm-200")}
               style={{ backgroundColor: hex }}
               aria-label={`Màu ${hex}`}
             />

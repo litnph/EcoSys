@@ -8,8 +8,7 @@ export function toApiWholeAmount(value: number): number {
 }
 
 export function toApiWholeAmountOrNull(
-  value: number | null | undefined,
-): number | null {
+  value: number | null | undefined): number | null {
   if (value === null || value === undefined) return null;
   if (!Number.isFinite(value)) return null;
   return Math.round(value);

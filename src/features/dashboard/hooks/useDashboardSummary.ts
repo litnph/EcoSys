@@ -5,13 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { dashboardKeys } from "../api/dashboardKeys";
 import { getSummary } from "../api/dashboardApi";
 
-export function useDashboardSummary(smoduleId: string | undefined) {
+export function useDashboardSummary() {
   return useQuery({
-    queryKey: smoduleId
-      ? dashboardKeys.summary(smoduleId)
-      : ["dashboard", "summary", "__"],
-    queryFn: () => getSummary(smoduleId ?? ""),
-    enabled: Boolean(smoduleId),
+    queryKey: dashboardKeys.summary(),
+    queryFn: () => getSummary(),
     staleTime: 60_000,
   });
 }

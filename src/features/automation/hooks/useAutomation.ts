@@ -13,11 +13,11 @@ import {
   toggleAutomationRule,
 } from "../api/automationApi";
 
-export function useAutomationRules(smoduleId: string | undefined) {
+export function useAutomationRules() {
   return useQuery({
-    queryKey: smoduleId ? automationKeys.list(smoduleId) : ["automation", "__"],
-    queryFn: () => getAutomationRules(smoduleId ?? ""),
-    enabled: Boolean(smoduleId),
+    queryKey: ["automation", "__"],
+    queryFn: () => getAutomationRules(),
+    enabled: true,
     staleTime: 30_000,
   });
 }

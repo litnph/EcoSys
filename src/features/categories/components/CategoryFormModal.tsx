@@ -19,13 +19,11 @@ const KINDS: { value: CategoryKind; label: string }[] = [
 ];
 
 export function CategoryFormModal({
-  smoduleId,
   isOpen,
   onClose,
   initial,
   defaultKind,
 }: {
-  smoduleId: string;
   isOpen: boolean;
   onClose: () => void;
   initial?: FinCategory | null;
@@ -74,13 +72,11 @@ export function CategoryFormModal({
           if (initial) {
             update.mutate(
               { id: initial.id, data: payload },
-              { onSuccess: onClose },
-            );
+              { onSuccess: onClose });
           } else {
             create.mutate(
-              { smoduleId, ...payload, parentId: null },
-              { onSuccess: onClose },
-            );
+              { ...payload, parentId: null },
+              { onSuccess: onClose });
           }
         }}
       >

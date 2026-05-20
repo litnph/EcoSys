@@ -14,13 +14,11 @@ import type { DebtRecordListItem } from "../types";
 
 const selectClassName = cn(
   "h-10 w-full rounded-button border border-warm-200 bg-warm-50 px-3 text-sm text-warm-900",
-  "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-);
+  "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30");
 
 const inputClassName = cn(
   "h-10 w-full rounded-button border border-warm-200 bg-warm-50 px-3 text-sm text-warm-900",
-  "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-);
+  "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30");
 
 function todayLocalISODate(): string {
   const d = new Date();
@@ -31,7 +29,6 @@ function todayLocalISODate(): string {
 }
 
 export interface DebtPaymentModalProps {
-  smoduleId: string;
   record: DebtRecordListItem | null;
   paymentSources: FinSource[];
   isOpen: boolean;
@@ -39,13 +36,12 @@ export interface DebtPaymentModalProps {
 }
 
 export function DebtPaymentModal({
-  smoduleId,
   record,
   paymentSources,
   isOpen,
   onClose,
 }: DebtPaymentModalProps) {
-  const createTxn = useCreateTransaction(smoduleId);
+  const createTxn = useCreateTransaction();
   const [amount, setAmount] = React.useState(0);
   const [sourceId, setSourceId] = React.useState("");
   const [note, setNote] = React.useState("");
@@ -88,7 +84,6 @@ export function DebtPaymentModal({
     setError(undefined);
     try {
       await createTxn.mutateAsync({
-        smoduleId,
         type: record.direction === "borrowed" ? "debtRepay" : "loanCollect",
         amount,
         sourceId,

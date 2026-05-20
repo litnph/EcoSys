@@ -82,16 +82,14 @@ export function transactionTypeIcon(type: TransactionType): LucideIcon {
 
 export function transactionTypeLabel(
   type: TransactionType,
-  t: (key: string) => string,
-): string {
+  t: (key: string) => string): string {
   return t(`types.${type}`);
 }
 
 /** Dấu hiển thị và class màu theo spec Sprint 3. */
 export function txnAmountPresentation(
   type: TransactionType,
-  amount: number,
-): { sign: string; className: string } {
+  amount: number): { sign: string; className: string } {
   if (type === "reversal") {
     return { sign: "", className: "text-warm-400 line-through italic" };
   }

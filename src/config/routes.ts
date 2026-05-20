@@ -1,18 +1,6 @@
 export const ROUTES = {
   auth: {
     login: "/login",
-    register: "/register",
-    forgotPassword: "/forgot-password",
-    resetPassword: "/reset-password",
-    verifyEmail: "/verify-email",
-    callback: "/auth/callback",
-  },
-  onboarding: {
-    workspaceSetup: "/workspace-setup",
-  },
-  organizations: {
-    hub: "/organizations",
-    detail: (orgId: string) => `/organizations/${orgId}`,
   },
   dashboard: {
     home: "/",
@@ -36,5 +24,6 @@ export const ROUTES = {
     settingsPreferences: "/settings/preferences",
     settingsChangeEmail: "/settings/change-email",
     settingsPrivacy: "/settings/privacy",
+    settingsMembers: "/settings/members",
   },
 } as const;

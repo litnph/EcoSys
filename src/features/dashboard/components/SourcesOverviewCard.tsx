@@ -109,12 +109,10 @@ export function SourcesOverviewCard({
                     <div
                       className={cn(
                         "h-full rounded-full transition-all",
-                        utilizationTone(s.usedPercentage),
-                      )}
+                        utilizationTone(s.usedPercentage))}
                       style={{
                         width: `${String(
-                          Math.min(100, s.usedPercentage ?? 0),
-                        )}%`,
+                          Math.min(100, s.usedPercentage ?? 0))}%`,
                       }}
                     />
                   </div>

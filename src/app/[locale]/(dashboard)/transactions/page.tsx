@@ -15,12 +15,10 @@ import {
 import {
   defaultTransactionFilterState,
 } from "@/features/transactions/utils/filterState";
-import { useTransactions, useDeleteTransaction } from "@/features/transactions/hooks";
+import { useDeleteTransaction, useTransactions } from "@/features/transactions/hooks";
 import type { Transaction } from "@/features/transactions/types";
 import { useSources } from "@/features/sources/hooks";
 
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
@@ -43,9 +41,6 @@ function calendarMonthIsoRange(year: number, month: number): {
 
 function TransactionsPageInner() {
   const t = useTranslations("transaction");
-  const smoduleId = useFinanceSmoduleId();
-  const missingModule = smoduleId.length === 0;
-
   const searchParams = useSearchParams();
   const [filterState, setFilterState] = useState(defaultTransactionFilterState);
   const qsKey = searchParams.toString();
@@ -87,20 +82,14 @@ function TransactionsPageInner() {
     setFilterState(next);
   }, [qsKey]);
 
-  const { data: sources } = useSources(
-    smoduleId.length ? smoduleId : undefined,
-  );
+  const { data: sources } = useSources();
 
-  const txQuery = useTransactions(
-    smoduleId.length ? smoduleId : undefined,
-    filterState,
-    20,
-  );
+  const txQuery = useTransactions(filterState,
+    20);
 
   const items = useMemo(
     () => txQuery.data?.pages.flatMap((p) => p.items) ?? [],
-    [txQuery.data],
-  );
+    [txQuery.data]);
 
   const [selected, setSelected] = useState<Transaction | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -121,7 +110,7 @@ function TransactionsPageInner() {
     setDeleteModalTx(tx);
   }, []);
 
-  const del = useDeleteTransaction();
+  const deleteMutation = useDeleteTransaction();
 
   return (
     <div className="w-full max-w-[1400px] pb-24 md:pb-8">
@@ -135,20 +124,17 @@ function TransactionsPageInner() {
           className="hidden shrink-0 sm:inline-flex"
           leftIcon={<Plus className="size-4" aria-hidden />}
           onClick={() => setCreateOpen(true)}
-          disabled={missingModule}
+          
         >
           {t("newTransaction")}
         </Button>
       </div>
 
-      {missingModule ? (
-        <MissingFinanceModule />
-      ) : (
-        <>
+      <>
           <ErrorBoundary fallbackTitle="Không tải được bộ lọc">
             <div className="mt-6">
               <TransactionFilters
-                smoduleId={smoduleId}
+                
                 sources={sources}
                 value={filterState}
                 onChange={setFilterState}
@@ -177,8 +163,7 @@ function TransactionsPageInner() {
               />
             </ErrorBoundary>
           )}
-        </>
-      )}
+      </>
 
       <TransactionDetailDrawer
         transactionId={selected?.id ?? null}
@@ -187,44 +172,28 @@ function TransactionsPageInner() {
         onClose={closeDetail}
       />
 
-      {!missingModule ? (
-        <DeleteTransactionModal
-          isOpen={deleteModalTx !== null}
-          onClose={() => setDeleteModalTx(null)}
-          transactionId={deleteModalTx?.id ?? null}
-          smoduleId={deleteModalTx?.smoduleId ?? smoduleId}
-          mutation={del}
-          onDeleted={() => {
-            if (
-              deleteModalTx &&
-              selected &&
-              selected.id === deleteModalTx.id
-            ) {
-              closeDetail();
-            }
-            setDeleteModalTx(null);
-          }}
-        />
-      ) : null}
+      <ResponsiveTransactionFormShell
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
 
-      {!missingModule ? (
-        <ResponsiveTransactionFormShell
-          smoduleId={smoduleId}
-          isOpen={createOpen}
-          onClose={() => setCreateOpen(false)}
-        />
-      ) : null}
+      <DeleteTransactionModal
+        transactionId={deleteModalTx?.id ?? null}
+        isOpen={deleteModalTx !== null}
+        mutation={deleteMutation}
+        onClose={() => setDeleteModalTx(null)}
+        onDeleted={() => setDeleteModalTx(null)}
+      />
 
       <button
         type="button"
         onClick={() => setCreateOpen(true)}
-        disabled={missingModule}
+        
         className={cn(
           "fixed bottom-6 right-6 z-40 flex size-14 items-center justify-center rounded-full",
           "bg-accent text-white shadow-lg transition hover:bg-accent-dark",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-          "md:hidden",
-        )}
+          "md:hidden")}
         aria-label={t("addTransactionAria")}
       >
         <Plus className="size-7" aria-hidden />

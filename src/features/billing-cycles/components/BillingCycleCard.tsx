@@ -44,8 +44,7 @@ function calendarDaysBetweenUtc(start: Date, end: Date): number {
   const s = Date.UTC(
     start.getUTCFullYear(),
     start.getUTCMonth(),
-    start.getUTCDate(),
-  );
+    start.getUTCDate());
   const e = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
   return Math.floor((e - s) / 86_400_000);
 }
@@ -53,8 +52,7 @@ function calendarDaysBetweenUtc(start: Date, end: Date): number {
 function overdueDays(paymentDueDate: string, today = new Date()): number {
   const due = new Date(`${paymentDueDate}T00:00:00Z`);
   const t = new Date(
-    Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()),
-  );
+    Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
   return calendarDaysBetweenUtc(due, t);
 }
 
@@ -81,15 +79,13 @@ export function BillingCycleCard({
   const showOverdueCopy = isOverdue && daysLate > 0;
 
   const periodLabel = `${formatDate(cycle.periodStart)} — ${formatDate(
-    cycle.periodEnd,
-  )}`;
+    cycle.periodEnd)}`;
 
   return (
     <motion.article
       {...cardHoverMotion}
       className={cn(
-        "flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-4 shadow-sm transition hover:border-warm-300",
-      )}
+        "flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-4 shadow-sm transition hover:border-warm-300")}
     >
       <button
         type="button"
@@ -114,14 +110,12 @@ export function BillingCycleCard({
         <div className="space-y-1">
           <div
             className={cn(
-              "h-2 w-full overflow-hidden rounded-full bg-warm-100",
-            )}
+              "h-2 w-full overflow-hidden rounded-full bg-warm-100")}
           >
             <div
               className={cn(
                 "h-full rounded-full transition-all",
-                isOverdue ? "bg-danger" : "bg-accent",
-              )}
+                isOverdue ? "bg-danger" : "bg-accent")}
               style={{ width: `${String(pct)}%` }}
             />
           </div>
@@ -147,8 +141,7 @@ export function BillingCycleCard({
           <span
             className={cn(
               "font-medium tabular-nums",
-              showOverdueCopy ? "text-danger" : "text-warm-800",
-            )}
+              showOverdueCopy ? "text-danger" : "text-warm-800")}
           >
             {formatDate(cycle.paymentDueDate)}
             {showOverdueCopy ? (

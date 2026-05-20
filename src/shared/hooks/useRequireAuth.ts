@@ -29,8 +29,7 @@ export function useRequireAuth(): { isReady: boolean } {
     const search = window.location.search.replace(/^\?/, "");
     const returnUrl = search ? `${path}?${search}` : path;
     router.replace(
-      `${ROUTES.auth.login}?returnUrl=${encodeURIComponent(returnUrl)}`,
-    );
+      `${ROUTES.auth.login}?returnUrl=${encodeURIComponent(returnUrl)}`);
   }, [isAuthenticated, isLoading, locale, pathname, router]);
 
   const isReady = !isLoading && isAuthenticated;

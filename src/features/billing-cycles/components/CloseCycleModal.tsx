@@ -47,8 +47,7 @@ export function CloseCycleModal({
       <div className="flex flex-col gap-4">
         <div
           className={cn(
-            "flex gap-3 rounded-button border border-warning/35 bg-warning/10 p-3 text-sm text-warm-800",
-          )}
+            "flex gap-3 rounded-button border border-warning/35 bg-warning/10 p-3 text-sm text-warm-800")}
           role="alert"
         >
           <AlertTriangle

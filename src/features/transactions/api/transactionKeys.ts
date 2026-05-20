@@ -1,9 +1,7 @@
 import type { TransactionFilters } from "../types";
 
 function stableFiltersKey(f: TransactionFilters): string {
-  return JSON.stringify({
-    smoduleId: f.smoduleId,
-    sourceId: f.sourceId ?? null,
+  return JSON.stringify({    sourceId: f.sourceId ?? null,
     type: f.type ?? null,
     categoryId: f.categoryId ?? null,
     dateFrom: f.dateFrom ?? null,

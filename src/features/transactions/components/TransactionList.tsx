@@ -89,8 +89,7 @@ export function TransactionList({
           fetchNextPage();
         }
       },
-      { rootMargin: "120px" },
-    );
+      { rootMargin: "120px" });
     obs.observe(el);
     return () => obs.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, items.length]);
@@ -165,8 +164,7 @@ export function TransactionList({
               animate="animate"
               className={cn(
                 "divide-y divide-warm-100 overflow-hidden rounded-card",
-                "border border-warm-200 bg-surface shadow-sm",
-              )}
+                "border border-warm-200 bg-surface shadow-sm")}
             >
               {g.rows.map((tx) => (
                 <motion.li

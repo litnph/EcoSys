@@ -53,8 +53,7 @@ export function isAccessTokenValid(token: string | null): boolean {
 /** True when access is missing/invalid/expired or expires within 2 minutes, and a refresh token exists. */
 export function shouldProactiveRefresh(
   accessToken: string | null,
-  refreshToken: string | null,
-): boolean {
+  refreshToken: string | null): boolean {
   if (!refreshToken) {
     return false;
   }

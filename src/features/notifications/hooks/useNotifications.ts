@@ -15,8 +15,7 @@ import {
 export function useNotifications(
   page = 1,
   pageSize = 20,
-  isRead?: boolean | null,
-) {
+  isRead?: boolean | null) {
   return useQuery({
     queryKey: notificationKeys.list(page, pageSize, isRead),
     queryFn: () => getNotifications({ page, pageSize, isRead }),

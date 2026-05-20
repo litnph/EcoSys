@@ -40,8 +40,7 @@ export function DashboardLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [offline, setOffline] = useState(
-    () => typeof navigator !== "undefined" && !navigator.onLine,
-  );
+    () => typeof navigator !== "undefined" && !navigator.onLine);
 
   useEffect(() => {
     function handleOnline(): void {
@@ -97,8 +96,7 @@ export function DashboardLayout({
         className={cn(
           "min-h-screen bg-warm-50 px-4 transition-[margin] duration-200 ease-out md:px-6",
           "pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-6",
-          sidebarCollapsed ? "md:ml-16" : "md:ml-[240px]",
-        )}
+          sidebarCollapsed ? "md:ml-16" : "md:ml-[240px]")}
       >
         <ErrorBoundary fallbackTitle="Không tải được nội dung trang">
           <PageTransition>{children}</PageTransition>
@@ -124,8 +122,7 @@ export function DashboardLayout({
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-warm-600 transition-colors",
                   "hover:bg-warm-100 hover:text-warm-900",
-                  active && "bg-accent/10 font-medium text-accent",
-                )}
+                  active && "bg-accent/10 font-medium text-accent")}
               >
                 <Icon className="size-5 shrink-0" aria-hidden />
                 <span>{tNav(labelKey)}</span>

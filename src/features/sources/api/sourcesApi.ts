@@ -32,7 +32,6 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 
 interface RemoteFinSourceDto {
   id: string;
-  smoduleId: string;
   name: string;
   type: FinSourceType;
   balance: number;
@@ -61,7 +60,6 @@ interface DeleteSourceEnvelope {
 function mapRemoteSource(row: RemoteFinSourceDto): FinSource {
   return {
     id: row.id,
-    smoduleId: row.smoduleId,
     name: row.name,
     type: row.type,
     balance: row.balance,
@@ -85,7 +83,6 @@ function mapRemoteSource(row: RemoteFinSourceDto): FinSource {
 function buildCreateBody(data: CreateSourceRequest) {
   const isCard = data.type === "creditCard";
   return {
-    smoduleId: data.smoduleId,
     name: data.name,
     type: data.type,
     currency: data.currency ?? "VND",
@@ -123,42 +120,35 @@ function buildUpdateBody(data: UpdateSourceRequest) {
   };
 }
 
-export async function getSources(smoduleId: string): Promise<FinSource[]> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+export async function getSources(): Promise<FinSource[]> {
   const envelope = await unwrap<SourcesListEnvelope>(
-    apiClient.get(`/finance/sources?${qs.toString()}`),
-  );
+    apiClient.get("/finance/sources"));
   return envelope.sources.map(mapRemoteSource);
 }
 
 export async function getSourceById(id: string): Promise<FinSource> {
   const envelope = await unwrap<SourceOneEnvelope>(
-    apiClient.get(`/finance/sources/${id}`),
-  );
+    apiClient.get(`/finance/sources/${id}`));
   return mapRemoteSource(envelope.source);
 }
 
 export async function createSource(data: CreateSourceRequest): Promise<FinSource> {
   const envelope = await unwrap<SourceOneEnvelope>(
-    apiClient.post(`/finance/sources`, buildCreateBody(data)),
-  );
+    apiClient.post(`/finance/sources`, buildCreateBody(data)));
   return mapRemoteSource(envelope.source);
 }
 
 export async function updateSource(
   id: string,
-  data: UpdateSourceRequest,
-): Promise<FinSource> {
+  data: UpdateSourceRequest): Promise<FinSource> {
   const envelope = await unwrap<SourceOneEnvelope>(
-    apiClient.put(`/finance/sources/${id}`, buildUpdateBody(data)),
-  );
+    apiClient.put(`/finance/sources/${id}`, buildUpdateBody(data)));
   return mapRemoteSource(envelope.source);
 }
 
 export async function deleteSource(id: string): Promise<string> {
   const envelope = await unwrap<DeleteSourceEnvelope>(
-    apiClient.delete(`/finance/sources/${id}`),
-  );
+    apiClient.delete(`/finance/sources/${id}`));
   return envelope.id;
 }
 
@@ -172,17 +162,13 @@ interface TransactionsPageEnvelope {
 
 /** Số giao dịch có <c>sourceId</c> là nguồn (khớp filter API list). */
 export async function getSourceTransactionCount(
-  smoduleId: string,
-  sourceId: string,
-): Promise<number> {
+  sourceId: string): Promise<number> {
   const qs = new URLSearchParams({
-    smodule_id: smoduleId,
     source_id: sourceId,
     page: "1",
     page_size: "1",
   });
   const envelope = await unwrap<TransactionsPageEnvelope>(
-    apiClient.get(`/finance/transactions?${qs.toString()}`),
-  );
+    apiClient.get(`/finance/transactions?${qs.toString()}`));
   return envelope.totalCount;
 }

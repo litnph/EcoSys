@@ -57,8 +57,7 @@ function SessionCard({
   return (
     <li
       className={cn(
-        "flex flex-col gap-3 rounded-card border border-warm-200 bg-surface p-4 md:flex-row md:items-center md:justify-between",
-      )}
+        "flex flex-col gap-3 rounded-card border border-warm-200 bg-surface p-4 md:flex-row md:items-center md:justify-between")}
     >
       <div className="flex gap-3">
         <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-warm-100">

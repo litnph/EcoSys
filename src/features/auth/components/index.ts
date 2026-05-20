@@ -1,11 +1,5 @@
 export { AuthLogo } from "./AuthLogo";
 export { DashboardAuthGate } from "./DashboardAuthGate";
-export { ForgotPasswordForm } from "./ForgotPasswordForm";
-export { GoogleOAuthButton } from "./GoogleOAuthButton";
 export { LoginForm } from "./LoginForm";
 export { RedirectIfAuthenticated } from "./RedirectIfAuthenticated";
-export { RegisterForm } from "./RegisterForm";
-export { ResetPasswordForm } from "./ResetPasswordForm";
-export { VerifyEmailHandler } from "./VerifyEmailHandler";
-export { AuthCallbackHandler } from "./AuthCallbackHandler";
 export { SessionManager } from "./SessionManager";

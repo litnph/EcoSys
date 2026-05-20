@@ -33,9 +33,7 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 }
 
 interface RemoteDebtRecordRow {
-  id: string;
-  smoduleId: string;
-  direction: DebtDirection;
+  id: string;  direction: DebtDirection;
   personName?: string | null;
   personContact?: string | null;
   originalAmount: number;
@@ -53,9 +51,7 @@ interface RemoteDebtListBody {
 
 function mapDebtListRow(row: RemoteDebtRecordRow): DebtRecordListItem {
   return {
-    id: row.id,
-    smoduleId: row.smoduleId,
-    direction: row.direction,
+    id: row.id,    direction: row.direction,
     personName: row.personName ?? null,
     personContact: row.personContact ?? null,
     originalAmount: row.originalAmount,
@@ -69,17 +65,16 @@ function mapDebtListRow(row: RemoteDebtRecordRow): DebtRecordListItem {
 }
 
 export async function getDebtRecords(
-  smoduleId: string,
   options?: {
     direction?: DebtDirection;
     status?: DebtStatus;
-  },
-): Promise<DebtRecordListItem[]> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+  }): Promise<DebtRecordListItem[]> {
+  const qs = new URLSearchParams();
   if (options?.direction) qs.set("direction", options.direction);
   if (options?.status) qs.set("status", options.status);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
   const envelope = await unwrap<RemoteDebtListBody>(
-    apiClient.get(`/finance/debt-records?${qs.toString()}`),
+    apiClient.get(`/finance/debt-records${suffix}`),
   );
   return (envelope.items ?? []).map(mapDebtListRow);
 }
@@ -91,11 +86,9 @@ interface RemoteDebtSummaryBody {
   overdueLentCount: number;
 }
 
-export async function getDebtSummary(smoduleId: string): Promise<DebtSummary> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+export async function getDebtSummary(): Promise<DebtSummary> {
   return unwrap<RemoteDebtSummaryBody>(
-    apiClient.get(`/finance/debt-records/summary?${qs.toString()}`),
-  );
+    apiClient.get("/finance/debt-records/summary"));
 }
 
 interface RemoteDebtTxn {
@@ -109,9 +102,7 @@ interface RemoteDebtTxn {
 }
 
 interface RemoteDebtRecordDetail {
-  id: string;
-  smoduleId: string;
-  direction: DebtDirection;
+  id: string;  direction: DebtDirection;
   personName: string;
   personContact?: string | null;
   originalTxnId?: string | null;
@@ -145,13 +136,10 @@ function mapDebtTxn(row: RemoteDebtTxn): DebtTransaction {
 
 export async function getDebtRecordDetail(id: string): Promise<DebtRecord> {
   const envelope = await unwrap<RemoteDebtDetailBody>(
-    apiClient.get(`/finance/debt-records/${id}`),
-  );
+    apiClient.get(`/finance/debt-records/${id}`));
   const r = envelope.record;
   return {
-    id: r.id,
-    smoduleId: r.smoduleId,
-    direction: r.direction,
+    id: r.id,    direction: r.direction,
     personName: r.personName?.trim() ? r.personName : null,
     personContact: r.personContact ?? null,
     originalTxnId: r.originalTxnId ?? null,
@@ -174,7 +162,6 @@ interface RemoteDeleteDebtBody {
 
 export async function deleteDebtRecord(id: string): Promise<string> {
   const envelope = await unwrap<RemoteDeleteDebtBody>(
-    apiClient.delete(`/finance/debt-records/${id}`),
-  );
+    apiClient.delete(`/finance/debt-records/${id}`));
   return envelope.debtRecordId;
 }

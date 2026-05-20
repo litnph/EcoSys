@@ -29,11 +29,8 @@ function cleanNote(v: string | undefined): string | null {
 
 /** Map form → POST /finance/transactions (camelCase trong OpenAPI). */
 export function mapFormValuesToCreateBody(
-  smoduleId: string,
-  v: TransactionFormValues,
-): CreateTransactionBody {
+  v: TransactionFormValues): CreateTransactionBody {
   const base: CreateTransactionBody = {
-    smoduleId,
     type: apiTypeFromForm(v.type),
     amount: toApiWholeAmount(v.amount),
     sourceId: v.sourceId.trim(),

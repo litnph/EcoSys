@@ -41,8 +41,7 @@ function TransactionItemInner({
 
   const Icon = React.useMemo(
     () => transactionTypeIcon(tx.type),
-    [tx.type],
-  );
+    [tx.type]);
 
   const { label, sub } = React.useMemo(() => {
     const rawLabel =
@@ -58,8 +57,7 @@ function TransactionItemInner({
   const amountPresentation = React.useMemo(() => {
     const { sign, className: amountClass } = txnAmountPresentation(
       tx.type,
-      tx.amount,
-    );
+      tx.amount);
     const shownAmount = Math.abs(tx.amount);
     return {
       sign,
@@ -71,8 +69,7 @@ function TransactionItemInner({
 
   const categoryColor = React.useMemo(
     () => categoryDotColor(tx.categoryId ?? null),
-    [tx.categoryId],
-  );
+    [tx.categoryId]);
 
   const onPointerDown = React.useCallback(
     (e: React.PointerEvent) => {
@@ -81,8 +78,7 @@ function TransactionItemInner({
       startX.current = e.clientX;
       (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     },
-    [swipeEnabled],
-  );
+    [swipeEnabled]);
 
   const onPointerMove = React.useCallback(
     (e: React.PointerEvent) => {
@@ -91,8 +87,7 @@ function TransactionItemInner({
       const next = Math.min(0, Math.max(-88, dx));
       setOffset(next);
     },
-    [swipeEnabled],
-  );
+    [swipeEnabled]);
 
   const endSwipe = React.useCallback(
     (e: React.PointerEvent) => {
@@ -105,8 +100,7 @@ function TransactionItemInner({
       }
       setOffset((o) => (o < -40 ? -72 : 0));
     },
-    [swipeEnabled],
-  );
+    [swipeEnabled]);
 
   const handleDeleteSwipe = React.useCallback(() => {
     setOffset(0);
@@ -128,8 +122,7 @@ function TransactionItemInner({
         onOpen(tx);
       }
     },
-    [onOpen, tx],
-  );
+    [onOpen, tx]);
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-transparent">
@@ -163,8 +156,7 @@ function TransactionItemInner({
         }}
         className={cn(
           "relative flex w-full cursor-pointer items-center gap-3 bg-surface px-3 py-3 text-left transition-[transform]",
-          "hover:bg-warm-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-        )}
+          "hover:bg-warm-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent")}
       >
         <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-warm-50 ring-1 ring-warm-200">
           <span
@@ -186,8 +178,7 @@ function TransactionItemInner({
         <p
           className={cn(
             "shrink-0 text-right font-mono text-sm font-semibold tabular-nums",
-            amountPresentation.amountClass,
-          )}
+            amountPresentation.amountClass)}
         >
           {amountPresentation.sign}
           {amountPresentation.amountText}

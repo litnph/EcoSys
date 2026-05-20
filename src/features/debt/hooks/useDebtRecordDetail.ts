@@ -7,8 +7,7 @@ import { getDebtRecordDetail } from "../api/debtApi";
 
 export function useDebtRecordDetail(
   recordId: string | undefined,
-  opts?: { enabled?: boolean },
-) {
+  opts?: { enabled?: boolean }) {
   const enabled =
     Boolean(recordId && recordId.length > 0) && opts?.enabled !== false;
 

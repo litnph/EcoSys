@@ -26,7 +26,6 @@ import type {
 import { categoryKindFor } from "./transactionFormSchema";
 
 export interface ConditionalFieldsProps {
-  smoduleId: string | undefined;
   sources?: FinSource[];
   disabled?: boolean;
   txnCurrency: string;
@@ -34,7 +33,6 @@ export interface ConditionalFieldsProps {
 }
 
 export function ConditionalFields({
-  smoduleId,
   sources,
   disabled,
   txnCurrency,
@@ -55,20 +53,16 @@ export function ConditionalFields({
   const destCandidates = useMemo(
     () =>
       (sources ?? []).filter(
-        (s) => typeof sourceId !== "string" || !sourceId || s.id !== sourceId,
-      ),
-    [sources, sourceId],
-  );
+        (s) => typeof sourceId !== "string" || !sourceId || s.id !== sourceId),
+    [sources, sourceId]);
 
   const splitSum = useMemo(
     () =>
       (splitsWatch ?? []).reduce(
         (acc, row) =>
           acc + (typeof row?.amount === "number" ? row.amount : 0),
-        0,
-      ),
-    [splitsWatch],
-  );
+        0),
+    [splitsWatch]);
 
   const splitMismatch =
     Math.abs(splitSum - mainAmount) > 0.005 && (splitsWatch?.length ?? 0) > 0;
@@ -96,7 +90,7 @@ export function ConditionalFields({
                 Danh mục
               </span>
               <CategorySelector
-                smoduleId={smoduleId}
+                
                 value={field.value}
                 onChange={field.onChange}
                 kind={categoryKindFor(txnType)}
@@ -128,8 +122,7 @@ export function ConditionalFields({
                   className={cn(
                     "flex h-11 w-full items-center justify-between gap-2 rounded-button border bg-warm-50 px-3 text-left text-sm text-warm-900",
                     toSourceErr ? "border-danger" : "border-warm-200",
-                    "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60",
-                  )}
+                    "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60")}
                 >
                   <span className="min-w-0 flex-1 truncate">
                     {!field.value?.length ? (
@@ -146,15 +139,13 @@ export function ConditionalFields({
                     sideOffset={4}
                     position="popper"
                     className={cn(
-                      "z-[120] max-h-[260px] w-[var(--radix-select-trigger-width)] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg",
-                    )}
+                      "z-[120] max-h-[260px] w-[var(--radix-select-trigger-width)] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg")}
                   >
                     <SelectPrimitive.Viewport className="max-h-[240px] overflow-y-auto p-1">
                       <SelectPrimitive.Item
                         value="__none__"
                         className={cn(
-                          "relative rounded-md px-3 py-2 text-sm outline-none data-[highlighted]:bg-warm-100",
-                        )}
+                          "relative rounded-md px-3 py-2 text-sm outline-none data-[highlighted]:bg-warm-100")}
                       >
                         Chọn…
                       </SelectPrimitive.Item>
@@ -163,8 +154,7 @@ export function ConditionalFields({
                           key={s.id}
                           value={s.id}
                           className={cn(
-                            "relative rounded-md px-3 py-2 text-sm outline-none data-[highlighted]:bg-warm-100",
-                          )}
+                            "relative rounded-md px-3 py-2 text-sm outline-none data-[highlighted]:bg-warm-100")}
                         >
                           <SelectPrimitive.ItemText>
                             <span className="flex justify-between gap-2">
@@ -199,8 +189,7 @@ export function ConditionalFields({
           <p
             className={cn(
               "text-sm",
-              splitMismatch ? "font-medium text-warm-800" : "text-warm-600",
-            )}
+              splitMismatch ? "font-medium text-warm-800" : "text-warm-600")}
           >
             Tổng phần:{" "}
             <strong className="tabular-nums">
@@ -269,8 +258,7 @@ export function ConditionalFields({
                   className={cn(
                     "h-11 w-full rounded-button border px-3 text-sm font-mono disabled:opacity-60",
                     dueErr ? "border-danger" : "border-warm-200 bg-warm-50",
-                    "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-                  )}
+                    "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30")}
                 />
               )}
             />
@@ -283,7 +271,7 @@ export function ConditionalFields({
 
       {txnType === "debt_repay" || txnType === "loan_collect" ? (
         <DebtRecordBlock
-          smoduleId={smoduleId}
+          
           txnType={txnType}
           disabled={disabled}
           debtErr={debtErr}
@@ -294,12 +282,10 @@ export function ConditionalFields({
 }
 
 function DebtRecordBlock({
-  smoduleId,
   txnType,
   disabled,
   debtErr,
 }: {
-  smoduleId: string | undefined;
   txnType: "debt_repay" | "loan_collect";
   disabled?: boolean;
   debtErr?: string;
@@ -307,7 +293,7 @@ function DebtRecordBlock({
   const direction = txnType === "debt_repay" ? "borrowed" : "lent";
 
   const { control } = useFormContext<TransactionFormValues>();
-  const { data = [], isLoading } = useDebtRecords(smoduleId, direction);
+  const { data = [], isLoading } = useDebtRecords( direction);
 
   const label =
     txnType === "debt_repay"
@@ -329,15 +315,14 @@ function DebtRecordBlock({
               field.onChange(v === "__none__" ? "" : v)
             }
             disabled={
-              disabled || !smoduleId || smoduleId.length === 0 || isLoading
+              disabled || false || isLoading
             }
           >
             <SelectPrimitive.Trigger
               className={cn(
                 "flex h-11 w-full items-center justify-between rounded-button border bg-warm-50 px-3 text-left text-sm text-warm-900",
                 debtErr ? "border-danger" : "border-warm-200",
-                "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60",
-              )}
+                "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60")}
             >
               <span className="min-w-0 flex-1 truncate">
                 {isLoading ? (
@@ -362,8 +347,7 @@ function DebtRecordBlock({
                 sideOffset={4}
                 position="popper"
                 className={cn(
-                  "z-[120] max-h-[260px] w-[var(--radix-select-trigger-width)] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg",
-                )}
+                  "z-[120] max-h-[260px] w-[var(--radix-select-trigger-width)] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg")}
               >
                 <SelectPrimitive.Viewport className="max-h-[240px] overflow-y-auto p-1">
                   <SelectPrimitive.Item

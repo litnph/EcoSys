@@ -20,8 +20,7 @@ function compareDeltaPct(
   currentRate: number | null,
   totalIncome: number,
   totalExpense: number,
-  comparison: MonthlyReport["comparisonWithPrevious"],
-): number | null {
+  comparison: MonthlyReport["comparisonWithPrevious"]): number | null {
   if (currentRate === null) return null;
   const prevSr = estimatedPreviousSavingsRatePercent({
     totalIncome,
@@ -61,8 +60,7 @@ function MomTrend({
     <span
       className={cn(
         "inline-flex items-center gap-1 text-xs tabular-nums",
-        Object.is(pct, 0) ? "text-warm-400" : good ? "text-success" : "text-danger",
-      )}
+        Object.is(pct, 0) ? "text-warm-400" : good ? "text-success" : "text-danger")}
     >
       <Icon className="size-3.5 shrink-0" aria-hidden />
       {labelText}
@@ -83,8 +81,7 @@ function MiniCard({ title, subtitle, valueClass, value }: CardProps) {
       variants={staggerItem}
       {...cardHoverMotion}
       className={cn(
-        "flex flex-col gap-2 rounded-card border border-warm-200 bg-surface px-4 py-3 shadow-sm",
-      )}
+        "flex flex-col gap-2 rounded-card border border-warm-200 bg-surface px-4 py-3 shadow-sm")}
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-warm-500">{title}</p>
       <p className={cn("font-display text-xl font-semibold tabular-nums", valueClass)}>{value}</p>
@@ -100,8 +97,7 @@ export function ReportSummaryCards({ report, className }: ReportSummaryCardsProp
       report.savingsRate,
       report.totalIncome,
       report.totalExpense,
-      report.comparisonWithPrevious,
-    );
+      report.comparisonWithPrevious);
   }, [report]);
 
   if (!report) {
@@ -109,8 +105,7 @@ export function ReportSummaryCards({ report, className }: ReportSummaryCardsProp
       <div
         className={cn(
           "grid gap-3 sm:grid-cols-2 xl:grid-cols-4",
-          className,
-        )}
+          className)}
       >
         {Array.from({ length: 4 }).map((_, i) => (
           <div

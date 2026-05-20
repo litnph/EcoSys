@@ -24,40 +24,31 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 
 function mapTag(row: Record<string, unknown>): Tag {
   return {
-    id: String(row.id),
-    smoduleId: String(row.smoduleId),
-    name: String(row.name),
+    id: String(row.id),    name: String(row.name),
     color: String(row.color ?? "#6366f1"),
     usageCount: Number(row.usageCount ?? 0),
   };
 }
 
-export async function getTags(smoduleId: string): Promise<Tag[]> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+export async function getTags(): Promise<Tag[]> {
   const rows = await unwrap<Record<string, unknown>[]>(
-    apiClient.get(`/finance/tags?${qs.toString()}`),
-  );
+    apiClient.get("/finance/tags"));
   return rows.map(mapTag);
 }
 
-export async function createTag(body: {
-  smoduleId: string;
-  name: string;
+export async function createTag(body: {  name: string;
   color: string;
 }): Promise<string> {
   const envelope = await unwrap<{ id: string }>(
-    apiClient.post("/finance/tags", body),
-  );
+    apiClient.post("/finance/tags", body));
   return envelope.id;
 }
 
 export async function updateTag(
   id: string,
-  body: { name: string; color: string },
-): Promise<Tag> {
+  body: { name: string; color: string }): Promise<Tag> {
   const envelope = await unwrap<{ tag: Record<string, unknown> }>(
-    apiClient.put(`/finance/tags/${id}`, body),
-  );
+    apiClient.put(`/finance/tags/${id}`, body));
   return mapTag(envelope.tag);
 }
 

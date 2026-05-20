@@ -23,9 +23,7 @@ export type HistoryChangeType =
   | "cancelled";
 
 /** Bộ lọc gửi API (một type / một source theo contract backend hiện tại). */
-export interface TransactionFilters {
-  smoduleId: string;
-  sourceId?: string;
+export interface TransactionFilters {  sourceId?: string;
   type?: TransactionType;
   categoryId?: string;
   dateFrom?: string;
@@ -49,9 +47,7 @@ export interface TransactionFilterState {
 }
 
 export interface Transaction {
-  id: string;
-  smoduleId: string;
-  type: TransactionType;
+  id: string;  type: TransactionType;
   amount: number;
   currency: string;
   sourceId: string;

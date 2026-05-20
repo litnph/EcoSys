@@ -65,8 +65,7 @@ export function categoryKindFor(t: TransactionCreateFormType): "expense" | "inco
 
 /** Schema động theo loại giao dịch (resolver gọi theo giá trị `type` hiện tại). */
 export function buildTransactionSchema(
-  type: TransactionCreateFormType,
-): z.ZodType<TransactionFormValues> {
+  type: TransactionCreateFormType): z.ZodType<TransactionFormValues> {
   return z
     .object({
       type: z.literal(type),
@@ -192,8 +191,7 @@ export function buildTransactionSchema(
 
 export function defaultsForTxnForm(
   type: TransactionCreateFormType,
-  preserve?: Partial<Pick<TransactionFormValues, "amount" | "txnDate">>,
-): TransactionFormValues {
+  preserve?: Partial<Pick<TransactionFormValues, "amount" | "txnDate">>): TransactionFormValues {
   const today = format(new Date(), "yyyy-MM-dd");
   return {
     type,

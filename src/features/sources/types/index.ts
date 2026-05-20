@@ -7,9 +7,7 @@ export type FinSourceType =
   | "investment";
 
 export interface FinSource {
-  id: string;
-  smoduleId: string;
-  name: string;
+  id: string;  name: string;
   type: FinSourceType;
   balance: number;
   creditLimit: number | null;
@@ -22,9 +20,7 @@ export interface FinSource {
   sortOrder: number;
 }
 
-export interface CreateSourceRequest {
-  smoduleId: string;
-  name: string;
+export interface CreateSourceRequest {  name: string;
   type: FinSourceType;
   currency?: string | null;
   icon?: string | null;

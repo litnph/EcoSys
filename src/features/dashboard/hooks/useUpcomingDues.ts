@@ -5,13 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { dashboardKeys } from "../api/dashboardKeys";
 import { getUpcomingDues } from "../api/dashboardApi";
 
-export function useUpcomingDues(smoduleId: string | undefined) {
+export function useUpcomingDues() {
   return useQuery({
-    queryKey: smoduleId
-      ? dashboardKeys.upcomingDues(smoduleId)
-      : ["dashboard", "dues", "__"],
-    queryFn: () => getUpcomingDues(smoduleId ?? ""),
-    enabled: Boolean(smoduleId),
+    queryKey: dashboardKeys.upcomingDues(),
+    queryFn: () => getUpcomingDues(),
     staleTime: 300_000,
   });
 }

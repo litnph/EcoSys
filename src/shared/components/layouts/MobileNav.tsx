@@ -85,8 +85,7 @@ export function MobileNav() {
     <>
       <nav
         className={cn(
-          "fixed bottom-0 left-0 right-0 z-50 flex min-h-16 items-stretch justify-between gap-1 border-t border-warm-200 bg-warm-25 px-2 pb-[max(0px,env(safe-area-inset-bottom))] pt-1 md:hidden",
-        )}
+          "fixed bottom-0 left-0 right-0 z-50 flex min-h-16 items-stretch justify-between gap-1 border-t border-warm-200 bg-warm-25 px-2 pb-[max(0px,env(safe-area-inset-bottom))] pt-1 md:hidden")}
         aria-label={tNav("mobileNavAria")}
       >
         {TABS.slice(0, 2).map(({ href, labelKey, icon: Icon }) => {
@@ -97,8 +96,7 @@ export function MobileNav() {
               href={href}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs font-medium transition-colors duration-150",
-                active ? "text-accent-emphasis" : "text-nav-inactive",
-              )}
+                active ? "text-accent-emphasis" : "text-nav-inactive")}
             >
               <Icon className="size-5 shrink-0" aria-hidden />
               <span className="truncate">{tNav(labelKey)}</span>
@@ -112,8 +110,7 @@ export function MobileNav() {
             onClick={() => setCreateOpen(true)}
             className={cn(
               "relative -top-2 flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg outline-none transition-transform active:scale-95",
-              "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-            )}
+              "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2")}
             aria-label={tTx("addTransactionAria")}
           >
             <Plus className="size-6" strokeWidth={2.25} aria-hidden />
@@ -128,8 +125,7 @@ export function MobileNav() {
               href={href}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-xs font-medium transition-colors duration-150",
-                active ? "text-accent-emphasis" : "text-nav-inactive",
-              )}
+                active ? "text-accent-emphasis" : "text-nav-inactive")}
             >
               <Icon className="size-5 shrink-0" aria-hidden />
               <span className="truncate">{tNav(labelKey)}</span>
@@ -154,8 +150,7 @@ export function MobileNav() {
                 onClick={() => setCreateOpen(false)}
                 className={cn(
                   "block w-full rounded-lg border border-warm-200 bg-surface px-4 py-3 text-left transition-colors",
-                  "hover:border-accent/40 hover:bg-warm-100/60",
-                )}
+                  "hover:border-accent/40 hover:bg-warm-100/60")}
               >
                 <span className="font-medium text-warm-900">
                   {tMobile(opt.labelKey)}

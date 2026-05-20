@@ -32,8 +32,7 @@ export function readJwtDisplayClaims(token: string): JwtDisplayClaims {
 
 export function initialsFromNameOrEmail(
   name: string | undefined,
-  email: string | undefined,
-): string {
+  email: string | undefined): string {
   const trimmedName = name?.trim();
   if (trimmedName) {
     const chunks = trimmedName.split(/\s+/).filter(Boolean);

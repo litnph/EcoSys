@@ -23,38 +23,31 @@ import {
 } from "./transactionFormSchema";
 
 export interface TransactionFormProps {
-  smoduleId: string;
   /** Nếu truyền sẽ bỏ qua fetch nội bộ. */
   sources?: FinSource[];
   onSucceeded?: () => void;
 }
 
 export function TransactionForm({
-  smoduleId,
   sources: sourcesProp,
   onSucceeded,
 }: TransactionFormProps) {
   const [submitError, setSubmitError] = useState("");
-  const { data: fetchedSources } = useSources(
-    sourcesProp !== undefined ? undefined : smoduleId,
-  );
+  const { data: fetchedSources } = useSources();
 
   const sources = useMemo(
     () => sourcesProp ?? fetchedSources ?? [],
-    [sourcesProp, fetchedSources],
-  );
-  const createTx = useCreateTransaction(smoduleId);
+    [sourcesProp, fetchedSources]);
+  const createTx = useCreateTransaction();
 
   const dynamicResolver = useMemo(
     (): Resolver<TransactionFormValues> => (values, context, opts) =>
       /** Zod v4 vs `@hookform/resolvers/zod`: cast schema để tương thích kiểu. */
       (
         zodResolver as unknown as (
-          schema: unknown,
-        ) => Resolver<TransactionFormValues>
+          schema: unknown) => Resolver<TransactionFormValues>
       )(buildTransactionSchema(values.type))(values, context, opts),
-    [],
-  );
+    []);
 
   const form = useForm<TransactionFormValues>({
     resolver: dynamicResolver,
@@ -89,7 +82,7 @@ export function TransactionForm({
         onSubmit={handleSubmit(
           (vals) => {
             setSubmitError("");
-            const body = mapFormValuesToCreateBody(smoduleId, vals);
+            const body = mapFormValuesToCreateBody( vals);
             createTx.mutate(body, {
               onSuccess: () => {
                 reset(defaultsForTxnForm(vals.type));
@@ -98,8 +91,7 @@ export function TransactionForm({
               onError: (err) => setSubmitError(getFinanceApiErrorMessage(err)),
             });
           },
-          (errs) => scrollFirstHookFormErrorIntoView(errs, form),
-        )}
+          (errs) => scrollFirstHookFormErrorIntoView(errs, form))}
       >
         <TypeSelector
           value={typeValue}
@@ -114,7 +106,7 @@ export function TransactionForm({
         />
 
         <ConditionalFields
-          smoduleId={smoduleId}
+          
           sources={sources}
           disabled={busy}
           txnCurrency={currency}

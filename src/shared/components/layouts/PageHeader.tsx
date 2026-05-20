@@ -19,8 +19,7 @@ export function PageHeader({
     <header
       className={cn(
         "mb-6 flex items-start justify-between gap-4",
-        className,
-      )}
+        className)}
     >
       <div className="min-w-0">
         <h1 className="font-display text-2xl font-semibold text-warm-900">

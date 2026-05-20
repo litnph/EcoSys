@@ -24,9 +24,7 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 
 function mapSaving(row: Record<string, unknown>): Saving {
   return {
-    id: String(row.id),
-    smoduleId: String(row.smoduleId),
-    sourceId: String(row.sourceId),
+    id: String(row.id),    sourceId: String(row.sourceId),
     sourceName: String(row.sourceName ?? ""),
     name: String(row.name),
     targetAmount: row.targetAmount != null ? Number(row.targetAmount) : null,
@@ -40,35 +38,29 @@ function mapSaving(row: Record<string, unknown>): Saving {
   };
 }
 
-export async function getSavings(smoduleId: string): Promise<Saving[]> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+export async function getSavings(): Promise<Saving[]> {
   const envelope = await unwrap<{ items: Record<string, unknown>[] }>(
-    apiClient.get(`/finance/savings?${qs.toString()}`),
-  );
+    apiClient.get("/finance/savings"));
   return envelope.items.map(mapSaving);
 }
 
 export async function getSavingById(id: string): Promise<SavingDetail> {
   const envelope = await unwrap<{ saving: Record<string, unknown> }>(
-    apiClient.get(`/finance/savings/${id}`),
-  );
+    apiClient.get(`/finance/savings/${id}`));
   return mapSaving(envelope.saving) as SavingDetail;
 }
 
 export async function createSaving(body: Record<string, unknown>): Promise<Saving> {
   const envelope = await unwrap<{ saving: Record<string, unknown> }>(
-    apiClient.post("/finance/savings", body),
-  );
+    apiClient.post("/finance/savings", body));
   return mapSaving(envelope.saving);
 }
 
 export async function updateSaving(
   id: string,
-  body: Record<string, unknown>,
-): Promise<Saving> {
+  body: Record<string, unknown>): Promise<Saving> {
   const envelope = await unwrap<{ saving: Record<string, unknown> }>(
-    apiClient.put(`/finance/savings/${id}`, body),
-  );
+    apiClient.put(`/finance/savings/${id}`, body));
   return mapSaving(envelope.saving);
 }
 
@@ -78,14 +70,12 @@ export async function deleteSaving(id: string): Promise<void> {
 
 export async function depositToSaving(
   id: string,
-  body: { amount: number; txnDate: string; note?: string | null },
-): Promise<void> {
+  body: { amount: number; txnDate: string; note?: string | null }): Promise<void> {
   await unwrap<unknown>(apiClient.post(`/finance/savings/${id}/deposit`, body));
 }
 
 export async function withdrawFromSaving(
   id: string,
-  body: { amount: number; txnDate: string; note?: string | null },
-): Promise<void> {
+  body: { amount: number; txnDate: string; note?: string | null }): Promise<void> {
   await unwrap<unknown>(apiClient.post(`/finance/savings/${id}/withdraw`, body));
 }

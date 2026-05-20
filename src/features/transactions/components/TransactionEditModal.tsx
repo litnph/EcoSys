@@ -74,8 +74,7 @@ export function TransactionEditModal({
                 monthlyPeriodId: transaction.monthlyPeriodId ?? null,
               },
             },
-            { onSuccess: () => onClose() },
-          );
+            { onSuccess: () => onClose() });
         })}
       >
         <Input
@@ -94,7 +93,7 @@ export function TransactionEditModal({
           {...register("txnDate", { required: "Vui lòng chọn ngày" })}
         />
         <CategorySelector
-          smoduleId={transaction.smoduleId}
+          
           kind={
             transaction.type === "income"
               ? "income"

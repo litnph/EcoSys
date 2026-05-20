@@ -1,7 +1,5 @@
 export interface Saving {
-  id: string;
-  smoduleId: string;
-  sourceId: string;
+  id: string;  sourceId: string;
   sourceName: string;
   name: string;
   targetAmount: number | null;

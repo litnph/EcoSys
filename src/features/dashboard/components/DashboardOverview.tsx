@@ -11,8 +11,6 @@ import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { staggerChildren } from "@/shared/lib/animations";
 
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 
 import {
   useDashboardSources,
@@ -37,8 +35,7 @@ const SpendingPieChart = dynamic(
         <SkeletonText className="h-52 w-full rounded-lg" />
       </div>
     ),
-  },
-);
+  });
 
 const MonthlyTrendChart = dynamic(
   () => import("./MonthlyTrendChart").then((m) => m.MonthlyTrendChart),
@@ -49,50 +46,28 @@ const MonthlyTrendChart = dynamic(
         <SkeletonText className="h-56 w-full rounded-lg" />
       </div>
     ),
-  },
-);
+  });
 
 export function DashboardOverview() {
   const t = useTranslations("dashboard");
-  const moduleIdRaw = useFinanceSmoduleId();
-
   const { year: reportYear, month: reportMonth } = useMemo(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
   }, []);
 
-  const summaryQ = useDashboardSummary(
-    moduleIdRaw.length ? moduleIdRaw : undefined,
-  );
-  const sourcesQ = useDashboardSources(
-    moduleIdRaw.length ? moduleIdRaw : undefined,
-  );
-  const txsQ = useRecentTransactions(
-    moduleIdRaw.length ? moduleIdRaw : undefined,
-  );
-  const duesQ = useUpcomingDues(
-    moduleIdRaw.length ? moduleIdRaw : undefined,
-  );
-  const categoriesQ = useSpendingByCategory(
-    moduleIdRaw.length ? moduleIdRaw : undefined,
-    reportYear,
-    reportMonth,
-  );
-  const trendQ = useMonthlyTrend(
-    moduleIdRaw.length ? moduleIdRaw : undefined,
-  );
-
-  const missingModule = moduleIdRaw.length === 0;
+  const summaryQ = useDashboardSummary();
+  const sourcesQ = useDashboardSources();
+  const txsQ = useRecentTransactions();
+  const duesQ = useUpcomingDues();
+  const categoriesQ = useSpendingByCategory(reportYear, reportMonth);
+  const trendQ = useMonthlyTrend();
 
   return (
     <div className="w-full max-w-[1400px]">
       <PageHeader title={t("title")} description={t("description")} />
-      {missingModule ? (
-        <MissingFinanceModule />
-      ) : (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={moduleIdRaw}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key="dashboard"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -166,8 +141,7 @@ export function DashboardOverview() {
               </ErrorBoundary>
             </motion.div>
           </motion.div>
-        </AnimatePresence>
-      )}
+      </AnimatePresence>
     </div>
   );
 }

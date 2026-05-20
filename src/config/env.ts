@@ -15,8 +15,7 @@ export const NEXT_PUBLIC_FINANCE_SMODULE_ID =
  * (browser + Edge middleware fetches).
  */
 export function getNgrokSkipBrowserWarningHeaders(
-  apiBase: string = NEXT_PUBLIC_API_URL,
-): Record<string, string> {
+  apiBase: string = NEXT_PUBLIC_API_URL): Record<string, string> {
   const raw = apiBase.trim().replace(/\/$/, "");
   if (!raw) return {};
   try {

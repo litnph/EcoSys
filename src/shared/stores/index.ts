@@ -5,9 +5,3 @@ export {
   type ToastType,
   useToastStore,
 } from "./toastStore";
-
-export {
-  getCurrentSmoduleIdSync,
-  useWorkspaceStore,
-  type WorkspaceState,
-} from "./workspaceStore";

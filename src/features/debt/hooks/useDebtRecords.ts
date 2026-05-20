@@ -7,27 +7,22 @@ import { getDebtRecords } from "../api/debtApi";
 import type { DebtDirection, DebtStatus } from "../types";
 
 export function useDebtRecords(
-  smoduleId: string | undefined,
   direction: DebtDirection | undefined,
   opts?: {
     enabled?: boolean;
     status?: DebtStatus;
   },
 ) {
-  const enabled =
-    Boolean(smoduleId && smoduleId.length > 0 && direction) &&
-    opts?.enabled !== false;
-
   const status = opts?.status ?? "active";
 
   return useQuery({
-    queryKey: debtKeys.list(smoduleId ?? "", direction, status),
+    queryKey: debtKeys.list(direction, status),
     queryFn: () =>
-      getDebtRecords(smoduleId!, {
+      getDebtRecords({
         direction,
         status,
       }),
-    enabled,
+    enabled: Boolean(direction) && opts?.enabled !== false,
     staleTime: 20_000,
   });
 }

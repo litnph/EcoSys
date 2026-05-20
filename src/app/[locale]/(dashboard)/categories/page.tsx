@@ -9,10 +9,8 @@ import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useDeleteCategory } from "@/features/categories/hooks/useCategoryMutations";
 import type { CategoryKind, FinCategory } from "@/features/categories/types";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 
 const KIND_TABS: { value: CategoryKind; label: string }[] = [
   { value: "expense", label: "Chi tiêu" },
@@ -20,15 +18,11 @@ const KIND_TABS: { value: CategoryKind; label: string }[] = [
   { value: "transfer", label: "Chuyển khoản" },
 ];
 
-export default function CategoriesPage() {
-  const smoduleId = useFinanceSmoduleId();
-  const [kind, setKind] = useState<CategoryKind>("expense");
+export default function CategoriesPage() {  const [kind, setKind] = useState<CategoryKind>("expense");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<FinCategory | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FinCategory | null>(null);
   const del = useDeleteCategory();
-  const missing = !smoduleId;
-
   return (
     <div className="w-full max-w-4xl">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -39,7 +33,7 @@ export default function CategoriesPage() {
         <Button
           type="button"
           leftIcon={<Plus className="size-4" />}
-          disabled={missing}
+          
           onClick={() => {
             setEditing(null);
             setFormOpen(true);
@@ -63,16 +57,13 @@ export default function CategoriesPage() {
         ))}
       </div>
 
-      {missing ? (
-        <MissingFinanceModule />
-      ) : (
-        <div className="mt-6 rounded-card border border-warm-200 bg-surface p-4 shadow-sm">
-          <CategoryTree smoduleId={smoduleId} kind={kind} />
+      <div className="mt-6 rounded-card border border-warm-200 bg-surface p-4 shadow-sm">
+          <CategoryTree  kind={kind} />
           <p className="mt-4 text-xs text-warm-500">
             Chọn danh mục trong cây bằng nút bên dưới (nếu có dữ liệu phẳng).
           </p>
           <CategoryActionsHint
-            smoduleId={smoduleId}
+            
             kind={kind}
             onEdit={(c) => {
               setEditing(c);
@@ -80,11 +71,10 @@ export default function CategoriesPage() {
             }}
             onDelete={setDeleteTarget}
           />
-        </div>
-      )}
+      </div>
 
       <CategoryFormModal
-        smoduleId={smoduleId}
+        
         isOpen={formOpen}
         onClose={() => {
           setFormOpen(false);
@@ -126,17 +116,15 @@ export default function CategoriesPage() {
 }
 
 function CategoryActionsHint({
-  smoduleId,
   kind,
   onEdit,
   onDelete,
 }: {
-  smoduleId: string;
   kind: CategoryKind;
   onEdit: (c: FinCategory) => void;
   onDelete: (c: FinCategory) => void;
 }) {
-  const { data } = useCategories(smoduleId, kind);
+  const { data } = useCategories( kind);
 
   function flatten(nodes: FinCategory[]): FinCategory[] {
     return nodes.flatMap((n) => [n, ...flatten(n.children ?? [])]);

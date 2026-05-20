@@ -20,22 +20,18 @@ function TransactionFormSkeleton() {
 const TransactionForm = dynamic(
   () =>
     import("@/features/transactions/components/TransactionForm").then(
-      (m) => m.TransactionForm,
-    ),
+      (m) => m.TransactionForm),
   {
     loading: () => <TransactionFormSkeleton />,
     ssr: false,
-  },
-);
+  });
 
 export interface TransactionFormModalProps {
-  smoduleId: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export function TransactionFormModal({
-  smoduleId,
   isOpen,
   onClose,
 }: TransactionFormModalProps) {
@@ -47,7 +43,7 @@ export function TransactionFormModal({
       description="Điền số tiền, loại và thông tin bổ sung theo loại."
       size="lg"
     >
-      <TransactionForm smoduleId={smoduleId} onSucceeded={onClose} />
+      <TransactionForm  onSucceeded={onClose} />
     </Modal>
   );
 }

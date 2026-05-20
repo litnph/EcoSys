@@ -44,8 +44,7 @@ function statusLabel(status: InstallmentStatus): string {
 }
 
 function conversionFeeBadge(
-  status: NonNullable<InstallmentPlan["conversionFeeStatus"]>,
-): { label: string; className: string } {
+  status: NonNullable<InstallmentPlan["conversionFeeStatus"]>): { label: string; className: string } {
   switch (status) {
     case "pending":
       return {
@@ -113,8 +112,7 @@ export function InstallmentPlanCard({
       {...cardHoverMotion}
       className={cn(
         "flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-4 shadow-sm transition",
-        isExpanded ? "border-accent/40 ring-1 ring-accent/15" : "hover:border-warm-300",
-      )}
+        isExpanded ? "border-accent/40 ring-1 ring-accent/15" : "hover:border-warm-300")}
     >
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -143,8 +141,7 @@ export function InstallmentPlanCard({
               <ChevronDown
                 className={cn(
                   "mt-0.5 size-5 shrink-0 text-warm-500 transition-transform",
-                  isExpanded && "rotate-180",
-                )}
+                  isExpanded && "rotate-180")}
                 aria-hidden
               />
             </div>
@@ -165,8 +162,7 @@ export function InstallmentPlanCard({
               size="sm"
               className={cn(
                 "shrink-0 capitalize",
-                statusBadgeClasses(listItem.status),
-              )}
+                statusBadgeClasses(listItem.status))}
             >
               {statusLabel(listItem.status)}
             </Badge>

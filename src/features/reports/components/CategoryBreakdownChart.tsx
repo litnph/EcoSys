@@ -27,8 +27,7 @@ export interface CategoryBreakdownChartProps {
     slice: Pick<CategoryBreakdownItem, "categoryId" | "categoryName"> & {
       year: number;
       month: number;
-    },
-  ) => void;
+    }) => void;
   year: number;
   month: number;
 }

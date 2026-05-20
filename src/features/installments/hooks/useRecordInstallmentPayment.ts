@@ -22,8 +22,7 @@ export function useRecordInstallmentPayment() {
       recordInstallmentPayment(
         args.planId,
         args.installmentNumber,
-        args.paymentSourceId,
-      ),
+        args.paymentSourceId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: installmentKeys.all });
       void qc.invalidateQueries({ queryKey: transactionKeys.lists() });

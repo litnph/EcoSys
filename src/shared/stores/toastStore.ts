@@ -25,8 +25,7 @@ export interface ToastStore {
   toasts: ToastRecord[];
   addToast: (
     toast: Omit<ToastRecord, "id" | "duration"> &
-      Partial<Pick<ToastRecord, "id" | "duration">>,
-  ) => string;
+      Partial<Pick<ToastRecord, "id" | "duration">>) => string;
   removeToast: (id: string) => void;
   clearAll: () => void;
 }
@@ -48,8 +47,7 @@ export const useToastStore = create<ToastStore>((set) => ({
 
     set((s) => ({
       toasts: [...s.toasts.filter((t) => t.id !== id), nextRecord].slice(
-        -MAX_TOASTS,
-      ),
+        -MAX_TOASTS),
     }));
     return id;
   },

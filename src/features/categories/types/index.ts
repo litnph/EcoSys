@@ -1,9 +1,7 @@
 export type CategoryKind = "expense" | "income" | "transfer";
 
 export interface FinCategory {
-  id: string;
-  smoduleId: string;
-  name: string;
+  id: string;  name: string;
   kind: CategoryKind;
   parentId: string | null;
   icon: string | null;

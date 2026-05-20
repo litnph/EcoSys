@@ -94,8 +94,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       ...props
     },
-    ref,
-  ) {
+    ref) {
     const isDisabled = disabled || isLoading;
 
     return (
@@ -115,8 +114,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           sizeClasses(variant, size),
           isLoading && "cursor-wait opacity-70",
           isDisabled && "pointer-events-none",
-          className,
-        )}
+          className)}
         disabled={isDisabled}
         {...props}
       >
@@ -138,7 +136,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         )}
       </motion.button>
     );
-  },
-);
+  });
 
 Button.displayName = "Button";

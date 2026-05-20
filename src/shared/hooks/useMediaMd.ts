@@ -11,6 +11,5 @@ export function useMediaMd(): boolean {
       return () => mq.removeEventListener("change", onStoreChange);
     },
     () => window.matchMedia("(min-width: 768px)").matches,
-    () => false,
-  );
+    () => false);
 }

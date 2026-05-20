@@ -126,8 +126,7 @@ export function RecentTransactionsCard({
                 <p
                   className={cn(
                     "shrink-0 font-mono text-sm font-semibold tabular-nums",
-                    income ? "text-success" : "text-danger",
-                  )}
+                    income ? "text-success" : "text-danger")}
                 >
                   {income ? "+" : "−"}
                   {formatCurrency(tx.amount)}

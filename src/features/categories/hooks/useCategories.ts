@@ -8,17 +8,11 @@ import type { CategoryKind } from "../types";
 
 const STALE_MS = 5 * 60 * 1000;
 
-export function useCategories(
-  smoduleId: string | undefined,
-  kind: CategoryKind | undefined,
-) {
+export function useCategories(kind: CategoryKind | undefined) {
   return useQuery({
-    queryKey:
-      smoduleId && kind
-        ? categoryKeys.tree(smoduleId, kind)
-        : ["categories", "tree", "__"],
-    queryFn: () => getCategories(smoduleId ?? "", kind ?? "expense"),
-    enabled: Boolean(smoduleId && kind),
+    queryKey: kind ? categoryKeys.tree(kind) : ["categories", "tree", "__"],
+    queryFn: () => getCategories(kind ?? "expense"),
+    enabled: Boolean(kind),
     staleTime: STALE_MS,
   });
 }

@@ -34,7 +34,6 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 
 interface RemoteBillingCycleDto {
   id: string;
-  smoduleId: string;
   sourceId: string;
   sourceName: string;
   periodStart: string;
@@ -97,13 +96,10 @@ function mapCycle(row: RemoteBillingCycleDto): BillingCycle {
 
 function mapBillingDetailTxn(
   row: RemoteBillingTxnDto,
-  smoduleId: string,
-  billingCycleId: string,
-): Transaction {
+  billingCycleId: string): Transaction {
   const status: TxnStatus = "completed";
   return {
     id: row.id,
-    smoduleId,
     type: normalizeTxnType(row.type),
     status,
     amount: row.amount,
@@ -121,16 +117,13 @@ function mapBillingDetailTxn(
 }
 
 export async function getBillingCycles(
-  smoduleId: string,
   sourceId?: string,
-  status?: BillingCycleStatus,
-): Promise<BillingCycle[]> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+  status?: BillingCycleStatus): Promise<BillingCycle[]> {
+  const qs = new URLSearchParams();
   if (sourceId) qs.set("source_id", sourceId);
   if (status) qs.set("status", status);
   const envelope = await unwrap<ListEnvelope>(
-    apiClient.get(`/finance/billing-cycles?${qs.toString()}`),
-  );
+    apiClient.get("/finance/billing-cycles"));
   return envelope.items.map(mapCycle);
 }
 
@@ -140,43 +133,36 @@ export interface BillingCycleDetailResult {
 }
 
 export async function getBillingCycleDetail(
-  id: string,
-): Promise<BillingCycleDetailResult> {
+  id: string): Promise<BillingCycleDetailResult> {
   const envelope = await unwrap<DetailEnvelope>(
-    apiClient.get(`/finance/billing-cycles/${id}`),
-  );
+    apiClient.get(`/finance/billing-cycles/${id}`));
   const rawCycle = envelope.detail.cycle;
   const cycle = mapCycle(rawCycle);
-  const smoduleId = rawCycle.smoduleId;
   const transactions = envelope.detail.transactions.map((t) =>
-    mapBillingDetailTxn(t, smoduleId, cycle.id),
+    mapBillingDetailTxn(t, cycle.id),
   );
   return { cycle, transactions };
 }
 
 export async function generateCycle(sourceId: string): Promise<BillingCycle> {
   const envelope = await unwrap<CycleEnvelope>(
-    apiClient.post(`/finance/billing-cycles/generate`, { sourceId }),
-  );
+    apiClient.post(`/finance/billing-cycles/generate`, { sourceId }));
   return mapCycle(envelope.cycle);
 }
 
 export async function closeCycle(id: string): Promise<BillingCycle> {
   const envelope = await unwrap<CycleEnvelope>(
-    apiClient.post(`/finance/billing-cycles/${id}/close`),
-  );
+    apiClient.post(`/finance/billing-cycles/${id}/close`));
   return mapCycle(envelope.cycle);
 }
 
 export async function payCycle(
   id: string,
-  body: PayCyclePayload,
-): Promise<BillingCycle> {
+  body: PayCyclePayload): Promise<BillingCycle> {
   const envelope = await unwrap<CycleEnvelope>(
     apiClient.post(`/finance/billing-cycles/${id}/pay`, {
       paymentSourceId: body.paymentSourceId,
       amount: toApiWholeAmount(body.amount),
-    }),
-  );
+    }));
   return mapCycle(envelope.cycle);
 }

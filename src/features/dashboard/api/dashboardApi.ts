@@ -40,7 +40,6 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 
 interface RemoteSourceDto {
   id: string;
-  smoduleId: string;
   name: string;
   type: string;
   balance: number;
@@ -76,7 +75,6 @@ interface PeriodsEnvelope {
 
 interface TransactionRow {
   id: string;
-  smoduleId: string;
   type: TransactionType;
   status: TxnStatus;
   amount: number;
@@ -110,7 +108,6 @@ interface MonthlyReportEnvelope {
 
 interface BillingCycleRow {
   id: string;
-  smoduleId: string;
   sourceId: string;
   sourceName: string;
   periodStart: string;
@@ -128,7 +125,6 @@ interface BillingCyclesEnvelope {
 
 interface InstallmentPlanSummary {
   id: string;
-  smoduleId: string;
 }
 
 interface InstallmentPlansEnvelope {
@@ -186,7 +182,6 @@ function normalizeSourceSummary(raw: RemoteSourceDto): SourceSummary {
 function mapTransactions(rows: TransactionRow[]): Transaction[] {
   return rows.map((row) => ({
     id: row.id,
-    smoduleId: row.smoduleId,
     type: row.type,
     status: row.status,
     amount: row.amount,
@@ -202,15 +197,12 @@ function mapTransactions(rows: TransactionRow[]): Transaction[] {
   }));
 }
 
-export async function getSummary(smoduleId: string): Promise<DashboardSummary> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
-
+export async function getSummary(): Promise<DashboardSummary> {
   const [sourcesData, currentData, periodsData] = await Promise.all([
-    unwrap<SourcesEnvelope>(apiClient.get(`/finance/sources?${qs.toString()}`)),
+    unwrap<SourcesEnvelope>(apiClient.get("/finance/sources")),
     unwrap<CurrentMonthEnvelope>(
-      apiClient.get(`/finance/monthly-periods/current?${qs.toString()}`),
-    ),
-    unwrap<PeriodsEnvelope>(apiClient.get(`/finance/monthly-periods?${qs.toString()}`)),
+      apiClient.get("/finance/monthly-periods/current")),
+    unwrap<PeriodsEnvelope>(apiClient.get("/finance/monthly-periods")),
   ]);
 
   const netWorth = sourcesData.sources.reduce((sum, s) => sum + s.balance, 0);
@@ -235,40 +227,30 @@ export async function getSummary(smoduleId: string): Promise<DashboardSummary> {
 }
 
 export async function getSourcesSummary(
-  smoduleId: string,
-): Promise<SourceSummary[]> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+  ): Promise<SourceSummary[]> {
   const envelope = await unwrap<SourcesEnvelope>(
-    apiClient.get(`/finance/sources?${qs.toString()}`),
-  );
+    apiClient.get("/finance/sources"));
   return envelope.sources.map(normalizeSourceSummary);
 }
 
 export async function getRecentTransactions(
-  smoduleId: string,
-  limit = 5,
-): Promise<Transaction[]> {
+  limit = 5): Promise<Transaction[]> {
   const qs = new URLSearchParams({
-    smodule_id: smoduleId,
     page: "1",
     page_size: String(limit),
   });
   const data = await unwrap<TransactionsEnvelope>(
-    apiClient.get(`/finance/transactions?${qs.toString()}`),
-  );
+    apiClient.get(`/finance/transactions?${qs.toString()}`));
   return mapTransactions(data.items);
 }
 
 async function fetchInstallmentDueLines(
-  smoduleId: string,
-): Promise<InstallmentPayDue[]> {
+  ): Promise<InstallmentPayDue[]> {
   const listQs = new URLSearchParams({
-    smodule_id: smoduleId,
     status: "active",
   });
   const list = await unwrap<InstallmentPlansEnvelope>(
-    apiClient.get(`/finance/installment-plans?${listQs.toString()}`),
-  );
+    apiClient.get(`/finance/installment-plans?${listQs.toString()}`));
 
   const dues: InstallmentPayDue[] = [];
   const capped = list.items.slice(0, 20);
@@ -276,8 +258,7 @@ async function fetchInstallmentDueLines(
   await Promise.all(
     capped.map(async (p) => {
       const detail = await unwrap<InstallmentPlanDetailEnvelope>(
-        apiClient.get(`/finance/installment-plans/${p.id}`),
-      );
+        apiClient.get(`/finance/installment-plans/${p.id}`));
       const unpaid = detail.plan.pays.filter((pay) => pay.status !== "paid");
       for (const pay of unpaid) {
         const remainingAmount = Math.max(0, pay.amount - pay.paidAmount);
@@ -292,19 +273,15 @@ async function fetchInstallmentDueLines(
           status: pay.status,
         });
       }
-    }),
-  );
+    }));
 
   return dues;
 }
 
 export async function getUpcomingDues(
-  smoduleId: string,
-): Promise<UpcomingDuesPayload> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+  ): Promise<UpcomingDuesPayload> {
   const cyclesData = await unwrap<BillingCyclesEnvelope>(
-    apiClient.get(`/finance/billing-cycles?${qs.toString()}`),
-  );
+    apiClient.get("/finance/billing-cycles"));
 
   const billingCycles: BillingCycleDue[] = [];
   for (const c of cyclesData.items) {
@@ -321,27 +298,22 @@ export async function getUpcomingDues(
     });
   }
 
-  const installmentPays = await fetchInstallmentDueLines(smoduleId);
+  const installmentPays = await fetchInstallmentDueLines();
 
   const sortedCycles = [...billingCycles].sort((a, b) =>
-    a.paymentDueDate.localeCompare(b.paymentDueDate),
-  );
+    a.paymentDueDate.localeCompare(b.paymentDueDate));
   const sortedInstallments = [...installmentPays].sort((a, b) =>
-    a.dueDate.localeCompare(b.dueDate),
-  );
+    a.dueDate.localeCompare(b.dueDate));
 
   return { billingCycles: sortedCycles, installmentPays: sortedInstallments };
 }
 
 export async function getSpendingByCategory(
-  smoduleId: string,
   year: number,
-  month: number,
-): Promise<CategoryBreakdown[]> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+  month: number): Promise<CategoryBreakdown[]> {
   const data = await unwrap<MonthlyReportEnvelope>(
     apiClient.get(
-      `/finance/monthly-periods/${String(year)}/${String(month)}/report?${qs.toString()}`,
+      `/finance/monthly-periods/${String(year)}/${String(month)}/report`,
     ),
   );
 
@@ -366,13 +338,9 @@ export async function getSpendingByCategory(
 }
 
 export async function getMonthlyTrend(
-  smoduleId: string,
-  months = 6,
-): Promise<MonthlyTrendPoint[]> {
-  const qs = new URLSearchParams({ smodule_id: smoduleId });
+  months = 6): Promise<MonthlyTrendPoint[]> {
   const envelope = await unwrap<PeriodsEnvelope>(
-    apiClient.get(`/finance/monthly-periods?${qs.toString()}`),
-  );
+    apiClient.get("/finance/monthly-periods"));
 
   const window = envelope.periods.slice(0, months).reverse();
 

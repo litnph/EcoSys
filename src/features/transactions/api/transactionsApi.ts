@@ -37,7 +37,6 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 
 interface RemoteListItem {
   id: string;
-  smoduleId: string;
   type: string;
   status: string;
   amount: number;
@@ -63,7 +62,6 @@ interface RemoteListEnvelope {
 function mapListItem(row: RemoteListItem): Transaction {
   return {
     id: row.id,
-    smoduleId: row.smoduleId,
     type: normalizeTxnType(row.type),
     status: row.status as TxnStatus,
     amount: row.amount,
@@ -81,7 +79,6 @@ function mapListItem(row: RemoteListItem): Transaction {
 
 interface RemoteDetailDto {
   id: string;
-  smoduleId: string;
   type: string;
   status: string;
   amount: number;
@@ -117,7 +114,6 @@ interface RemoteDetailEnvelope {
 function mapDetailDto(t: RemoteDetailDto): TransactionDetail {
   return {
     id: t.id,
-    smoduleId: t.smoduleId,
     type: normalizeTxnType(t.type),
     status: t.status as TxnStatus,
     amount: t.amount,
@@ -197,7 +193,6 @@ interface RemoteAttachmentsEnvelope {
 
 function buildQueryParams(filters: TransactionFilters): URLSearchParams {
   const qs = new URLSearchParams({
-    smodule_id: filters.smoduleId,
     page: String(filters.page),
     page_size: String(filters.pageSize),
   });
@@ -215,8 +210,7 @@ function buildQueryParams(filters: TransactionFilters): URLSearchParams {
 
 function paginationFromResponse(
   envelope: RemoteListEnvelope,
-  meta?: PaginationMeta | null,
-): Pick<TransactionsPage, "page" | "pageSize" | "totalCount" | "totalPages"> {
+  meta?: PaginationMeta | null): Pick<TransactionsPage, "page" | "pageSize" | "totalCount" | "totalPages"> {
   if (meta) {
     return {
       page: meta.page,
@@ -251,12 +245,10 @@ function serializeTypeForQuery(t: TransactionType): string {
 }
 
 export async function getTransactions(
-  filters: TransactionFilters,
-): Promise<TransactionsPage> {
+  filters: TransactionFilters): Promise<TransactionsPage> {
   const qs = buildQueryParams(filters);
   const { data: body } = await apiClient.get<ApiEnvelope<RemoteListEnvelope>>(
-    `/finance/transactions?${qs.toString()}`,
-  );
+    `/finance/transactions${qs.toString() ? `?${qs.toString()}` : ''}`);
   assertData(body);
   const envelope = body.data;
   const paging = paginationFromResponse(envelope, body.meta ?? null);
@@ -268,17 +260,14 @@ export async function getTransactions(
 
 export async function getTransactionById(id: string): Promise<TransactionDetail> {
   const envelope = await unwrap<RemoteDetailEnvelope>(
-    apiClient.get(`/finance/transactions/${id}`),
-  );
+    apiClient.get(`/finance/transactions/${id}`));
   return mapDetailDto(envelope.transaction);
 }
 
 export async function getTransactionHistory(
-  id: string,
-): Promise<FinTransactionHistory[]> {
+  id: string): Promise<FinTransactionHistory[]> {
   const envelope = await unwrap<RemoteHistoryEnvelope>(
-    apiClient.get(`/finance/transactions/${id}/history`),
-  );
+    apiClient.get(`/finance/transactions/${id}/history`));
   return envelope.items.map((row) => ({
     id: row.id,
     transactionId: row.transactionId,
@@ -294,11 +283,9 @@ export async function getTransactionHistory(
 }
 
 export async function getTransactionAttachments(
-  id: string,
-): Promise<TransactionAttachment[]> {
+  id: string): Promise<TransactionAttachment[]> {
   const envelope = await unwrap<RemoteAttachmentsEnvelope>(
-    apiClient.get(`/finance/transactions/${id}/attachments`),
-  );
+    apiClient.get(`/finance/transactions/${id}/attachments`));
   return envelope.items.map((a) => ({
     id: a.id,
     fileName: a.fileName,
@@ -330,7 +317,6 @@ export interface CreateSplitItemBody {
 }
 
 export interface CreateTransactionBody {
-  smoduleId: string;
   type: CreateTransactionBodyType;
   amount: number;
   sourceId: string;
@@ -352,8 +338,7 @@ interface CreateTransactionEnvelope {
 }
 
 function serializeCreateTransactionBody(
-  body: CreateTransactionBody,
-): CreateTransactionBody {
+  body: CreateTransactionBody): CreateTransactionBody {
   return {
     ...body,
     amount: toApiWholeAmount(body.amount),
@@ -365,11 +350,9 @@ function serializeCreateTransactionBody(
 }
 
 export async function createTransaction(
-  body: CreateTransactionBody,
-): Promise<TransactionDetail> {
+  body: CreateTransactionBody): Promise<TransactionDetail> {
   const envelope = await unwrap<CreateTransactionEnvelope>(
-    apiClient.post("/finance/transactions", serializeCreateTransactionBody(body)),
-  );
+    apiClient.post("/finance/transactions", serializeCreateTransactionBody(body)));
   return mapDetailDto(envelope.transaction);
 }
 
@@ -383,8 +366,7 @@ export type UpdateTransactionPayload = {
 
 export async function updateTransaction(
   id: string,
-  payload: UpdateTransactionPayload,
-): Promise<TransactionDetail> {
+  payload: UpdateTransactionPayload): Promise<TransactionDetail> {
   const { data: body } = await apiClient.put<ApiEnvelope<RemoteDetailEnvelope>>(
     `/finance/transactions/${id}`,
     {
@@ -393,16 +375,14 @@ export async function updateTransaction(
       description: payload.description,
       note: payload.note ?? null,
       monthlyPeriodId: payload.monthlyPeriodId ?? null,
-    },
-  );
+    });
   assertData(body);
   return mapDetailDto(body.data.transaction);
 }
 
 export async function deleteTransaction(
   id: string,
-  reason?: string,
-): Promise<string> {
+  reason?: string): Promise<string> {
   interface DelBody {
     transactionId?: string;
   }
@@ -410,8 +390,7 @@ export async function deleteTransaction(
     `/finance/transactions/${id}`,
     {
       data: reason ? { reason } : undefined,
-    },
-  );
+    });
   assertData(body);
   const tid = body.data.transactionId ?? id;
   return tid;

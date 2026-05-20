@@ -44,8 +44,7 @@ export function Modal({
     (open: boolean) => {
       if (!open) onClose();
     },
-    [onClose],
-  );
+    [onClose]);
 
   return (
     <Dialog.Root open={presence} onOpenChange={handleOpenChange}>
@@ -62,8 +61,7 @@ export function Modal({
                 <motion.div
                   aria-hidden="true"
                   className={cn(
-                    "fixed inset-0 z-[100] bg-warm-900/40 backdrop-blur-sm",
-                  )}
+                    "fixed inset-0 z-[100] bg-warm-900/40 backdrop-blur-sm")}
                   role="presentation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -78,8 +76,7 @@ export function Modal({
                     "-translate-x-1/2 -translate-y-1/2",
                     sizeClass[size],
                     "rounded-card border border-warm-200 bg-surface shadow-lg",
-                    "max-h-[min(90vh,700px)] flex flex-col outline-none focus:outline-none",
-                  )}
+                    "max-h-[min(90vh,700px)] flex flex-col outline-none focus:outline-none")}
                   initial={{ opacity: 0, y: 48 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 32 }}
@@ -107,8 +104,7 @@ export function Modal({
                           "absolute right-4 top-4 rounded-button p-1.5 text-warm-600",
                           "outline-none hover:bg-warm-100 hover:text-warm-900",
                           "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-                          "disabled:pointer-events-none",
-                        )}
+                          "disabled:pointer-events-none")}
                         aria-label="Đóng"
                       >
                         <X className="size-5" aria-hidden />

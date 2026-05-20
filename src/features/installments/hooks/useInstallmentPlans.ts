@@ -6,16 +6,11 @@ import { installmentKeys } from "../api/installmentKeys";
 import { getInstallmentPlans } from "../api/installmentsApi";
 import type { InstallmentStatus } from "../types";
 
-export function useInstallmentPlans(
-  smoduleId: string | undefined,
-  status?: InstallmentStatus,
-) {
+export function useInstallmentPlans(status?: InstallmentStatus) {
   return useQuery({
-    queryKey: smoduleId
-      ? installmentKeys.list(smoduleId, status)
-      : installmentKeys.list("__", status),
-    queryFn: () => getInstallmentPlans(smoduleId ?? "", status),
-    enabled: Boolean(smoduleId && smoduleId.length > 0),
+    queryKey: installmentKeys.list(status),
+    queryFn: () => getInstallmentPlans(status),
+    enabled: true,
     staleTime: 12_000,
   });
 }

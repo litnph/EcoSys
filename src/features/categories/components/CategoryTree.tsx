@@ -12,7 +12,6 @@ import { useCategories } from "../hooks/useCategories";
 import type { CategoryKind, FinCategory } from "../types";
 
 export interface CategoryTreeProps {
-  smoduleId: string | undefined;
   kind: CategoryKind;
   className?: string;
   /** Danh mục gốc — nếu không truyền sẽ gọi API trong component. */
@@ -53,8 +52,7 @@ function CategoryTreeBranch({ node, depth }: CategoryTreeBranchProps) {
         onClick={toggle}
         className={cn(
           "flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-sm text-warm-900 transition-colors hover:bg-warm-100",
-          !hasChildren && "cursor-default hover:bg-transparent",
-        )}
+          !hasChildren && "cursor-default hover:bg-transparent")}
         aria-expanded={hasChildren ? open : undefined}
       >
         <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-warm-500">
@@ -86,16 +84,12 @@ function CategoryTreeBranch({ node, depth }: CategoryTreeBranchProps) {
 }
 
 export function CategoryTree({
-  smoduleId,
   kind,
   className,
   roots: rootsProp,
 }: CategoryTreeProps) {
   const fetchEnabled = rootsProp === undefined;
-  const query = useCategories(
-    fetchEnabled ? smoduleId : undefined,
-    fetchEnabled ? kind : undefined,
-  );
+  const query = useCategories(fetchEnabled ? kind : undefined);
 
   const roots = rootsProp ?? query.data ?? [];
 

@@ -45,7 +45,6 @@ function filterRoots(roots: FinCategory[], qRaw: string): FinCategory[] {
 }
 
 export interface CategorySelectorProps {
-  smoduleId: string | undefined;
   value: string | undefined;
   onChange: (categoryId: string | undefined) => void;
   kind: CategoryKind;
@@ -73,7 +72,6 @@ const itemClass =
   "relative flex cursor-pointer select-none items-center rounded-md px-2 py-2 text-sm outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-warm-100 data-[state=checked]:bg-accent/15";
 
 export function CategorySelector({
-  smoduleId,
   value,
   onChange,
   kind,
@@ -83,16 +81,13 @@ export function CategorySelector({
   className,
 }: CategorySelectorProps) {
   const { data: roots = [], isLoading, isError } = useCategories(
-    smoduleId,
-    kind,
-  );
+    kind);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const filteredRoots = useMemo(
     () => filterRoots(roots, open ? search : ""),
-    [roots, search, open],
-  );
+    [roots, search, open]);
 
   const byId = useMemo(() => flattenLabels(roots), [roots]);
 
@@ -101,7 +96,7 @@ export function CategorySelector({
   const selectValue = value ?? NONE;
 
   const disableControl =
-    disabled || isLoading || isError || !smoduleId || smoduleId.length === 0;
+    disabled || isLoading || isError || false;
 
   return (
     <div className={cn("w-full", className)}>
@@ -124,8 +119,7 @@ export function CategorySelector({
             "disabled:cursor-not-allowed disabled:opacity-60",
             error
               ? "border-danger focus:border-danger focus:ring-danger/30"
-              : "border-warm-200",
-          )}
+              : "border-warm-200")}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "category-selector-error" : undefined}
         >
@@ -145,8 +139,7 @@ export function CategorySelector({
           <SelectPrimitive.Content
             position="popper"
             className={cn(
-              "z-50 max-h-[min(360px,var(--radix-select-content-available-height))] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg",
-            )}
+              "z-50 max-h-[min(360px,var(--radix-select-content-available-height))] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg")}
             sideOffset={4}
           >
             <div

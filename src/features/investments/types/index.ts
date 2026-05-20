@@ -1,7 +1,5 @@
 export interface Investment {
-  id: string;
-  smoduleId: string;
-  name: string;
+  id: string;  name: string;
   type: string;
   currentValue: number;
   totalInvested: number;

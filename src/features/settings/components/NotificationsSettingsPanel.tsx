@@ -25,8 +25,7 @@ function cellKey(eventType: string, ch: NotificationChannelKey) {
 }
 
 function buildMapFromPrefs(
-  data: NotificationPreferencesDto | undefined,
-): Record<string, boolean> {
+  data: NotificationPreferencesDto | undefined): Record<string, boolean> {
   const m: Record<string, boolean> = {};
   for (const ev of NOTIFICATION_MATRIX_EVENTS) {
     for (const ch of CHANNELS) {
@@ -73,8 +72,7 @@ export function NotificationsSettingsPanel() {
         eventType: ev.eventType,
         channel: ch.key,
         enabled: map[cellKey(ev.eventType, ch.key)] ?? true,
-      })),
-    );
+      })));
     save.mutate(
       { cells },
       {
@@ -86,8 +84,7 @@ export function NotificationsSettingsPanel() {
             savedTimer.current = null;
           }, 2200);
         },
-      },
-    );
+      });
   };
 
   return (
@@ -135,14 +132,12 @@ export function NotificationsSettingsPanel() {
                               "relative h-6 w-11 cursor-pointer rounded-full border-2 border-transparent",
                               "bg-warm-200 transition-colors outline-none",
                               "data-[state=checked]:bg-accent",
-                              "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-                            )}
+                              "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2")}
                           >
                             <Switch.Thumb
                               className={cn(
                                 "pointer-events-none block size-5 translate-x-0.5 rounded-full bg-white shadow-sm transition-transform",
-                                "data-[state=checked]:translate-x-[1.35rem]",
-                              )}
+                                "data-[state=checked]:translate-x-[1.35rem]")}
                             />
                           </Switch.Root>
                         </div>

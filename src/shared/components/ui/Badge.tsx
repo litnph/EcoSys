@@ -40,8 +40,7 @@ export function Badge({
         "inline-flex items-center justify-center whitespace-nowrap font-medium tabular-nums",
         variantClasses[variant],
         sizeClasses[size],
-        className,
-      )}
+        className)}
       {...props}
     />
   );

@@ -21,8 +21,6 @@ import type { FinSource } from "@/features/sources/types";
 import { useSources } from "@/features/sources/hooks";
 
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
-import { MissingFinanceModule } from "@/shared/components/finance/MissingFinanceModule";
-import { useFinanceSmoduleId } from "@/shared/hooks/useFinanceSmoduleId";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { cn } from "@/shared/lib/utils";
@@ -31,8 +29,7 @@ import { staggerChildren, staggerItem } from "@/shared/lib/animations";
 function paymentSourceOptions(sources: FinSource[] | undefined): FinSource[] {
   return (sources ?? []).filter(
     (s) =>
-      s.type === "bankAccount" || s.type === "cash" || s.type === "eWallet",
-  );
+      s.type === "bankAccount" || s.type === "cash" || s.type === "eWallet");
 }
 
 const statusTabsClass =
@@ -41,46 +38,36 @@ const statusTabsClass =
 const statusTriggerClass = cn(
   "shrink-0 rounded-md px-3 py-2 font-medium transition outline-none whitespace-nowrap",
   "data-[state=active]:bg-surface data-[state=active]:text-warm-900 data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-warm-500 hover:text-warm-800",
-);
+  "data-[state=inactive]:text-warm-500 hover:text-warm-800");
 
 export default function DebtPage() {
-  const smoduleId = useFinanceSmoduleId();
-  const missingModule = smoduleId.length === 0;
-
   const [directionTab, setDirectionTab] = React.useState<DebtDirection>("borrowed");
   const [statusFilter, setStatusFilter] = React.useState<DebtStatus>("active");
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [payRecord, setPayRecord] = React.useState<DebtRecordListItem | null>(null);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
-  const summaryQ = useDebtSummary(missingModule ? undefined : smoduleId, {
-    enabled: !missingModule,
+  const summaryQ = useDebtSummary( {
+      });
+
+  const borrowedActiveQ = useDebtRecords( "borrowed", {
+        status: "active",
+  });
+  const lentActiveQ = useDebtRecords( "lent", {
+        status: "active",
   });
 
-  const borrowedActiveQ = useDebtRecords(missingModule ? undefined : smoduleId, "borrowed", {
-    enabled: !missingModule,
-    status: "active",
-  });
-  const lentActiveQ = useDebtRecords(missingModule ? undefined : smoduleId, "lent", {
-    enabled: !missingModule,
-    status: "active",
-  });
-
-  const listQ = useDebtRecords(missingModule ? undefined : smoduleId, directionTab, {
-    enabled: !missingModule,
-    status: statusFilter,
+  const listQ = useDebtRecords( directionTab, {
+        status: statusFilter,
   });
 
   const detailQ = useDebtRecordDetail(expandedId ?? undefined, {
-    enabled: Boolean(!missingModule && expandedId),
-  });
+      });
 
-  const { data: sources } = useSources(missingModule ? undefined : smoduleId);
+  const { data: sources } = useSources();
   const paySources = React.useMemo(
     () => paymentSourceOptions(sources),
-    [sources],
-  );
+    [sources]);
 
   const delM = useDeleteDebtRecord();
 
@@ -93,8 +80,7 @@ export default function DebtPage() {
       const row = listQ.data?.find((x) => x.id === id);
       if (row) setPayRecord(row);
     },
-    [listQ.data],
-  );
+    [listQ.data]);
 
   const deleteDebt = React.useCallback(
     (id: string) => {
@@ -108,8 +94,7 @@ export default function DebtPage() {
         }
       })();
     },
-    [delM],
-  );
+    [delM]);
 
   const summaryCurrency =
     borrowedActiveQ.data?.[0]?.currency ??
@@ -121,12 +106,10 @@ export default function DebtPage() {
     "mt-6 flex gap-1 overflow-x-auto rounded-button border p-1 text-sm",
     directionTab === "borrowed"
       ? "border-danger/25 bg-danger/5"
-      : "border-success/25 bg-success/5",
-  );
+      : "border-success/25 bg-success/5");
 
   const directionTriggerBase = cn(
-    "shrink-0 rounded-md px-4 py-2.5 font-medium transition outline-none whitespace-nowrap",
-  );
+    "shrink-0 rounded-md px-4 py-2.5 font-medium transition outline-none whitespace-nowrap");
 
   return (
     <div className="w-full max-w-[1400px] pb-24 md:pb-8">
@@ -135,9 +118,7 @@ export default function DebtPage() {
         description="Theo dõi khoản bạn đang nợ và khoản bạn cho mượn. Tạo khoản mới từ giao dịch trong form giao dịch."
       />
 
-      {missingModule ? (
-        <MissingFinanceModule />
-      ) : (
+      {(
         <>
           <div className="mt-6">
             {summaryQ.isLoading ? (
@@ -170,8 +151,7 @@ export default function DebtPage() {
                 className={cn(
                   directionTriggerBase,
                   "data-[state=active]:bg-danger/15 data-[state=active]:text-danger data-[state=active]:shadow-sm",
-                  "data-[state=inactive]:text-warm-600 data-[state=inactive]:hover:text-danger",
-                )}
+                  "data-[state=inactive]:text-warm-600 data-[state=inactive]:hover:text-danger")}
               >
                 Tôi đang nợ
               </Tabs.Trigger>
@@ -180,8 +160,7 @@ export default function DebtPage() {
                 className={cn(
                   directionTriggerBase,
                   "data-[state=active]:bg-success/15 data-[state=active]:text-success data-[state=active]:shadow-sm",
-                  "data-[state=inactive]:text-warm-600 data-[state=inactive]:hover:text-success",
-                )}
+                  "data-[state=inactive]:text-warm-600 data-[state=inactive]:hover:text-success")}
               >
                 Người khác nợ tôi
               </Tabs.Trigger>
@@ -258,7 +237,7 @@ export default function DebtPage() {
       )}
 
       <DebtPaymentModal
-        smoduleId={smoduleId}
+        
         record={payRecord}
         paymentSources={paySources}
         isOpen={payRecord !== null}

@@ -12,7 +12,6 @@ import type { MonthlyPeriodStatus } from "../types";
 import { CloseMonthConfirmModal } from "./CloseMonthConfirmModal";
 
 export interface CloseMonthSectionProps {
-  smoduleId: string | undefined;
   year: number;
   month: number;
   status: MonthlyPeriodStatus;
@@ -21,7 +20,6 @@ export interface CloseMonthSectionProps {
 }
 
 export function CloseMonthSection({
-  smoduleId,
   year,
   month,
   status,
@@ -31,16 +29,13 @@ export function CloseMonthSection({
   const [modalOpen, setModalOpen] = useState(false);
   const blockers = useMemo(
     () => billingCyclesBlockingCloseMonth(year, month, billingCycles ?? []),
-    [billingCycles, month, year],
-  );
+    [billingCycles, month, year]);
 
   const uniqueNames = useMemo(
     () =>
       Array.from(new Set(blockers.map((b) => b.sourceName))).sort((a, b) =>
-        a.localeCompare(b),
-      ),
-    [blockers],
-  );
+        a.localeCompare(b)),
+    [blockers]);
 
   if (status === "closed") {
     return (
@@ -78,11 +73,7 @@ export function CloseMonthSection({
           <Button
             type="button"
             className="shrink-0"
-            disabled={
-              disabledClosing ||
-              isCyclesLoading ||
-              !smoduleId?.trim()?.length
-            }
+            disabled={disabledClosing || isCyclesLoading}
             leftIcon={<Lock className="size-4" aria-hidden />}
             onClick={() => setModalOpen(true)}
           >
@@ -109,7 +100,7 @@ export function CloseMonthSection({
       </section>
 
       <CloseMonthConfirmModal
-        smoduleId={smoduleId}
+        
         year={year}
         month={month}
         open={modalOpen}

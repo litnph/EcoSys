@@ -10,7 +10,7 @@ import { useToastStore } from "@/shared/stores/toastStore";
 import { createTransaction, type CreateTransactionBody } from "../api/transactionsApi";
 import { transactionKeys } from "../api/transactionKeys";
 
-export function useCreateTransaction(smoduleId: string | undefined) {
+export function useCreateTransaction() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
 
@@ -21,11 +21,8 @@ export function useCreateTransaction(smoduleId: string | undefined) {
       void qc.invalidateQueries({ queryKey: transactionKeys.all });
       void qc.invalidateQueries({ queryKey: debtKeys.all });
       void qc.invalidateQueries({ queryKey: sourceKeys.lists() });
-      if (smoduleId && smoduleId.length > 0) {
-        void qc.invalidateQueries({
-          queryKey: dashboardKeys.summary(smoduleId),
-        });
-      }
+      void qc.invalidateQueries({ queryKey: dashboardKeys.summary() });
+      void qc.invalidateQueries({ queryKey: dashboardKeys.all });
       addToast({
         type: "success",
         title: "Đã tạo giao dịch",

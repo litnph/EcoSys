@@ -21,8 +21,7 @@ import { useCreateInstallmentPlan } from "../hooks/useCreateInstallmentPlan";
 
 const selectClassName = cn(
   "h-10 w-full rounded-button border border-warm-200 bg-warm-50 px-3 text-sm text-warm-900",
-  "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-);
+  "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30");
 
 function splitSchedule(total: number, months: number): {
   monthlyShare: number;
@@ -34,13 +33,12 @@ function splitSchedule(total: number, months: number): {
   return { monthlyShare, lastShare };
 }
 
-async function fetchBlockedOriginalTxnIds(smoduleId: string): Promise<
+async function fetchBlockedOriginalTxnIds(): Promise<
   Set<string>
 > {
-  const active = await getInstallmentPlans(smoduleId, "active");
+  const active = await getInstallmentPlans( "active");
   const details = await Promise.all(
-    active.map((p) => getInstallmentPlanDetail(p.id)),
-  );
+    active.map((p) => getInstallmentPlanDetail(p.id)));
   const set = new Set<string>();
   for (const d of details) {
     set.add(d.originalTxnId);
@@ -49,14 +47,12 @@ async function fetchBlockedOriginalTxnIds(smoduleId: string): Promise<
 }
 
 export interface CreateInstallmentPlanModalProps {
-  smoduleId: string;
   sources: FinSource[] | undefined;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export function CreateInstallmentPlanModal({
-  smoduleId,
   sources,
   isOpen,
   onClose,
@@ -71,8 +67,7 @@ export function CreateInstallmentPlanModal({
   const sourceFingerprint = (sources ?? [])
     .map(
       (s) =>
-        `${s.id}:${s.type}:${String(s.minInstallmentAmt ?? "")}`,
-    )
+        `${s.id}:${s.type}:${String(s.minInstallmentAmt ?? "")}`)
     .sort()
     .join("|");
 
@@ -80,15 +75,13 @@ export function CreateInstallmentPlanModal({
     queryKey: [
       ...installmentKeys.all,
       "eligible-deferred",
-      smoduleId,
       sourceFingerprint,
     ] as const,
     queryFn: async (): Promise<Transaction[]> => {
       const map = new Map<string, FinSource>();
       for (const s of sources ?? []) map.set(s.id, s);
-      const blocked = await fetchBlockedOriginalTxnIds(smoduleId);
+      const blocked = await fetchBlockedOriginalTxnIds();
       const page = await getTransactions({
-        smoduleId,
         type: "deferred",
         page: 1,
         pageSize: 100,
@@ -106,7 +99,7 @@ export function CreateInstallmentPlanModal({
         return true;
       });
     },
-    enabled: isOpen && smoduleId.length > 0 && (sources?.length ?? 0) > 0,
+    enabled: isOpen && (sources?.length ?? 0) > 0,
     staleTime: 20_000,
   });
 
@@ -239,14 +232,12 @@ export function CreateInstallmentPlanModal({
             onClick={() => setZeroInterest(!zeroInterest)}
             className={cn(
               "relative h-8 w-14 shrink-0 rounded-full transition-colors",
-              zeroInterest ? "bg-accent" : "bg-warm-300",
-            )}
+              zeroInterest ? "bg-accent" : "bg-warm-300")}
           >
             <span
               className={cn(
                 "absolute top-1 left-1 block size-6 rounded-full bg-surface shadow transition-transform",
-                zeroInterest && "translate-x-6",
-              )}
+                zeroInterest && "translate-x-6")}
             />
           </button>
         </div>

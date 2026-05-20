@@ -42,8 +42,7 @@ export function SettingsSectionLayout({ children }: SettingsSectionLayoutProps) 
           aria-label={t("sectionsNav")}
           className={cn(
             "flex shrink-0 gap-1 overflow-x-auto rounded-card border border-warm-200 bg-surface p-1",
-            "lg:w-52 lg:flex-col lg:overflow-visible",
-          )}
+            "lg:w-52 lg:flex-col lg:overflow-visible")}
         >
           {TABS.map(({ href, labelKey }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -56,8 +55,7 @@ export function SettingsSectionLayout({ children }: SettingsSectionLayoutProps) 
                   "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
                   active
                     ? "bg-accent/15 text-warm-900"
-                    : "text-warm-600 hover:bg-warm-100 hover:text-warm-900",
-                )}
+                    : "text-warm-600 hover:bg-warm-100 hover:text-warm-900")}
               >
                 {t(labelKey)}
               </Link>

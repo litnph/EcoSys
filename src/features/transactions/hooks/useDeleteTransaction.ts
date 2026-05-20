@@ -15,7 +15,6 @@ import type { TransactionsPage } from "../types";
 export type DeleteTransactionVariables = {
   id: string;
   reason?: string;
-  smoduleId?: string | null;
 };
 
 type InfiniteTxnCache = InfiniteData<TransactionsPage>;
@@ -45,8 +44,7 @@ export function useDeleteTransaction() {
               items: page.items.filter((t) => t.id !== variables.id),
             })),
           };
-        },
-      );
+        });
 
       return { previousInfinite };
     },
@@ -76,13 +74,8 @@ export function useDeleteTransaction() {
 
       void qc.invalidateQueries({ queryKey: sourceKeys.lists() });
 
-      const sid = variables.smoduleId?.trim();
-      if (sid) {
-        void qc.invalidateQueries({ queryKey: dashboardKeys.summary(sid) });
-        void qc.invalidateQueries({
-          queryKey: [...dashboardKeys.all, "recentTransactions", sid],
-        });
-      }
+      void qc.invalidateQueries({ queryKey: dashboardKeys.summary() });
+      void qc.invalidateQueries({ queryKey: dashboardKeys.all });
 
       addToast({
         type: "success",
