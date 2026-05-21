@@ -5,7 +5,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { formatCurrency, formatPercentage } from "@/shared/lib/formatters";
-import { slideUp } from "@/shared/lib/animations";
+import { cardSlideUpMotion } from "@/shared/lib/animations";
 
 import type { CategoryBreakdown } from "../types";
 
@@ -41,7 +41,7 @@ export function SpendingPieChart({ data, isLoading }: SpendingPieChartProps) {
   if (isLoading || data === undefined) {
     return (
       <motion.article
-        variants={slideUp}
+        {...cardSlideUpMotion}
         className="flex flex-col rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
       >
         <SkeletonText className="mb-6 h-6 w-2/5" />
@@ -62,7 +62,7 @@ export function SpendingPieChart({ data, isLoading }: SpendingPieChartProps) {
 
   return (
     <motion.article
-      variants={slideUp}
+      {...cardSlideUpMotion}
       className="flex flex-col rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
     >
       <h3 className="mb-5 font-display text-base font-semibold text-warm-900">

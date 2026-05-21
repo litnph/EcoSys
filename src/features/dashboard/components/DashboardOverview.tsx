@@ -3,13 +3,11 @@
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
-import { staggerChildren } from "@/shared/lib/animations";
 
 
 import {
@@ -65,20 +63,7 @@ export function DashboardOverview() {
   return (
     <div className="w-full max-w-[1400px]">
       <PageHeader title={t("title")} description={t("description")} />
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="dashboard"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <motion.div
-              variants={staggerChildren}
-              initial="initial"
-              animate="animate"
-              className="grid grid-cols-1 gap-4 md:auto-rows-fr md:grid-cols-2 md:gap-6 xl:grid-cols-3"
-            >
+      <div className="grid grid-cols-1 gap-4 md:auto-rows-fr md:grid-cols-2 md:gap-6 xl:grid-cols-3">
               <ErrorBoundary fallbackTitle="Không tải được tài sản ròng">
                 <div className="md:col-span-2 xl:col-span-2">
                   <NetWorthCard
@@ -139,9 +124,7 @@ export function DashboardOverview() {
                   />
                 </div>
               </ErrorBoundary>
-            </motion.div>
-          </motion.div>
-      </AnimatePresence>
+      </div>
     </div>
   );
 }

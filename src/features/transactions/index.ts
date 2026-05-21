@@ -30,7 +30,6 @@ export {
   TransactionItem,
   TransactionFilters,
   TransactionDetailDrawer,
-  ResponsiveTransactionFormShell,
 } from "./components";
 export {
   defaultTransactionFilterState,

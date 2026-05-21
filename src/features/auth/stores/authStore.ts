@@ -19,6 +19,17 @@ export interface AuthStore {
   updateUser: (user: UserDto) => void;
 }
 
+function readStoredAccessToken(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  try {
+    return window.localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
 function persistTokens(accessToken: string, refreshToken: string): void {
   if (typeof window === "undefined") {
     return;
@@ -43,10 +54,12 @@ function clearStoredTokens(): void {
   }
 }
 
+const storedAccess = readStoredAccessToken();
+
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
-  accessToken: null,
-  isAuthenticated: false,
+  accessToken: storedAccess,
+  isAuthenticated: Boolean(storedAccess),
   setAuth: (user, accessToken, refreshToken) => {
     persistTokens(accessToken, refreshToken);
     setAuthCookies(accessToken, refreshToken);
@@ -71,19 +84,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
     set({ user: null, accessToken: null, isAuthenticated: false });
   },
   hydrateFromStorage: () => {
-    if (typeof window === "undefined") {
+    const access = readStoredAccessToken();
+    if (access) {
+      set({ accessToken: access, isAuthenticated: true });
       return;
     }
-    try {
-      const access = window.localStorage.getItem(TOKEN_KEY);
-      if (access) {
-        set({ accessToken: access, isAuthenticated: true });
-        return;
-      }
-      set({ accessToken: null, isAuthenticated: false, user: null });
-    } catch {
-      set({ accessToken: null, isAuthenticated: false, user: null });
-    }
+    set({ accessToken: null, isAuthenticated: false, user: null });
   },
   updateUser: (user) => set({ user }),
 }));

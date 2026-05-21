@@ -53,26 +53,13 @@
     "savings": "Savings",
     "investments": "Investments",
     "tags": "Tags",
-    "automation": "Automation",
-    "notifications": "Notifications",
     "members": "Members",
     "settings": "Settings",
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
     "expand": "Expand",
     "collapse": "Collapse",
-    "mainNav": "Main navigation",
-    "mobileMenuTitle": "Menu",
-    "mobileNavAria": "Mobile navigation"
-  },
-  "mobileNav": {
-    "expense": "Expense",
-    "expenseDesc": "Record a purchase or bill payment",
-    "income": "Income",
-    "incomeDesc": "Record salary, refund, or other inflow",
-    "transfer": "Transfer",
-    "transferDesc": "Move money between your sources",
-    "add": "Add"
+    "mainNav": "Main navigation"
   },
   "settings": {
     "title": "Settings",
@@ -307,11 +294,6 @@
     "changePassword": "Change password",
     "sessions": "Sessions",
     "twoFactor": "Two-factor authentication"
-  },
-  "notifications": {
-    "title": "Notifications",
-    "emailDigest": "Email digest",
-    "push": "Push notifications"
   },
   "changeEmail": {
     "title": "Change email",

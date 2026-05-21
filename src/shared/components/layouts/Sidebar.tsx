@@ -6,7 +6,6 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import {
   ArrowLeftRight,
   BarChart2,
-  Bell,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -20,7 +19,6 @@ import {
   TrendingUp,
   Users,
   Wallet,
-  Zap,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -43,8 +41,6 @@ export type SidebarNavItem = {
     | "savings"
     | "investments"
     | "tags"
-    | "automation"
-    | "notifications"
     | "members"
     | "settings";
   icon: LucideIcon;
@@ -63,8 +59,6 @@ const NAV_ITEM_DEFS: SidebarNavItem[] = [
   { href: ROUTES.dashboard.savings, labelKey: "savings", icon: PiggyBank },
   { href: ROUTES.dashboard.investments, labelKey: "investments", icon: TrendingUp },
   { href: ROUTES.dashboard.tags, labelKey: "tags", icon: Tags },
-  { href: ROUTES.dashboard.automation, labelKey: "automation", icon: Zap },
-  { href: ROUTES.dashboard.notifications, labelKey: "notifications", icon: Bell },
   {
     href: ROUTES.dashboard.settingsMembers,
     labelKey: "members",
@@ -105,7 +99,7 @@ export function Sidebar({
           height: `calc(100dvh - ${String(bannerInsetPx)}px)`,
         }}
         className={cn(
-          "fixed left-0 z-30 hidden shrink-0 flex-col border-r border-warm-200 bg-warm-25 transition-[width] duration-200 ease-out md:flex",
+          "fixed left-0 z-30 flex shrink-0 flex-col border-r border-warm-200 bg-warm-25 transition-[width] duration-200 ease-out",
           collapsed ? "w-16" : "w-[240px]")}
         aria-label={t("mainNav")}
       >
@@ -116,6 +110,7 @@ export function Sidebar({
             const content = (
               <Link
                 href={href}
+                prefetch
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-warm-600 transition-colors",
                   "hover:bg-warm-100 hover:text-warm-900",

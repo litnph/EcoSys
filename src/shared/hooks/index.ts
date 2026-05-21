@@ -1,1 +1,0 @@
-export { useMediaMd } from "./useMediaMd";

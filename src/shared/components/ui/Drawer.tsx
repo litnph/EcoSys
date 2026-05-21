@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import * as React from "react";
 
-import { useMediaMd } from "@/shared/hooks/useMediaMd";
 import { cn } from "@/shared/lib/utils";
 
 export interface DrawerSide {
@@ -30,7 +29,7 @@ const sizeClassDesktop: Record<NonNullable<DrawerProps["size"]>, string> = {
   full: "w-[95vw] max-w-4xl",
 };
 
-/** `side="right"` → bottom sheet on narrow viewports; right pane from md up. `side="bottom"` → always bottom. */
+/** Panel slides in from `side` (desktop layout). */
 export function Drawer({
   side,
   isOpen,
@@ -40,9 +39,7 @@ export function Drawer({
   size = "md",
   children,
 }: DrawerProps) {
-  const mdUp = useMediaMd();
-  const effectiveSide: "bottom" | "right" =
-    side === "bottom" ? "bottom" : mdUp ? "right" : "bottom";
+  const effectiveSide = side;
 
   const [presence, setPresence] = React.useState(isOpen);
 
@@ -108,7 +105,7 @@ export function Drawer({
                     effectiveSide === "bottom" &&
                       cn(
                         "inset-x-0 bottom-0 max-h-[min(92vh,900px)] w-full rounded-t-card",
-                        "pb-[max(1rem,env(safe-area-inset-bottom))] pt-0"),
+                        "pb-4 pt-0"),
                     effectiveSide === "right" &&
                       cn(
                         "inset-y-0 right-0 rounded-l-card",

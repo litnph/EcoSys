@@ -8,7 +8,7 @@ import { Badge } from "@/shared/components/ui/Badge";
 import { AnimatedAmount } from "@/shared/components/ui/AnimatedAmount";
 import { SkeletonTitle, SkeletonText } from "@/shared/components/ui/Skeleton";
 import { formatCurrency, formatPercentage } from "@/shared/lib/formatters";
-import { slideUp } from "@/shared/lib/animations";
+import { cardSlideUpMotion } from "@/shared/lib/animations";
 
 import type { DashboardSummary } from "../types";
 
@@ -33,7 +33,7 @@ export function NetWorthCard({ summary, isLoading }: NetWorthCardProps) {
   if (isLoading || summary === undefined) {
     return (
       <motion.article
-        variants={slideUp}
+        {...cardSlideUpMotion}
         className="flex flex-col gap-6 rounded-card border border-warm-200 bg-surface p-5 shadow-sm md:p-6"
       >
         <div>
@@ -50,7 +50,7 @@ export function NetWorthCard({ summary, isLoading }: NetWorthCardProps) {
 
   return (
     <motion.article
-      variants={slideUp}
+      {...cardSlideUpMotion}
       className="flex flex-col justify-between gap-6 rounded-card border border-warm-200 bg-gradient-to-br from-surface to-warm-25 p-5 shadow-md md:p-7"
     >
       <header className="flex flex-wrap items-start justify-between gap-3">

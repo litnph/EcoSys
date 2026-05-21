@@ -1,7 +1,4 @@
 export { DashboardLayout, type DashboardLayoutProps } from "./DashboardLayout";
-export {
-  MobileNav,
-} from "./MobileNav";
 export { PageHeader, type PageHeaderProps } from "./PageHeader";
 export {
   Sidebar,

@@ -26,7 +26,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { cn } from "@/shared/lib/utils";
-import { staggerChildren, staggerItem } from "@/shared/lib/animations";
+import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 
 const tabListClass =
   "flex gap-1 overflow-x-auto rounded-button border border-warm-200 bg-warm-50 p-1 text-sm";
@@ -109,7 +109,7 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="w-full max-w-[1400px] pb-24 md:pb-8">
+    <div className="w-full max-w-[1400px] pb-8">
       <PageHeader
         title="Kỳ sao kê thẻ"
         description="Theo dõi kỳ hoạch toán, đóng sao kê và thanh toán cho từng thẻ tín dụng."
@@ -172,14 +172,12 @@ export default function BillingPage() {
                   {cyclesQ.isLoading ? (
                     <motion.div
                       className="grid grid-cols-1 gap-4 md:grid-cols-2"
-                      variants={staggerChildren}
-                      initial="initial"
-                      animate="animate"
+                      {...listStaggerMotion}
                     >
-                      <motion.div variants={staggerItem}>
+                      <motion.div {...listStaggerItemMotion}>
                         <SkeletonCard lines={3} />
                       </motion.div>
-                      <motion.div variants={staggerItem}>
+                      <motion.div {...listStaggerItemMotion}>
                         <SkeletonCard lines={3} />
                       </motion.div>
                     </motion.div>
@@ -196,12 +194,10 @@ export default function BillingPage() {
                   ) : (
                     <motion.div
                       className="grid grid-cols-1 gap-4 md:grid-cols-2"
-                      variants={staggerChildren}
-                      initial="initial"
-                      animate="animate"
+                      {...listStaggerMotion}
                     >
                       {sortedCycles.map((c) => (
-                        <motion.div key={c.id} variants={staggerItem}>
+                        <motion.div key={c.id} {...listStaggerItemMotion}>
                           <BillingCycleCard
                             cycle={c}
                             currency={card.currency}

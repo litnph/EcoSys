@@ -13,10 +13,7 @@ const PATH_META: Record<string, string> = {
   [ROUTES.dashboard.savings]: "Tiết kiệm",
   [ROUTES.dashboard.investments]: "Đầu tư",
   [ROUTES.dashboard.tags]: "Thẻ",
-  [ROUTES.dashboard.automation]: "Tự động hóa",
-  [ROUTES.dashboard.notifications]: "Thông báo",
   [ROUTES.dashboard.settings]: "Settings",
-  [ROUTES.dashboard.settingsPrivacy]: "Quyền riêng tư",
   [ROUTES.dashboard.settingsMembers]: "Thành viên",
 };
 

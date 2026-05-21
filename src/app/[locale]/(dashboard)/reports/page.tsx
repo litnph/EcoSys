@@ -72,7 +72,7 @@ export default function ReportsPage() {
     [router]);
 
   return (
-    <div className="w-full max-w-[1400px] pb-24 md:pb-8">
+    <div className="w-full max-w-[1400px] pb-8">
       <PageHeader
         title="Báo cáo tháng"
         description="Tổng quan thu chi theo danh mục, dòng tiền hằng ngày và chốt sổ tháng."

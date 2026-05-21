@@ -9,7 +9,7 @@ import { Drawer } from "@/shared/components/ui/Drawer";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
-import { staggerChildren, staggerItem } from "@/shared/lib/animations";
+import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 
 import { useBillingCycleDetail } from "../hooks/useBillingCycles";
 
@@ -93,13 +93,11 @@ export function BillingCycleDetail({
                 <p className="text-sm text-warm-500">Chưa có giao dịch.</p>
               ) : (
                 <motion.div
-                  variants={staggerChildren}
-                  initial="initial"
-                  animate="animate"
+                  {...listStaggerMotion}
                   className="flex flex-col gap-2"
                 >
                   {detailQ.data.transactions.map((tx) => (
-                    <motion.div key={tx.id} variants={staggerItem}>
+                    <motion.div key={tx.id} {...listStaggerItemMotion}>
                       <TransactionItem
                         transaction={tx}
                         onOpen={onOpenTransaction}

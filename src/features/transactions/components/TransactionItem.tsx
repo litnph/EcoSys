@@ -3,7 +3,6 @@
 import { Trash2 } from "lucide-react";
 import * as React from "react";
 
-import { useMediaMd } from "@/shared/hooks/useMediaMd";
 import { cn } from "@/shared/lib/utils";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 
@@ -31,8 +30,7 @@ function TransactionItemInner({
   onOpen,
   onDelete,
 }: TransactionItemProps) {
-  const mdUp = useMediaMd();
-  const swipeEnabled = !mdUp && onDelete != null;
+  const swipeEnabled = false;
 
   const pointerId = React.useRef<number | null>(null);
   const startX = React.useRef(0);

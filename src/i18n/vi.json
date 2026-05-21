@@ -53,27 +53,13 @@
     "savings": "Tiết kiệm",
     "investments": "Đầu tư",
     "tags": "Thẻ",
-    "automation": "Tự động hóa",
-    "notifications": "Thông báo",
     "members": "Thành viên",
     "settings": "Cài đặt",
     "expandSidebar": "Mở rộng sidebar",
     "collapseSidebar": "Thu gọn sidebar",
     "expand": "Mở rộng",
     "collapse": "Thu gọn",
-    "mainNav": "Điều hướng chính",
-    "mobileMenuTitle": "Menu",
-    "mobileFullMenu": "Menu đầy đủ",
-    "mobileNavAria": "Điều hướng mobile"
-  },
-  "mobileNav": {
-    "expense": "Chi tiêu",
-    "expenseDesc": "Ghi nhận mua sắm hoặc thanh toán hóa đơn",
-    "income": "Thu nhập",
-    "incomeDesc": "Ghi nhận lương, hoàn tiền hoặc dòng tiền vào",
-    "transfer": "Chuyển khoản",
-    "transferDesc": "Chuyển tiền giữa các nguồn",
-    "add": "Thêm"
+    "mainNav": "Điều hướng chính"
   },
   "settings": {
     "title": "Cài đặt",
@@ -308,11 +294,6 @@
     "changePassword": "Đổi mật khẩu",
     "sessions": "Phiên đăng nhập",
     "twoFactor": "Xác thực hai lớp"
-  },
-  "notifications": {
-    "title": "Thông báo",
-    "emailDigest": "Tóm tắt qua email",
-    "push": "Thông báo đẩy"
   },
   "changeEmail": {
     "title": "Đổi email",

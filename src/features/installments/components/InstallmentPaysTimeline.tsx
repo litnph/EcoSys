@@ -7,7 +7,7 @@ import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { cn } from "@/shared/lib/utils";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
-import { staggerChildren, staggerItem } from "@/shared/lib/animations";
+import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 
 import type { InstallmentPay, InstallmentPayLineStatus } from "../types";
 
@@ -59,9 +59,7 @@ export function InstallmentPaysTimeline({
         aria-hidden
       />
       <motion.ul
-        variants={staggerChildren}
-        initial="initial"
-        animate="animate"
+        {...listStaggerMotion}
         className="flex flex-col gap-4"
       >
         {sorted.map((pay) => {
@@ -72,7 +70,7 @@ export function InstallmentPaysTimeline({
             typeof onPay === "function";
 
           return (
-            <motion.li key={pay.id} variants={staggerItem} className="relative">
+            <motion.li key={pay.id} {...listStaggerItemMotion} className="relative">
               <div
                 className={cn(
                   "absolute -left-6 top-3 size-3 rounded-full border-2 bg-surface",

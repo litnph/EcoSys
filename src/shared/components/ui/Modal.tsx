@@ -70,51 +70,57 @@ export function Modal({
                 />
               </Dialog.Overlay>
               <Dialog.Content key="modal-content" asChild forceMount>
-                <motion.div
+                <div
                   className={cn(
-                    "fixed left-[50%] top-[50%] z-[101] w-[calc(100%-2rem)]",
-                    "-translate-x-1/2 -translate-y-1/2",
-                    sizeClass[size],
-                    "rounded-card border border-warm-200 bg-surface shadow-lg",
-                    "max-h-[min(90vh,700px)] flex flex-col outline-none focus:outline-none")}
-                  initial={{ opacity: 0, y: 48 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 32 }}
-                  transition={{ type: "spring", damping: 28, stiffness: 320 }}
+                    "fixed top-0 right-0 bottom-0 z-[101] flex items-center justify-center p-4",
+                    "outline-none focus:outline-none")}
+                  style={{ left: "var(--dashboard-sidebar, 0px)" }}
                 >
-                  <div className="flex shrink-0 items-start justify-between gap-3 border-b border-warm-200 px-6 py-4">
-                    <div className="min-w-0 space-y-1 pr-10">
-                      <Dialog.Title className="font-display text-lg font-semibold text-warm-900">
-                        {title}
-                      </Dialog.Title>
-                      {description !== undefined && description.length > 0 ? (
-                        <Dialog.Description className="text-sm text-warm-600">
-                          {description}
-                        </Dialog.Description>
-                      ) : (
-                        <Dialog.Description className="sr-only">
+                  <motion.div
+                    className={cn(
+                      "flex w-full flex-col",
+                      sizeClass[size],
+                      "rounded-card border border-warm-200 bg-surface shadow-lg",
+                      "max-h-[min(90vh,700px)]")}
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ type: "spring", damping: 28, stiffness: 320 }}
+                  >
+                    <div className="relative flex shrink-0 items-start justify-between gap-3 border-b border-warm-200 px-6 py-4">
+                      <div className="min-w-0 space-y-1 pr-10">
+                        <Dialog.Title className="font-display text-lg font-semibold text-warm-900">
                           {title}
-                        </Dialog.Description>
-                      )}
+                        </Dialog.Title>
+                        {description !== undefined && description.length > 0 ? (
+                          <Dialog.Description className="text-sm text-warm-600">
+                            {description}
+                          </Dialog.Description>
+                        ) : (
+                          <Dialog.Description className="sr-only">
+                            {title}
+                          </Dialog.Description>
+                        )}
+                      </div>
+                      <Dialog.Close asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "absolute right-4 top-4 rounded-button p-1.5 text-warm-600",
+                            "outline-none hover:bg-warm-100 hover:text-warm-900",
+                            "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
+                            "disabled:pointer-events-none")}
+                          aria-label="Đóng"
+                        >
+                          <X className="size-5" aria-hidden />
+                        </button>
+                      </Dialog.Close>
                     </div>
-                    <Dialog.Close asChild>
-                      <button
-                        type="button"
-                        className={cn(
-                          "absolute right-4 top-4 rounded-button p-1.5 text-warm-600",
-                          "outline-none hover:bg-warm-100 hover:text-warm-900",
-                          "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-                          "disabled:pointer-events-none")}
-                        aria-label="Đóng"
-                      >
-                        <X className="size-5" aria-hidden />
-                      </button>
-                    </Dialog.Close>
-                  </div>
-                  <div className="relative min-h-0 flex-1 overflow-y-auto px-6 py-4">
-                    {children}
-                  </div>
-                </motion.div>
+                    <div className="relative min-h-0 flex-1 overflow-y-auto px-6 py-4">
+                      {children}
+                    </div>
+                  </motion.div>
+                </div>
               </Dialog.Content>
             </>
           )}

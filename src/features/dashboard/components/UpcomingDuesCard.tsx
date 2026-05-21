@@ -10,7 +10,11 @@ import {
   SkeletonAvatar,
 } from "@/shared/components/ui/Skeleton";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
-import { slideUp, staggerChildren, staggerItem } from "@/shared/lib/animations";
+import {
+  cardSlideUpMotion,
+  listStaggerItemMotion,
+  listStaggerMotion,
+} from "@/shared/lib/animations";
 
 import type { BillingCycleDue, InstallmentPayDue } from "../types";
 
@@ -48,7 +52,7 @@ export function UpcomingDuesCard({
   ) {
     return (
       <motion.article
-        variants={slideUp}
+        {...cardSlideUpMotion}
         className="flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
       >
         <SkeletonText className="h-6 w-[55%]" />
@@ -78,7 +82,7 @@ export function UpcomingDuesCard({
 
   return (
     <motion.article
-      variants={slideUp}
+      {...cardSlideUpMotion}
       className="flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
     >
       <h3 className="flex items-center gap-2 font-display text-base font-semibold text-warm-900">
@@ -91,9 +95,7 @@ export function UpcomingDuesCard({
         </p>
       ) : (
         <motion.ul
-          variants={staggerChildren}
-          initial="initial"
-          animate="animate"
+          {...listStaggerMotion}
           className="flex max-h-80 flex-col gap-3 overflow-y-auto pe-1"
         >
           {combined.map((row, idx) => {
@@ -103,7 +105,7 @@ export function UpcomingDuesCard({
               return (
                 <motion.li
                   key={`bc-${c.id}`}
-                  variants={staggerItem}
+                  {...listStaggerItemMotion}
                   className={
                     late > 0
                       ? "rounded-lg border border-danger/40 bg-danger/5 px-3 py-2"
@@ -136,7 +138,7 @@ export function UpcomingDuesCard({
             return (
               <motion.li
                 key={`ip-${p.planId}-${String(p.installmentNumber)}-${String(idx)}`}
-                variants={staggerItem}
+                {...listStaggerItemMotion}
                 className={
                   late > 0
                     ? "rounded-lg border border-danger/40 bg-danger/5 px-3 py-2"

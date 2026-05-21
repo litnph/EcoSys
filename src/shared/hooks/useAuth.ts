@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useLayoutEffect } from "react";
 
 import { ROUTES } from "@/config/routes";
 import { logout as authApiLogout } from "@/features/auth/api/authApi";
@@ -12,11 +12,9 @@ export function useAuth() {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     hydrateFromStorage();
-    setIsLoading(false);
   }, [hydrateFromStorage]);
 
   const logout = useCallback(async () => {
@@ -27,7 +25,7 @@ export function useAuth() {
   return {
     user,
     isAuthenticated,
-    isLoading,
+    isLoading: false,
     logout,
   };
 }

@@ -8,7 +8,7 @@ import {
 } from "@/shared/components/ui/Skeleton";
 import { cn } from "@/shared/lib/utils";
 import { formatCurrency, formatPercentage } from "@/shared/lib/formatters";
-import { slideUp } from "@/shared/lib/animations";
+import { cardSlideUpMotion } from "@/shared/lib/animations";
 
 import type { DashboardSummary } from "../types";
 
@@ -24,7 +24,7 @@ export function MonthlySummaryCard({
   if (isLoading || summary === undefined) {
     return (
       <motion.article
-        variants={slideUp}
+        {...cardSlideUpMotion}
         className="flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
       >
         <SkeletonTitle className="h-5 w-1/2" />
@@ -41,7 +41,7 @@ export function MonthlySummaryCard({
 
   return (
     <motion.article
-      variants={slideUp}
+      {...cardSlideUpMotion}
       className="flex flex-col gap-5 rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
     >
       <h3 className="font-display text-base font-semibold text-warm-900">

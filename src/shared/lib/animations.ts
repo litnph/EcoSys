@@ -1,13 +1,13 @@
 import type { HTMLMotionProps, Variants } from "framer-motion";
 
 const duration = {
-  fast: 0.2,
-  normal: 0.32,
-  slow: 0.42,
+  fast: 0.15,
+  normal: 0.2,
+  slow: 0.28,
 } as const;
 
-/** Delay between staggered list items (ms). */
-export const STAGGER_CHILD_DELAY_MS = 60;
+/** Delay between staggered list items (ms). Kept short so route changes feel snappy. */
+export const STAGGER_CHILD_DELAY_MS = 24;
 
 export const STAGGER_CHILD_DELAY_S = STAGGER_CHILD_DELAY_MS / 1000;
 
@@ -51,6 +51,13 @@ export const slideUp: Variants = {
     transition: exitTransition,
   },
 };
+
+/** Dashboard/report cards — visible immediately on route change. */
+export const cardSlideUpMotion = {
+  variants: slideUp,
+  initial: false,
+  animate: "animate",
+} as const;
 
 export const slideDown: Variants = {
   initial: { opacity: 0, y: -16 },
@@ -140,6 +147,19 @@ export const staggerItem: Variants = {
     transition: exitTransition,
   },
 };
+
+/** Stagger list root — skips entrance delay on route change. */
+export const listStaggerMotion = {
+  variants: staggerChildren,
+  initial: false,
+  animate: "animate",
+} as const;
+
+/** Child of {@link listStaggerMotion}; avoids opacity:0 stuck state. */
+export const listStaggerItemMotion = {
+  variants: staggerItem,
+  initial: false,
+} as const;
 
 /** Shared hover lift + shadow for cards (motion.div / motion.article). */
 export const cardHoverMotion: Pick<

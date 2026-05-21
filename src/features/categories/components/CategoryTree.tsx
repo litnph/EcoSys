@@ -6,7 +6,7 @@ import { useCallback, useState } from "react";
 
 import { cn } from "@/shared/lib/utils";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
-import { staggerChildren, staggerItem } from "@/shared/lib/animations";
+import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 
 import { useCategories } from "../hooks/useCategories";
 import type { CategoryKind, FinCategory } from "../types";
@@ -117,13 +117,11 @@ export function CategoryTree({
 
       {!showLoading && roots.length > 0 ? (
         <motion.div
-          variants={staggerChildren}
-          initial="initial"
-          animate="animate"
+          {...listStaggerMotion}
           className="space-y-0.5"
         >
           {roots.map((node) => (
-            <motion.div key={node.id} variants={staggerItem}>
+            <motion.div key={node.id} {...listStaggerItemMotion}>
               <CategoryTreeBranch node={node} depth={0} />
             </motion.div>
           ))}

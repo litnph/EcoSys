@@ -5,7 +5,11 @@ import { motion } from "framer-motion";
 import { useMemo, type ReactNode } from "react";
 
 import { formatCurrency, formatPercentage } from "@/shared/lib/formatters";
-import { cardHoverMotion, staggerChildren, staggerItem } from "@/shared/lib/animations";
+import {
+  cardHoverMotion,
+  listStaggerItemMotion,
+  listStaggerMotion,
+} from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import type { MonthlyReport } from "../types";
@@ -78,7 +82,7 @@ type CardProps = {
 function MiniCard({ title, subtitle, valueClass, value }: CardProps) {
   return (
     <motion.article
-      variants={staggerItem}
+      {...listStaggerItemMotion}
       {...cardHoverMotion}
       className={cn(
         "flex flex-col gap-2 rounded-card border border-warm-200 bg-surface px-4 py-3 shadow-sm")}
@@ -127,9 +131,7 @@ export function ReportSummaryCards({ report, className }: ReportSummaryCardsProp
 
   return (
     <motion.div
-      variants={staggerChildren}
-      initial="initial"
-      animate="animate"
+      {...listStaggerMotion}
       className={cn("grid gap-3 sm:grid-cols-2 xl:grid-cols-4", className)}
     >
       <MiniCard

@@ -3,12 +3,7 @@ import { apiClient } from "@/shared/lib/axios";
 import type { ApiResponse } from "@/shared/types/api";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
-import type {
-  NotificationChannelKey,
-  NotificationPreferencesDto,
-  UserPreferencesDto,
-  UserProfileBundleDto,
-} from "../types";
+import type { UserPreferencesDto, UserProfileBundleDto } from "../types";
 
 function assertSuccess<T>(res: ApiResponse<T>): asserts res is ApiResponse<T> & {
   success: true;
@@ -23,7 +18,6 @@ type BeUserProfileDto = {
   fullName: string;
   email: string;
   role?: string;
-  isEmailVerified: boolean;
   languageCode: string;
   timezone: string;
   dateFormat: string;
@@ -32,14 +26,6 @@ type BeUserProfileDto = {
   phoneNumber?: string | null;
   dateOfBirth?: string | null;
   avatarUrl?: string | null;
-};
-
-type BeNotificationPrefDto = {
-  id: string;
-  moduleCode: number | string;
-  channel: number | string;
-  eventType: string;
-  isEnabled: boolean;
 };
 
 function normalizePreferences(raw: Partial<UserPreferencesDto>): UserPreferencesDto {
@@ -64,7 +50,7 @@ function mapProfileToUser(profile: BeUserProfileDto): UserDto {
     email: profile.email,
     fullName: profile.fullName,
     avatarUrl: profile.avatarUrl ?? null,
-    isVerified: profile.isEmailVerified,
+    isVerified: true,
     role,
   };
 }
@@ -79,18 +65,6 @@ function mapProfileToPreferences(profile: BeUserProfileDto): UserPreferencesDto 
         ? profile.theme
         : "system",
   });
-}
-
-function mapChannelFromBe(channel: number | string): NotificationChannelKey {
-  const normalized = String(channel).toLowerCase();
-  if (normalized === "email" || normalized === "2") {
-    return "email";
-  }
-  return "inApp";
-}
-
-function mapChannelToBe(channel: NotificationChannelKey): "inApp" | "email" {
-  return channel === "email" ? "email" : "inApp";
 }
 
 async function fetchProfileDto(): Promise<BeUserProfileDto> {
@@ -158,10 +132,10 @@ export async function uploadProfileAvatar(file: File): Promise<{ avatarUrl: stri
   const fd = new FormData();
   fd.append("file", file);
   const { data: body } = await apiClient.post<
-    ApiResponse<{ avatarId: string; storageKey: string; storageUrl: string }>
+    ApiResponse<{ avatarUrl: string }>
   >("/user/avatar", fd, { headers: { "Content-Type": "multipart/form-data" } });
   assertSuccess(body);
-  return { avatarUrl: body.data.storageUrl };
+  return { avatarUrl: body.data.avatarUrl };
 }
 
 export async function changePassword(
@@ -195,42 +169,4 @@ export async function patchPreferences(
     }),
   });
   return mapProfileToPreferences(updated);
-}
-
-export async function getNotificationPreferences(): Promise<NotificationPreferencesDto> {
-  const { data: body } = await apiClient.get<
-    ApiResponse<{ preferences: BeNotificationPrefDto[] }>
-  >("/user/notification-prefs");
-  assertSuccess(body);
-  return {
-    cells: body.data.preferences.map((p) => ({
-      moduleCode: typeof p.moduleCode === "number" ? p.moduleCode : 1,
-      eventType: p.eventType,
-      channel: mapChannelFromBe(p.channel),
-      enabled: p.isEnabled,
-    })),
-  };
-}
-
-export async function putNotificationPreferences(
-  prefs: NotificationPreferencesDto): Promise<NotificationPreferencesDto> {
-  const { data: body } = await apiClient.put<
-    ApiResponse<{ preferences: BeNotificationPrefDto[] }>
-  >("/user/notification-prefs", {
-    preferences: prefs.cells.map((c) => ({
-      moduleCode: c.moduleCode,
-      channel: mapChannelToBe(c.channel),
-      eventType: c.eventType,
-      isEnabled: c.enabled,
-    })),
-  });
-  assertSuccess(body);
-  return {
-    cells: body.data.preferences.map((p) => ({
-      moduleCode: typeof p.moduleCode === "number" ? p.moduleCode : 1,
-      eventType: p.eventType,
-      channel: mapChannelFromBe(p.channel),
-      enabled: p.isEnabled,
-    })),
-  };
 }

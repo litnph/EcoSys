@@ -1,8 +1,7 @@
 "use client";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { NotificationBell } from "@/features/notifications";
-import { ChevronRight, Menu } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
@@ -26,21 +25,15 @@ export type TopNavUser = {
 
 export type TopNavProps = {
   sidebarCollapsed: boolean;
-  onOpenMobileDrawer: () => void;
   user?: TopNavUser;
-  unreadNotificationCount?: number;
-  /** Đẩy header xuống khi có banner offline (px). */
   bannerInsetPx?: number;
 };
 
 export function TopNav({
   sidebarCollapsed,
-  onOpenMobileDrawer,
   user: userProp,
-  unreadNotificationCount = 0,
   bannerInsetPx = 0,
 }: TopNavProps) {
-  void unreadNotificationCount;
   const pathname = usePathname();
   const crumbs = buildDashboardBreadcrumbs(pathname);
 
@@ -69,23 +62,11 @@ export function TopNav({
     <header
       style={{ top: bannerInsetPx }}
       className={cn(
-        "fixed left-0 right-0 z-40 flex h-14 items-center gap-3 border-b border-warm-200 bg-warm-25/80 px-4 backdrop-blur transition-[left] duration-200 ease-out md:px-6",
-        sidebarCollapsed ? "md:left-16" : "md:left-[240px]")}
+        "fixed right-0 z-40 flex h-14 items-center gap-3 border-b border-warm-200 bg-warm-25/80 px-6 backdrop-blur transition-[left] duration-200 ease-out",
+        sidebarCollapsed ? "left-16" : "left-[240px]")}
     >
-      <button
-        type="button"
-        className={cn(
-          "inline-flex rounded-button p-2 text-warm-700 outline-none md:hidden",
-          "hover:bg-warm-100 hover:text-warm-900",
-          "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2")}
-        aria-label="Open menu"
-        onClick={onOpenMobileDrawer}
-      >
-        <Menu className="size-5" aria-hidden />
-      </button>
-
       <nav
-        className="hidden min-w-0 flex-1 items-center md:flex"
+        className="flex min-w-0 flex-1 items-center"
         aria-label="Breadcrumb"
       >
         <ol className="flex min-w-0 flex-wrap items-center gap-1 text-sm text-warm-600">
@@ -114,9 +95,7 @@ export function TopNav({
         </ol>
       </nav>
 
-      <div className="flex flex-1 items-center justify-end gap-2 md:flex-initial">
-        <NotificationBell />
-
+      <div className="flex shrink-0 items-center justify-end gap-2">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <button

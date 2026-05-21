@@ -14,7 +14,7 @@ import {
 
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { formatCurrency } from "@/shared/lib/formatters";
-import { slideUp } from "@/shared/lib/animations";
+import { cardSlideUpMotion } from "@/shared/lib/animations";
 
 import type { DailyPoint } from "../types";
 
@@ -48,7 +48,7 @@ export function DailyBreakdownChart({
   if (isLoading || data === undefined) {
     return (
       <motion.article
-        variants={slideUp}
+        {...cardSlideUpMotion}
         className="flex flex-col rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
       >
         <SkeletonText className="mb-6 h-6 w-3/5" />
@@ -69,7 +69,7 @@ export function DailyBreakdownChart({
 
   return (
     <motion.article
-      variants={slideUp}
+      {...cardSlideUpMotion}
       className="flex flex-col rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
     >
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">

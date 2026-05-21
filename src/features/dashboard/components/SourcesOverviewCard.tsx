@@ -7,7 +7,11 @@ import {
   SkeletonText,
 } from "@/shared/components/ui/Skeleton";
 import { formatCurrency } from "@/shared/lib/formatters";
-import { slideUp, staggerChildren, staggerItem } from "@/shared/lib/animations";
+import {
+  cardSlideUpMotion,
+  listStaggerItemMotion,
+  listStaggerMotion,
+} from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import type { SourceSummary } from "../types";
@@ -37,7 +41,7 @@ export function SourcesOverviewCard({
   if (isLoading || sources === undefined) {
     return (
       <motion.article
-        variants={slideUp}
+        {...cardSlideUpMotion}
         className="flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
       >
         <SkeletonText className="h-6 w-[45%]" />
@@ -56,16 +60,14 @@ export function SourcesOverviewCard({
 
   return (
     <motion.article
-      variants={slideUp}
+      {...cardSlideUpMotion}
       className="flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
     >
       <h3 className="font-display text-base font-semibold text-warm-900">
         Nguồn tiền
       </h3>
       <motion.ul
-        variants={staggerChildren}
-        initial="initial"
-        animate="animate"
+        {...listStaggerMotion}
         className="flex flex-col divide-y divide-warm-100"
       >
         {sources.length === 0 ? (
@@ -76,7 +78,7 @@ export function SourcesOverviewCard({
           sources.map((s) => (
             <motion.li
               key={s.sourceId}
-              variants={staggerItem}
+              {...listStaggerItemMotion}
               className="flex flex-col gap-2 py-3 first:pt-0"
             >
               <div className="flex items-start justify-between gap-3">

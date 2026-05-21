@@ -11,18 +11,10 @@ import { cn } from "@/shared/lib/utils";
 
 const TABS: {
   href: string;
-  labelKey:
-    | "tabProfile"
-    | "tabSecurity"
-    | "tabNotifications"
-    | "tabPreferences"
-    | "tabPrivacy";
+  labelKey: "tabProfile" | "tabPreferences";
 }[] = [
   { href: ROUTES.dashboard.settingsProfile, labelKey: "tabProfile" },
-  { href: ROUTES.dashboard.settingsSecurity, labelKey: "tabSecurity" },
-  { href: ROUTES.dashboard.settingsNotifications, labelKey: "tabNotifications" },
   { href: ROUTES.dashboard.settingsPreferences, labelKey: "tabPreferences" },
-  { href: ROUTES.dashboard.settingsPrivacy, labelKey: "tabPrivacy" },
 ];
 
 export type SettingsSectionLayoutProps = {

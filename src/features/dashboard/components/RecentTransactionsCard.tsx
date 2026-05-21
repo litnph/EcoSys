@@ -7,7 +7,11 @@ import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { Link } from "@/i18n/navigation";
 import { ROUTES } from "@/config/routes";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
-import { slideUp, staggerChildren, staggerItem } from "@/shared/lib/animations";
+import {
+  cardSlideUpMotion,
+  listStaggerItemMotion,
+  listStaggerMotion,
+} from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import type { Transaction } from "../types";
@@ -51,7 +55,7 @@ export function RecentTransactionsCard({
   if (isLoading || items === undefined) {
     return (
       <motion.article
-        variants={slideUp}
+        {...cardSlideUpMotion}
         className="rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
       >
         <div className="mb-4 flex justify-between gap-4">
@@ -69,7 +73,7 @@ export function RecentTransactionsCard({
 
   return (
     <motion.article
-      variants={slideUp}
+      {...cardSlideUpMotion}
       className="rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
     >
       <header className="mb-4 flex flex-wrap items-end justify-between gap-2">
@@ -89,9 +93,7 @@ export function RecentTransactionsCard({
         </p>
       ) : (
         <motion.ul
-          variants={staggerChildren}
-          initial="initial"
-          animate="animate"
+          {...listStaggerMotion}
           className="flex flex-col divide-y divide-warm-100"
         >
           {items.slice(0, 5).map((tx) => {
@@ -105,7 +107,7 @@ export function RecentTransactionsCard({
             return (
               <motion.li
                 key={tx.id}
-                variants={staggerItem}
+                {...listStaggerItemMotion}
                 className="flex items-center gap-3 py-3 first:pt-0"
               >
                 <span

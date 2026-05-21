@@ -28,12 +28,10 @@ import type { FinSource } from "@/features/sources/types";
 
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
-import { Drawer } from "@/shared/components/ui/Drawer";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
-import { useMediaMd } from "@/shared/hooks/useMediaMd";
 import { cn } from "@/shared/lib/utils";
-import { staggerChildren, staggerItem } from "@/shared/lib/animations";
+import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 
 const tabListClass =
   "flex gap-1 overflow-x-auto rounded-button border border-warm-200 bg-warm-50 p-1 text-sm";
@@ -56,11 +54,9 @@ function paymentSourceOptions(sources: FinSource[] | undefined): FinSource[] {
       s.type === "bankAccount" || s.type === "cash" || s.type === "eWallet");
 }
 
-export default function InstallmentsPage() {  const mdUp = useMediaMd();
-
+export default function InstallmentsPage() {
   const [tab, setTab] = React.useState<InstallmentStatus>("active");
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
-  const [drawerPlanId, setDrawerPlanId] = React.useState<string | null>(null);
   const [createOpen, setCreateOpen] = React.useState(false);
   const [cancelPlanId, setCancelPlanId] = React.useState<string | null>(null);
   const [payCtx, setPayCtx] = React.useState<{
@@ -92,22 +88,8 @@ export default function InstallmentsPage() {  const mdUp = useMediaMd();
 
   const { data: sources } = useSources();
 
-  const drawerPlan = drawerPlanId ? planById.get(drawerPlanId) : undefined;
-
-  const drawerItem =
-    drawerPlanId && listQ.data
-      ? listQ.data.find((p) => p.id === drawerPlanId)
-      : undefined;
-  const drawerCurrency = drawerItem
-    ? pickCurrencyForPlan(drawerItem, sources)
-    : "VND";
-
   const handleToggleCard = (id: string) => {
-    if (mdUp) {
-      setExpandedId((prev) => (prev === id ? null : id));
-      return;
-    }
-    setDrawerPlanId(id);
+    setExpandedId((prev) => (prev === id ? null : id));
   };
 
   const handlePay = (planId: string, pay: InstallmentPay) => {
@@ -115,32 +97,29 @@ export default function InstallmentsPage() {  const mdUp = useMediaMd();
   };
 
   return (
-    <div className="w-full max-w-[1400px] pb-24 md:pb-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="w-full max-w-[1400px] pb-8">
+      <div className="flex flex-row items-end justify-between gap-4">
         <PageHeader
           title="Trả góp"
           description="Kế hoạch trả góp từ giao dịch quẹt thẻ, lịch từng kỳ và thanh toán."
         />
         <Button
           type="button"
-          className="hidden shrink-0 sm:inline-flex"
+          className="shrink-0"
           leftIcon={<Plus className="size-4" aria-hidden />}
           onClick={() => setCreateOpen(true)}
-          
         >
           Tạo kế hoạch
         </Button>
       </div>
 
-      {(
-        <>
-          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <>
+          <div className="mt-6 flex flex-row items-center justify-between gap-4">
             <Tabs.Root
               value={tab}
               onValueChange={(v) => {
                 setTab(v as InstallmentStatus);
                 setExpandedId(null);
-                setDrawerPlanId(null);
               }}
             >
               <Tabs.List className={tabListClass} aria-label="Trạng thái trả góp">
@@ -155,29 +134,18 @@ export default function InstallmentsPage() {  const mdUp = useMediaMd();
                 </Tabs.Trigger>
               </Tabs.List>
             </Tabs.Root>
-            <Button
-              type="button"
-              size="sm"
-              className="sm:hidden"
-              leftIcon={<Plus className="size-4" aria-hidden />}
-              onClick={() => setCreateOpen(true)}
-            >
-              Tạo kế hoạch
-            </Button>
           </div>
 
           <motion.div
             className="mt-6 grid gap-4 lg:grid-cols-2"
-            variants={staggerChildren}
-            initial="initial"
-            animate="animate"
+            {...listStaggerMotion}
           >
             {listQ.isLoading ? (
               <>
-                <motion.div variants={staggerItem}>
+                <motion.div {...listStaggerItemMotion}>
                   <SkeletonCard />
                 </motion.div>
-                <motion.div variants={staggerItem}>
+                <motion.div {...listStaggerItemMotion}>
                   <SkeletonCard />
                 </motion.div>
               </>
@@ -201,13 +169,13 @@ export default function InstallmentsPage() {  const mdUp = useMediaMd();
                     : false;
 
                 return (
-                  <motion.div key={item.id} variants={staggerItem} className="flex flex-col gap-3">
+                  <motion.div key={item.id} {...listStaggerItemMotion} className="flex flex-col gap-3">
                     <InstallmentPlanCard
                       listItem={item}
                       plan={plan}
                       isDetailLoading={isLoadingThis}
                       currency={currency}
-                      isExpanded={mdUp ? expanded : false}
+                      isExpanded={expanded}
                       onToggle={() => handleToggleCard(item.id)}
                       onCancel={
                         item.status === "active"
@@ -215,7 +183,7 @@ export default function InstallmentsPage() {  const mdUp = useMediaMd();
                           : undefined
                       }
                     />
-                    {mdUp && expanded && plan ? (
+                    {expanded && plan ? (
                       <div className="rounded-card border border-warm-200 bg-surface p-4 shadow-inner">
                         <InstallmentPaysTimeline
                           pays={plan.pays}
@@ -229,46 +197,7 @@ export default function InstallmentsPage() {  const mdUp = useMediaMd();
               })
             )}
           </motion.div>
-
-          <Drawer
-            side="right"
-            isOpen={Boolean(!mdUp && drawerPlanId)}
-            onClose={() => setDrawerPlanId(null)}
-            title="Lịch trả góp"
-            description={drawerPlan?.originalTxnDescription ?? undefined}
-            size="lg"
-          >
-            {drawerPlanId && !drawerPlan ? (
-              <div className="relative pl-6" aria-busy="true">
-                <div
-                  className="pointer-events-none absolute left-[7px] top-2 bottom-8 w-px bg-warm-200"
-                  aria-hidden
-                />
-                <motion.div
-                  variants={staggerChildren}
-                  initial="initial"
-                  animate="animate"
-                  className="flex flex-col gap-4"
-                >
-                  {[0, 1, 2].map((i) => (
-                    <motion.div key={i} variants={staggerItem}>
-                      <SkeletonCard lines={3} />
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </div>
-            ) : drawerPlan ? (
-              <InstallmentPaysTimeline
-                pays={drawerPlan.pays}
-                currency={drawerCurrency}
-                onPay={(pay) => {
-                  if (drawerPlanId) handlePay(drawerPlanId, pay);
-                }}
-              />
-            ) : null}
-          </Drawer>
-        </>
-      )}
+      </>
 
       <CreateInstallmentPlanModal
         

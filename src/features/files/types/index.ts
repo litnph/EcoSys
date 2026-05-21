@@ -1,6 +1,5 @@
 export interface FileAttachment {
   id: string;
-  moduleCode: string;
   entityType: string;
   entityId: string;
   fileName: string;

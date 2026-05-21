@@ -17,7 +17,7 @@ import {
 import { Button } from "@/shared/components/ui/Button";
 import { SkeletonTable } from "@/shared/components/ui/Skeleton";
 import { formatCurrency } from "@/shared/lib/formatters";
-import { staggerChildren, staggerItem } from "@/shared/lib/animations";
+import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 import { motion } from "framer-motion";
 
@@ -159,9 +159,7 @@ export function TransactionList({
               </p>
             </header>
             <motion.ul
-              variants={staggerChildren}
-              initial="initial"
-              animate="animate"
+              {...listStaggerMotion}
               className={cn(
                 "divide-y divide-warm-100 overflow-hidden rounded-card",
                 "border border-warm-200 bg-surface shadow-sm")}
@@ -169,7 +167,7 @@ export function TransactionList({
               {g.rows.map((tx) => (
                 <motion.li
                   key={tx.id}
-                  variants={staggerItem}
+                  {...listStaggerItemMotion}
                   className="scroll-mt-20"
                 >
                   <TransactionItem

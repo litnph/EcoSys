@@ -3,9 +3,6 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-import { Link } from "@/i18n/navigation";
-
-import { ROUTES } from "@/config/routes";
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { Input } from "@/shared/components/ui/Input";
 import { Button } from "@/shared/components/ui/Button";
@@ -192,22 +189,14 @@ export function ProfileSettingsPanel() {
               <label className="mb-1 block text-sm font-medium text-warm-700" htmlFor="profile-email">
                 Email
               </label>
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  id="profile-email"
-                  readOnly
-                  value={user.email}
-                  aria-readonly
-                  className={cn(
-                    "h-10 w-full max-w-md rounded-input border border-warm-200 bg-warm-50 px-3 text-sm text-warm-700")}
-                />
-                <Link
-                  href={ROUTES.dashboard.settingsChangeEmail}
-                  className="text-sm font-medium text-accent hover:text-accent-dark hover:underline"
-                >
-                  Đổi email
-                </Link>
-              </div>
+              <input
+                id="profile-email"
+                readOnly
+                value={user.email}
+                aria-readonly
+                className={cn(
+                  "h-10 w-full max-w-md rounded-input border border-warm-200 bg-warm-50 px-3 text-sm text-warm-700")}
+              />
             </div>
 
             <div className="flex justify-end">

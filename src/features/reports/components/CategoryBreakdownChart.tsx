@@ -15,7 +15,7 @@ import {
 import { warmPaletteColor } from "@/features/dashboard/utils/warmPalette";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { formatCurrency, formatPercentage } from "@/shared/lib/formatters";
-import { slideUp } from "@/shared/lib/animations";
+import { cardSlideUpMotion } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import type { CategoryBreakdownItem } from "../types";
@@ -68,7 +68,7 @@ export function CategoryBreakdownChart({
   if (isLoading || data === undefined) {
     return (
       <motion.article
-        variants={slideUp}
+        {...cardSlideUpMotion}
         className="flex flex-col rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
       >
         <SkeletonText className="mb-6 h-6 w-2/5" />
@@ -107,7 +107,7 @@ export function CategoryBreakdownChart({
 
   return (
     <motion.article
-      variants={slideUp}
+      {...cardSlideUpMotion}
       className={cn("flex flex-col rounded-card border border-warm-200 bg-surface p-5 shadow-sm")}
     >
       <header className="mb-3 flex flex-col gap-1">

@@ -7,8 +7,8 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   DeleteTransactionModal,
-  ResponsiveTransactionFormShell,
   TransactionDetailDrawer,
+  TransactionFormModal,
   TransactionFilters,
   TransactionList,
 } from "@/features/transactions/components";
@@ -23,8 +23,6 @@ import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { Button } from "@/shared/components/ui/Button";
-import { cn } from "@/shared/lib/utils";
-
 function calendarMonthIsoRange(year: number, month: number): {
   dateFrom: string;
   dateTo: string;
@@ -113,18 +111,17 @@ function TransactionsPageInner() {
   const deleteMutation = useDeleteTransaction();
 
   return (
-    <div className="w-full max-w-[1400px] pb-24 md:pb-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="w-full max-w-[1400px] pb-8">
+      <div className="flex flex-row items-end justify-between gap-4">
         <PageHeader
           title={t("pageTitle")}
           description={t("pageDescription")}
         />
         <Button
           type="button"
-          className="hidden shrink-0 sm:inline-flex"
+          className="shrink-0"
           leftIcon={<Plus className="size-4" aria-hidden />}
           onClick={() => setCreateOpen(true)}
-          
         >
           {t("newTransaction")}
         </Button>
@@ -172,7 +169,7 @@ function TransactionsPageInner() {
         onClose={closeDetail}
       />
 
-      <ResponsiveTransactionFormShell
+      <TransactionFormModal
         isOpen={createOpen}
         onClose={() => setCreateOpen(false)}
       />
@@ -185,26 +182,13 @@ function TransactionsPageInner() {
         onDeleted={() => setDeleteModalTx(null)}
       />
 
-      <button
-        type="button"
-        onClick={() => setCreateOpen(true)}
-        
-        className={cn(
-          "fixed bottom-6 right-6 z-40 flex size-14 items-center justify-center rounded-full",
-          "bg-accent text-white shadow-lg transition hover:bg-accent-dark",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-          "md:hidden")}
-        aria-label={t("addTransactionAria")}
-      >
-        <Plus className="size-7" aria-hidden />
-      </button>
     </div>
   );
 }
 
 function TransactionsPageFallback() {
   return (
-    <div className="w-full max-w-[1400px] animate-pulse space-y-6 pb-24 md:pb-8">
+    <div className="w-full max-w-[1400px] animate-pulse space-y-6 pb-8">
       <SkeletonText className="h-12 w-full max-w-md" />
       <SkeletonText className="h-[120px] w-full rounded-card" />
       <SkeletonText className="h-[520px] w-full rounded-card" />

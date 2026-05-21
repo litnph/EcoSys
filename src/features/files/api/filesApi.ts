@@ -26,7 +26,6 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 
 interface RemoteFileDto {
   id: string;
-  moduleCode: string;
   entityType: string;
   entityId: string;
   fileName: string;
@@ -45,7 +44,6 @@ interface RemoteSignedUrlDto {
 function mapFile(row: RemoteFileDto): FileAttachment {
   return {
     id: row.id,
-    moduleCode: row.moduleCode,
     entityType: row.entityType,
     entityId: row.entityId,
     fileName: row.fileName,
@@ -58,13 +56,11 @@ function mapFile(row: RemoteFileDto): FileAttachment {
 }
 
 export async function uploadFile(params: {
-  moduleCode: string;
   entityType: string;
   entityId: string;
   file: File;
 }): Promise<FileAttachment> {
   const fd = new FormData();
-  fd.append("module_code", params.moduleCode);
   fd.append("entity_type", params.entityType);
   fd.append("entity_id", params.entityId);
   fd.append("file", params.file);

@@ -2,10 +2,11 @@
 
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 import type { ApiResponse } from "@/shared/types/api";
-import { useSearchParams } from "next/navigation";
-
+import { ROUTES } from "@/config/routes";
 import { useRouter } from "@/i18n/navigation";
 import { useToastStore } from "@/shared/stores/toastStore";
 import {
@@ -36,17 +37,21 @@ export function useLogin() {
   const addToast = useToastStore((s) => s.addToast);
   const setAuth = useAuthStore((s) => s.setAuth);
 
+  useEffect(() => {
+    router.prefetch(ROUTES.dashboard.home);
+  }, [router]);
+
   return useMutation({
     mutationFn: (data: LoginRequest) => login(data),
     onSuccess: (response) => {
       const { accessToken, refreshToken, user } = response.data;
       setAuth(user, accessToken, refreshToken);
+      const returnUrl = sanitizeReturnUrl(searchParams.get("returnUrl"));
+      router.replace(resolvePostAuthPath(returnUrl));
       addToast({
         type: "success",
         title: "Đăng nhập thành công",
       });
-      const returnUrl = sanitizeReturnUrl(searchParams.get("returnUrl"));
-      router.replace(resolvePostAuthPath(returnUrl));
     },
     onError: (error) => {
       addToast({

@@ -24,7 +24,7 @@ import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { cn } from "@/shared/lib/utils";
-import { staggerChildren, staggerItem } from "@/shared/lib/animations";
+import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 
 function paymentSourceOptions(sources: FinSource[] | undefined): FinSource[] {
   return (sources ?? []).filter(
@@ -112,7 +112,7 @@ export default function DebtPage() {
     "shrink-0 rounded-md px-4 py-2.5 font-medium transition outline-none whitespace-nowrap");
 
   return (
-    <div className="w-full max-w-[1400px] pb-24 md:pb-8">
+    <div className="w-full max-w-[1400px] pb-8">
       <PageHeader
         title="Nợ & cho vay"
         description="Theo dõi khoản bạn đang nợ và khoản bạn cho mượn. Tạo khoản mới từ giao dịch trong form giao dịch."
@@ -188,16 +188,14 @@ export default function DebtPage() {
 
           <motion.div
             className="mt-6 grid gap-4 lg:grid-cols-2"
-            variants={staggerChildren}
-            initial="initial"
-            animate="animate"
+            {...listStaggerMotion}
           >
             {listQ.isLoading ? (
               <>
-                <motion.div variants={staggerItem}>
+                <motion.div {...listStaggerItemMotion}>
                   <SkeletonCard />
                 </motion.div>
-                <motion.div variants={staggerItem}>
+                <motion.div {...listStaggerItemMotion}>
                   <SkeletonCard />
                 </motion.div>
               </>
@@ -211,7 +209,7 @@ export default function DebtPage() {
               </div>
             ) : (
               listQ.data?.map((item) => (
-                <motion.div key={item.id} variants={staggerItem}>
+                <motion.div key={item.id} {...listStaggerItemMotion}>
                   <DebtRecordCard
                     item={item}
                     detail={

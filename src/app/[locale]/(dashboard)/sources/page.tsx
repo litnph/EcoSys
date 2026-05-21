@@ -15,7 +15,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Modal } from "@/shared/components/ui/Modal";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
-import { staggerChildren, staggerItem } from "@/shared/lib/animations";
+import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
 
@@ -86,13 +86,11 @@ export default function SourcesPage() {  const { data: sources, isLoading, isErr
         </div>
       ) : (
         <motion.div
-          variants={staggerChildren}
-          initial="initial"
-          animate="animate"
+          {...listStaggerMotion}
           className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
         >
           {sources?.map((s) => (
-            <motion.div key={s.id} variants={staggerItem} className="h-full">
+            <motion.div key={s.id} {...listStaggerItemMotion} className="h-full">
               <SourceCard
                 source={s}
                 onEdit={openEdit}

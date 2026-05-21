@@ -101,7 +101,6 @@ export function TransactionDetailDrawer({
     mutationFn: (file: File) => {
       if (!transactionId) throw new Error("Missing transaction");
       return uploadFile({
-        moduleCode: "finance",
         entityType: "FinTransaction",
         entityId: transactionId,
         file,

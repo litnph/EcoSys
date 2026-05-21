@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useMemo } from "react";
 
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
-import { staggerChildren, staggerItem } from "@/shared/lib/animations";
+import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import type { DebtTransaction, DebtTxnType } from "../types";
@@ -50,15 +50,13 @@ export function DebtTransactionHistory({
 
   return (
     <motion.ul
-      variants={staggerChildren}
-      initial="initial"
-      animate="animate"
+      {...listStaggerMotion}
       className={cn("flex flex-col gap-2", className)}
     >
       {sorted.map((tx) => (
         <motion.li
           key={tx.id}
-          variants={staggerItem}
+          {...listStaggerItemMotion}
           className="flex flex-wrap items-baseline justify-between gap-2 rounded-md bg-surface px-3 py-2 text-sm shadow-sm ring-1 ring-warm-100"
         >
           <div className="min-w-0">

@@ -8,21 +8,14 @@ import { useToastStore } from "@/shared/stores/toastStore";
 
 import {
   changePassword,
-  getNotificationPreferences,
   getPreferences,
   getUserProfileBundle,
   patchPreferences,
-  putNotificationPreferences,
   updateProfileName,
   uploadProfileAvatar,
 } from "../api/settingsApi";
 import { settingsKeys } from "../api/settingsKeys";
-import type {
-  LoginHistoryRowDto,
-  NotificationPreferencesDto,
-  UserPreferencesDto,
-  UserSessionDto,
-} from "../types";
+import type { UserPreferencesDto } from "../types";
 
 export function useUserProfileBundle() {
   return useQuery({
@@ -40,37 +33,6 @@ export function usePreferencesQuery(enabled = true) {
     staleTime: 30_000,
     retry: false,
     enabled,
-  });
-}
-
-/** Session list API is not on the backend yet — keep query disabled until BE ships it. */
-export function useSessionsQuery() {
-  return useQuery({
-    queryKey: settingsKeys.sessions(),
-    queryFn: async (): Promise<UserSessionDto[]> => [],
-    enabled: false,
-    staleTime: 15_000,
-    retry: false,
-  });
-}
-
-/** Login history API is not on the backend yet — keep query disabled until BE ships it. */
-export function useLoginHistoryQuery() {
-  return useQuery({
-    queryKey: settingsKeys.loginHistory(),
-    queryFn: async (): Promise<LoginHistoryRowDto[]> => [],
-    enabled: false,
-    staleTime: 60_000,
-    retry: false,
-  });
-}
-
-export function useNotificationPrefsQuery() {
-  return useQuery({
-    queryKey: settingsKeys.notificationPrefs(),
-    queryFn: getNotificationPreferences,
-    staleTime: 60_000,
-    retry: false,
   });
 }
 
@@ -156,62 +118,6 @@ export function useChangePasswordMutation() {
       addToast({
         type: "error",
         title: "Đổi mật khẩu thất bại",
-        message: e.message,
-      });
-    },
-  });
-}
-
-export function useRevokeSessionMutation() {
-  const addToast = useToastStore((s) => s.addToast);
-
-  return useMutation({
-    mutationFn: async (_sessionId: string) => {
-      void _sessionId;
-      throw new Error("Quản lý phiên đăng nhập chưa được hỗ trợ trên máy chủ.");
-    },
-    onError: (e: Error) => {
-      addToast({
-        type: "error",
-        title: "Không thể đăng xuất",
-        message: e.message,
-      });
-    },
-  });
-}
-
-export function useRevokeOthersMutation() {
-  const addToast = useToastStore((s) => s.addToast);
-
-  return useMutation({
-    mutationFn: async () => {
-      throw new Error("Quản lý phiên đăng nhập chưa được hỗ trợ trên máy chủ.");
-    },
-    onError: (e: Error) => {
-      addToast({
-        type: "error",
-        title: "Thao tác thất bại",
-        message: e.message,
-      });
-    },
-  });
-}
-
-export function useSaveNotificationPrefs() {
-  const qc = useQueryClient();
-  const addToast = useToastStore((s) => s.addToast);
-
-  return useMutation({
-    mutationFn: (prefs: NotificationPreferencesDto) =>
-      putNotificationPreferences(prefs),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: settingsKeys.notificationPrefs() });
-      addToast({ type: "success", title: "Đã lưu thông báo" });
-    },
-    onError: (e: Error) => {
-      addToast({
-        type: "error",
-        title: "Không lưu được",
         message: e.message,
       });
     },
