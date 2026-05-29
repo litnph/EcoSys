@@ -1,8 +1,6 @@
-"use client";
-
 import type { ReactNode } from "react";
 import { useEffect, useLayoutEffect, useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale } from "@/i18n/navigation";
 
 import { ROUTES } from "@/config/routes";
 import { useAuthStore } from "@/features/auth/stores/authStore";
@@ -37,18 +35,16 @@ export function DashboardAuthGate({ children }: DashboardAuthGateProps) {
       `${ROUTES.auth.login}?returnUrl=${encodeURIComponent(returnUrl)}`);
   }, [mounted, isAuthenticated, locale, pathname, router]);
 
-  if (!mounted) {
+  if (!mounted || !isAuthenticated) {
     return (
       <div
-        className="min-h-[40vh] w-full max-w-[1400px] animate-pulse space-y-6 pb-8"
-        aria-busy="true"
-        aria-hidden
-      />
+        className="flex min-h-screen items-center justify-center bg-warm-50"
+        aria-busy={!mounted}
+        aria-label={mounted ? "Đang chuyển hướng" : "Đang tải"}
+      >
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-warm-200 border-t-accent" />
+      </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    return null;
   }
 
   return <>{children}</>;

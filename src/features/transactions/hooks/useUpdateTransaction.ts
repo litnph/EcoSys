@@ -1,5 +1,3 @@
-"use client";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
@@ -8,6 +6,8 @@ import {
   updateTransaction,
   type UpdateTransactionPayload,
 } from "../api/transactionsApi";
+import { sourceKeys } from "@/features/sources/api/sourceKeys";
+
 import { transactionKeys } from "../api/transactionKeys";
 
 export function useUpdateTransaction() {
@@ -25,6 +25,7 @@ export function useUpdateTransaction() {
     onSuccess: async (data) => {
       await qc.invalidateQueries({ queryKey: transactionKeys.detail(data.id) });
       await qc.invalidateQueries({ queryKey: transactionKeys.lists() });
+      await qc.invalidateQueries({ queryKey: sourceKeys.all });
       addToast({ type: "success", title: "Đã cập nhật giao dịch" });
     },
     onError: (e: Error) => {

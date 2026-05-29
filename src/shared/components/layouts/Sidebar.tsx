@@ -1,5 +1,3 @@
-"use client";
-
 import type { LucideIcon } from "lucide-react";
 
 import * as Tooltip from "@radix-ui/react-tooltip";
@@ -20,7 +18,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "@/i18n/hooks";
 
 import { ROUTES } from "@/config/routes";
 import { Link, usePathname } from "@/i18n/navigation";
@@ -110,7 +108,6 @@ export function Sidebar({
             const content = (
               <Link
                 href={href}
-                prefetch
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-warm-600 transition-colors",
                   "hover:bg-warm-100 hover:text-warm-900",

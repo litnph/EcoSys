@@ -99,6 +99,7 @@
       "deferred": "Quẹt thẻ",
       "split": "Chia tiền",
       "debt_borrow": "Mượn tiền",
+      "balance_adjustment": "Điều chỉnh số dư",
       "debt_repay": "Trả nợ",
       "loan_give": "Cho vay",
       "loan_collect": "Thu hồi nợ",
@@ -150,7 +151,14 @@
     "amountMax": "Số tiền tối đa",
     "reset": "Đặt lại",
     "clearDates": "Xóa ngày",
-    "done": "Xong"
+    "done": "Xong",
+    "presetAll": "Tất cả",
+    "presetThisMonth": "Tháng này",
+    "presetLast30Days": "30 ngày",
+    "datePresets": "Lọc nhanh theo ngày",
+    "moreFilters": "Thêm",
+    "activeFilters": "Đang lọc",
+    "categoryChip": "Danh mục"
   },
   "form": {
     "amount": "Số tiền",

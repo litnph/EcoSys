@@ -18,6 +18,8 @@ export interface FinSource {
   icon: string | null;
   color: string | null;
   sortOrder: number;
+  /** Dư nợ trả góp còn lại (active plans) — chỉ có ý nghĩa với thẻ tín dụng. */
+  installmentRemainingAmount?: number;
 }
 
 export interface CreateSourceRequest {  name: string;
@@ -30,6 +32,8 @@ export interface CreateSourceRequest {  name: string;
   paymentDueDay?: number | null;
   minInstallmentAmt?: number | null;
   sortOrder?: number | null;
+  /** Số dư ban đầu (chỉ khi tạo, nguồn không phải thẻ). */
+  initialBalance?: number | null;
 }
 
 export interface UpdateSourceRequest {

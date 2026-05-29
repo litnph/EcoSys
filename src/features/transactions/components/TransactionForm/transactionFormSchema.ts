@@ -18,12 +18,26 @@ function uuidField(msg: string): z.ZodString {
     .refine((s) => UUID.test(s), msg);
 }
 
+/** Loại giao dịch hỗ trợ nhập hàng loạt (không gồm split). */
+export const BULK_TRANSACTION_TYPES = [
+  "direct",
+  "income",
+  "transfer",
+  "debt_borrow",
+  "debt_repay",
+  "loan_give",
+  "loan_collect",
+] as const satisfies readonly TransactionCreateFormType[];
+
+export type BulkTransactionFormType =
+  (typeof BULK_TRANSACTION_TYPES)[number];
+
 /** Các loại giao dịch trong form tạo (không gồm reversal). */
+/** `deferred` không hiển thị — map từ `direct` khi nguồn là thẻ tín dụng. */
 export const TRANSACTION_CREATE_TYPES = [
   "direct",
   "income",
   "transfer",
-  "deferred",
   "split",
   "debt_borrow",
   "debt_repay",
@@ -44,7 +58,9 @@ export interface TransactionFormValues {
   amount: number;
   sourceId: string;
   txnDate: string;
+  description?: string;
   note?: string;
+  tagIds?: string[];
   categoryId?: string;
   toSourceId?: string;
   splits?: { personName: string; amount: number }[];
@@ -56,11 +72,22 @@ export interface TransactionFormValues {
 }
 
 function needsCategory(t: TransactionCreateFormType) {
-  return t === "direct" || t === "income" || t === "deferred";
+  return t === "direct" || t === "income" || t === "split";
 }
 
 export function categoryKindFor(t: TransactionCreateFormType): "expense" | "income" {
   return t === "income" ? "income" : "expense";
+}
+
+/** Chỉ validate / giữ `splits` khi loại là split; các loại khác bỏ qua dữ liệu tồn dư. */
+function splitsFieldFor(type: TransactionCreateFormType) {
+  if (type === "split") {
+    return z.array(splitItemSchema).min(1, "Thêm ít nhất một người chia");
+  }
+  return z.preprocess(
+    () => undefined,
+    z.undefined().optional(),
+  );
 }
 
 /** Schema động theo loại giao dịch (resolver gọi theo giá trị `type` hiện tại). */
@@ -74,10 +101,15 @@ export function buildTransactionSchema(
         .positive("Số tiền phải > 0"),
       sourceId: uuidField("Chọn nguồn"),
       txnDate: txnDateString,
+      description: z
+        .string()
+        .max(512, "Mô tả tối đa 512 ký tự")
+        .optional(),
       note: z.string().max(500, "Ghi chú tối đa 500 ký tự").optional(),
+      tagIds: z.array(z.string()).optional(),
       categoryId: z.string().optional(),
       toSourceId: z.string().optional(),
-      splits: z.array(splitItemSchema).optional(),
+      splits: splitsFieldFor(type),
       personName: z.string().optional(),
       personContact: z.string().optional(),
       dueDate: z.string().optional(),
@@ -127,14 +159,6 @@ export function buildTransactionSchema(
 
       if (type === "split") {
         const rows = data.splits ?? [];
-        if (rows.length < 1) {
-          ctx.addIssue({
-            code: "custom",
-            message: "Thêm ít nhất một người chia",
-            path: ["splits"],
-          });
-          return;
-        }
         const sum = rows.reduce((acc, row) => acc + row.amount, 0);
         if (Math.abs(sum - data.amount) > 0.005) {
           ctx.addIssue({
@@ -198,10 +222,12 @@ export function defaultsForTxnForm(
     amount: preserve?.amount ?? 0,
     txnDate: preserve?.txnDate ?? today,
     sourceId: "",
+    description: "",
     note: "",
+    tagIds: [],
     categoryId: undefined,
     toSourceId: undefined,
-    splits: [{ personName: "", amount: 0 }],
+    splits: type === "split" ? [{ personName: "", amount: 0 }] : undefined,
     personName: "",
     personContact: "",
     dueDate: "",

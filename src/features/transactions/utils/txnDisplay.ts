@@ -9,7 +9,7 @@ import {
   Undo2,
 } from "lucide-react";
 
-import type { TransactionType } from "../types";
+import type { TransactionType, TxnStatus } from "../types";
 
 export function normalizeTxnType(raw: string): TransactionType {
   const map: Record<string, TransactionType> = {
@@ -23,6 +23,8 @@ export function normalizeTxnType(raw: string): TransactionType {
     loanGive: "loan_give",
     loanCollect: "loan_collect",
     reversal: "reversal",
+    balanceAdjustment: "balance_adjustment",
+    balance_adjustment: "balance_adjustment",
     debt_borrow: "debt_borrow",
     debt_repay: "debt_repay",
     loan_give: "loan_give",
@@ -74,6 +76,8 @@ export function transactionTypeIcon(type: TransactionType): LucideIcon {
       return Scale;
     case "reversal":
       return Undo2;
+    case "balance_adjustment":
+      return Scale;
     case "direct":
     default:
       return Banknote;
@@ -89,18 +93,81 @@ export function transactionTypeLabel(
 /** Dấu hiển thị và class màu theo spec Sprint 3. */
 export function txnAmountPresentation(
   type: TransactionType,
-  amount: number): { sign: string; className: string } {
+  amount: number,
+  opts?: {
+    hasInstallmentPlan?: boolean;
+    isInstallmentPayment?: boolean;
+  },
+): { sign: string; className: string } {
+  let sign: string;
+  let className: string;
+
   if (type === "reversal") {
-    return { sign: "", className: "text-warm-400 line-through italic" };
+    sign = "";
+    className = "text-warm-400 line-through italic";
+  } else if (isTransferTxnType(type) || type === "balance_adjustment") {
+    sign = amount < 0 ? "−" : amount > 0 ? "+" : "";
+    className = "text-warm-600";
+  } else if (isIncomeTxnType(type)) {
+    sign = "+";
+    className = "text-success";
+  } else {
+    sign = "−";
+    className = "text-danger";
   }
-  if (isTransferTxnType(type)) {
-    return {
-      sign: amount < 0 ? "−" : amount > 0 ? "+" : "",
-      className: "text-warm-600",
-    };
+
+  if (opts?.hasInstallmentPlan || opts?.isInstallmentPayment) {
+    className = "text-amber-600";
   }
-  if (isIncomeTxnType(type)) {
-    return { sign: "+", className: "text-success" };
+
+  return { sign, className };
+}
+
+export function normalizeTxnStatus(raw: string): TxnStatus {
+  const map: Record<string, TxnStatus> = {
+    new: "new",
+    pending: "new",
+    transferredToInstallment: "transferredToInstallment",
+    transferred_to_installment: "transferredToInstallment",
+    completed: "completed",
+    cancelled: "cancelled",
+  };
+  return map[raw] ?? "new";
+}
+
+export function txnStatusLabel(status: TxnStatus): string {
+  switch (status) {
+    case "new":
+      return "Giao dịch mới";
+    case "transferredToInstallment":
+      return "Đã chuyển trả góp";
+    case "completed":
+      return "Hoàn thành";
+    case "cancelled":
+      return "Đã hủy";
+    default:
+      return "Giao dịch mới";
   }
-  return { sign: "−", className: "text-danger" };
+}
+
+export function txnStatusBadgeClasses(status: TxnStatus): string {
+  switch (status) {
+    case "new":
+      return "bg-accent/10 text-accent-emphasis ring-1 ring-accent/25";
+    case "transferredToInstallment":
+      return "bg-amber-100 text-amber-900 ring-1 ring-amber-200";
+    case "completed":
+      return "bg-success/10 text-success ring-1 ring-success/20";
+    case "cancelled":
+      return "bg-warm-100 text-warm-500 ring-1 ring-warm-200";
+    default:
+      return "bg-warm-100 text-warm-500 ring-1 ring-warm-200";
+  }
+}
+
+export function isInstallmentRelatedTxn(tx: {
+  hasInstallmentPlan?: boolean;
+  isInstallmentPayment?: boolean;
+}): boolean {
+  return Boolean(tx.hasInstallmentPlan || tx.isInstallmentPayment);
 }

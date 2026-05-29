@@ -1,5 +1,3 @@
-"use client";
-
 import type { UseMutationResult } from "@tanstack/react-query";
 import * as React from "react";
 

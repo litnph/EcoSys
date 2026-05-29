@@ -1,8 +1,7 @@
-"use client";
-
 import { useEffect, useRef, useState } from "react";
 
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "@/i18n/hooks";
+import { useLocale } from "@/i18n/navigation";
 
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTheme } from "@/shared/providers/theme-provider";
@@ -14,6 +13,10 @@ import type {
   TimeFormatPreference,
   UserPreferencesDto,
 } from "../types";
+import {
+  readClientPreferences,
+  writeClientPreferences,
+} from "../utils/clientPreferences";
 import { usePatchPreferences, usePreferencesQuery } from "../hooks/useSettingsQueries";
 import { TimezoneSelect } from "./TimezoneSelect";
 
@@ -62,6 +65,7 @@ const defaultPreferences: UserPreferencesDto = {
   timeFormat: "24h",
   theme: "system",
   firstDayOfWeek: "monday",
+  ...readClientPreferences(),
 };
 
 export function PreferencesSettingsPanel() {
@@ -80,26 +84,53 @@ export function PreferencesSettingsPanel() {
 
   useEffect(() => {
     if (server && !dirtyRef.current) {
-      setLocal(server);
+      setLocal({ ...server, ...readClientPreferences() });
       applyRootTheme(server.theme);
     }
   }, [server, applyRootTheme]);
 
   useEffect(() => {
-    if (!dirtyRef.current) {
-      return;
-    }
+    if (!dirtyRef.current) return;
     const timer = window.setTimeout(() => {
-      patch.mutate(local, {
-        onSuccess: () => {
-          dirtyRef.current = false;
+      patch.mutate(
+        {
+          languageCode: local.languageCode,
+          timezone: local.timezone,
+          dateFormat: local.dateFormat,
+          theme: local.theme,
         },
-      });
+        {
+          onSuccess: () => {
+            dirtyRef.current = false;
+          },
+        },
+      );
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [local, patch]);
+  }, [
+    local.languageCode,
+    local.timezone,
+    local.dateFormat,
+    local.theme,
+    patch,
+  ]);
 
   const bump = (partial: Partial<UserPreferencesDto>) => {
+    if (
+      partial.timeFormat !== undefined ||
+      partial.firstDayOfWeek !== undefined
+    ) {
+      setLocal((prev) => {
+        const merged = { ...prev, ...partial };
+        writeClientPreferences({
+          timeFormat: merged.timeFormat,
+          firstDayOfWeek: merged.firstDayOfWeek,
+        });
+        return merged;
+      });
+      return;
+    }
+
     dirtyRef.current = true;
     setLocal((prev) => {
       const merged = { ...prev, ...partial };
@@ -137,7 +168,7 @@ export function PreferencesSettingsPanel() {
                 const code = e.target.value as "vi" | "en";
                 bump({ languageCode: code });
                 if (code !== locale) {
-                  router.replace(pathname, { locale: code });
+                  router.replace(pathname, { locale: code, preserveSearch: true });
                 }
               }}
               className="mt-3 h-10 w-full max-w-xs rounded-input border border-warm-200 bg-surface px-3 text-sm text-warm-900 outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25"

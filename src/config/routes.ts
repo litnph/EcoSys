@@ -7,6 +7,7 @@ export const ROUTES = {
     profile: "/profile",
     transactions: "/transactions",
     sources: "/sources",
+    sourceLedger: (id: string) => `/sources/${id}/ledger` as const,
     billing: "/billing",
     installments: "/installments",
     debt: "/debt",

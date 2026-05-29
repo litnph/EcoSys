@@ -1,5 +1,3 @@
-"use client";
-
 import { differenceInCalendarDays, parseISO, startOfDay } from "date-fns";
 import { CalendarClock } from "lucide-react";
 import { motion } from "framer-motion";

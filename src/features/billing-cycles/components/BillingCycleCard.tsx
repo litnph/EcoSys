@@ -1,5 +1,4 @@
-"use client";
-
+import { RefreshCw, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { Badge } from "@/shared/components/ui/Badge";
@@ -9,6 +8,10 @@ import { cardHoverMotion } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import type { BillingCycle, BillingCycleStatus } from "../types";
+import {
+  billingCycleDisplayName,
+  billingCyclePeriodLabel,
+} from "../utils/billingCycleDisplay";
 
 function statusBadgeClasses(status: BillingCycleStatus): string {
   switch (status) {
@@ -62,6 +65,9 @@ export interface BillingCycleCardProps {
   onOpenDetail: (cycle: BillingCycle) => void;
   onPay: (cycle: BillingCycle) => void;
   onCloseCycle: (cycle: BillingCycle) => void;
+  onRefresh?: (cycle: BillingCycle) => void;
+  isRefreshing?: boolean;
+  onDelete?: (cycle: BillingCycle) => void;
 }
 
 export function BillingCycleCard({
@@ -70,6 +76,9 @@ export function BillingCycleCard({
   onOpenDetail,
   onPay,
   onCloseCycle,
+  onRefresh,
+  isRefreshing = false,
+  onDelete,
 }: BillingCycleCardProps) {
   const total = Math.max(0, cycle.totalAmount);
   const paid = Math.max(0, cycle.paidAmount);
@@ -78,8 +87,9 @@ export function BillingCycleCard({
   const daysLate = isOverdue ? overdueDays(cycle.paymentDueDate) : 0;
   const showOverdueCopy = isOverdue && daysLate > 0;
 
-  const periodLabel = `${formatDate(cycle.periodStart)} — ${formatDate(
-    cycle.periodEnd)}`;
+  const title = billingCycleDisplayName(cycle);
+  const periodLabel = billingCyclePeriodLabel(cycle);
+  const canDelete = cycle.status === "open" && cycle.paidAmount <= 0;
 
   return (
     <motion.article
@@ -95,9 +105,11 @@ export function BillingCycleCard({
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <h3 className="truncate font-display text-base font-semibold text-warm-900">
-              {cycle.sourceName}
+              {title}
             </h3>
-            <p className="text-sm text-warm-600">{periodLabel}</p>
+            <p className="text-sm text-warm-600">
+              {cycle.sourceName} · {periodLabel}
+            </p>
           </div>
           <Badge
             size="sm"
@@ -155,15 +167,40 @@ export function BillingCycleCard({
 
       <div className="flex flex-wrap gap-2 border-t border-warm-100 pt-3">
         {cycle.status === "open" ? (
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="flex-1 min-w-[140px]"
-            onClick={() => onCloseCycle(cycle)}
-          >
-            Đóng kỳ sao kê
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="flex-1 min-w-[140px]"
+              leftIcon={<RefreshCw className="size-4" aria-hidden />}
+              isLoading={isRefreshing}
+              onClick={() => onRefresh?.(cycle)}
+            >
+              Làm mới
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="flex-1 min-w-[140px]"
+              onClick={() => onCloseCycle(cycle)}
+            >
+              Đóng kỳ sao kê
+            </Button>
+            {canDelete ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-danger hover:bg-danger/10"
+                leftIcon={<Trash2 className="size-4" aria-hidden />}
+                onClick={() => onDelete?.(cycle)}
+              >
+                Xóa
+              </Button>
+            ) : null}
+          </>
         ) : null}
         {cycle.status === "closed" || cycle.status === "overdue" ? (
           <Button

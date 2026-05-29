@@ -1,5 +1,3 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState } from "react";
 import { FormProvider, useForm, type Resolver } from "react-hook-form";
@@ -8,9 +6,13 @@ import type { FinSource } from "@/features/sources/types";
 import { useSources } from "@/features/sources/hooks";
 import { Button } from "@/shared/components/ui/Button";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
-import { scrollFirstHookFormErrorIntoView } from "@/shared/lib/scrollFirstFormError";
+import {
+  firstHookFormErrorMessage,
+  scrollFirstHookFormErrorIntoView,
+} from "@/shared/lib/scrollFirstFormError";
 
 import { useCreateTransaction } from "../../hooks/useCreateTransaction";
+import { syncTransactionTags } from "../../utils/syncTransactionTags";
 import { BaseFields } from "./BaseFields";
 import { ConditionalFields } from "./ConditionalFields";
 import { mapFormValuesToCreateBody } from "./mapFormToApi";
@@ -33,6 +35,7 @@ export function TransactionForm({
   onSucceeded,
 }: TransactionFormProps) {
   const [submitError, setSubmitError] = useState("");
+  const [validationHint, setValidationHint] = useState("");
   const { data: fetchedSources } = useSources();
 
   const sources = useMemo(
@@ -56,7 +59,7 @@ export function TransactionForm({
     reValidateMode: "onChange",
   });
 
-  const { watch, handleSubmit, reset, formState } = form;
+  const { watch, handleSubmit, reset } = form;
   const typeValue = watch("type");
   const sourceId = watch("sourceId");
 
@@ -70,6 +73,7 @@ export function TransactionForm({
     const txnDate = watch("txnDate");
     reset(defaultsForTxnForm(next, { amount, txnDate }));
     setSubmitError("");
+    setValidationHint("");
   }
 
   const busy = createTx.isPending;
@@ -80,18 +84,29 @@ export function TransactionForm({
         noValidate
         className="flex flex-col gap-4"
         onSubmit={handleSubmit(
-          (vals) => {
+          async (vals) => {
             setSubmitError("");
-            const body = mapFormValuesToCreateBody( vals);
-            createTx.mutate(body, {
-              onSuccess: () => {
-                reset(defaultsForTxnForm(vals.type));
-                onSucceeded?.();
-              },
-              onError: (err) => setSubmitError(getFinanceApiErrorMessage(err)),
-            });
+            setValidationHint("");
+            const body = mapFormValuesToCreateBody(vals, sources);
+            const tagIds = vals.tagIds ?? [];
+            try {
+              const created = await createTx.mutateAsync(body);
+              if (tagIds.length > 0) {
+                await syncTransactionTags(created.id, [], tagIds);
+              }
+              reset(defaultsForTxnForm(vals.type));
+              onSucceeded?.();
+            } catch (err) {
+              setSubmitError(getFinanceApiErrorMessage(err));
+            }
           },
-          (errs) => scrollFirstHookFormErrorIntoView(errs, form))}
+          (errs) => {
+            scrollFirstHookFormErrorIntoView(errs, form);
+            setValidationHint(
+              firstHookFormErrorMessage(errs) ??
+                "Vui lòng điền đủ các trường bắt buộc.",
+            );
+          })}
       >
         <TypeSelector
           value={typeValue}
@@ -112,6 +127,15 @@ export function TransactionForm({
           txnCurrency={currency}
         />
 
+        {validationHint.length > 0 ? (
+          <div
+            className="rounded-md border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger"
+            role="alert"
+          >
+            {validationHint}
+          </div>
+        ) : null}
+
         {submitError.length > 0 ? (
           <div
             className="rounded-md border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger"
@@ -125,7 +149,7 @@ export function TransactionForm({
           <Button
             type="submit"
             className="w-full"
-            disabled={busy || !formState.isDirty}
+            disabled={busy}
             isLoading={busy}
           >
             Lưu giao dịch

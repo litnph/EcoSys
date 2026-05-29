@@ -1,7 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import {
   getNgrokSkipBrowserWarningHeaders,
-  NEXT_PUBLIC_API_URL,
+  VITE_API_URL,
 } from "@/config/env";
 import { resolveApiUserMessage } from "@/shared/lib/errorMessages";
 import { REFRESH_TOKEN_KEY, TOKEN_KEY } from "@/config/constants";
@@ -18,7 +18,7 @@ declare module "axios" {
   }
 }
 
-const baseURL = `${NEXT_PUBLIC_API_URL.replace(/\/$/, "")}/api/v1`;
+const baseURL = `${VITE_API_URL.replace(/\/$/, "")}/api/v1`;
 
 export const apiClient = axios.create({
   baseURL,

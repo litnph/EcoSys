@@ -1,5 +1,3 @@
-"use client";
-
 import { Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useCallback, useState } from "react";
 

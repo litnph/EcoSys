@@ -1,5 +1,3 @@
-"use client";
-
 import * as Tabs from "@radix-ui/react-tabs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,7 +8,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "@/i18n/hooks";
 import * as React from "react";
 
 import { Drawer } from "@/shared/components/ui/Drawer";
@@ -27,6 +25,7 @@ import { transactionKeys } from "../api/transactionKeys";
 import { useDeleteTransaction } from "../hooks/useDeleteTransaction";
 import type { Transaction } from "../types";
 import {
+  isInstallmentRelatedTxn,
   transactionTypeLabel,
   txnAmountPresentation,
 } from "../utils/txnDisplay";
@@ -160,8 +159,14 @@ export function TransactionDetailDrawer({
       : t("detailFallbackTitle");
 
   const amountPres = mergedDisplay
-    ? txnAmountPresentation(mergedDisplay.type, mergedDisplay.amount)
+    ? txnAmountPresentation(mergedDisplay.type, mergedDisplay.amount, {
+        hasInstallmentPlan: mergedDisplay.hasInstallmentPlan,
+        isInstallmentPayment: mergedDisplay.isInstallmentPayment,
+      })
     : { sign: "", className: "" };
+
+  const installmentRelated =
+    mergedDisplay != null && isInstallmentRelatedTxn(mergedDisplay);
 
   return (
     <>
@@ -183,10 +188,41 @@ export function TransactionDetailDrawer({
           <DetailDrawerSkeleton />
         ) : mergedDisplay ? (
           <div className="space-y-6">
+            {mergedDisplay.hasInstallmentPlan ? (
+              <div
+                className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-950"
+                role="status"
+              >
+                <p className="font-medium">Đã chuyển sang trả góp</p>
+                <p className="mt-0.5 text-xs text-amber-800/90">
+                  Giao dịch gốc này đang được theo dõi qua kế hoạch trả góp trên
+                  thẻ tín dụng — không phải đã hoàn tất toàn bộ kế hoạch.
+                </p>
+              </div>
+            ) : null}
+            {mergedDisplay.isInstallmentPayment ? (
+              <div
+                className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-950"
+                role="status"
+              >
+                <p className="font-medium">Thanh toán kỳ trả góp</p>
+                <p className="mt-0.5 text-xs text-amber-800/90">
+                  Giao dịch ghi nhận thanh toán một kỳ trong kế hoạch trả góp.
+                </p>
+              </div>
+            ) : null}
+
             <div>
-              <span className="inline-flex rounded-badge border border-warm-200 bg-warm-50 px-2 py-0.5 text-xs font-medium text-warm-700">
-                {transactionTypeLabel(mergedDisplay.type, t)}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex rounded-badge border border-warm-200 bg-warm-50 px-2 py-0.5 text-xs font-medium text-warm-700">
+                  {transactionTypeLabel(mergedDisplay.type, t)}
+                </span>
+                {installmentRelated ? (
+                  <span className="inline-flex rounded-badge bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-amber-200">
+                    Trả góp
+                  </span>
+                ) : null}
+              </div>
               <p
                 className={cn(
                   "mt-3 font-mono text-3xl font-bold tabular-nums",
@@ -365,16 +401,18 @@ export function TransactionDetailDrawer({
               >
                 {tCommon("edit")}
               </Button>
-              <Button
-                type="button"
-                variant="danger"
-                size="sm"
-                disabled={del.isPending}
-                leftIcon={<Trash2 className="size-4" />}
-                onClick={() => setDeleteOpen(true)}
-              >
-                {tCommon("delete")}
-              </Button>
+              {detail?.canDelete !== false && detail?.type !== "reversal" ? (
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  disabled={del.isPending}
+                  leftIcon={<Trash2 className="size-4" />}
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  {tCommon("delete")}
+                </Button>
+              ) : null}
             </div>
           </div>
         ) : null}

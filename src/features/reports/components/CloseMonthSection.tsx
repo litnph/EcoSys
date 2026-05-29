@@ -1,5 +1,3 @@
-"use client";
-
 import { AlertTriangle, Lock } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -9,6 +7,7 @@ import { Button } from "@/shared/components/ui/Button";
 import type { BillingCycle } from "@/features/billing-cycles/types";
 import { billingCyclesBlockingCloseMonth } from "../utils/blockingCycles";
 import type { MonthlyPeriodStatus } from "../types";
+import { currentUtcYearMonth } from "../utils/months";
 import { CloseMonthConfirmModal } from "./CloseMonthConfirmModal";
 
 export interface CloseMonthSectionProps {
@@ -17,6 +16,7 @@ export interface CloseMonthSectionProps {
   status: MonthlyPeriodStatus;
   billingCycles: BillingCycle[] | undefined;
   isCyclesLoading?: boolean;
+  onClosed?: () => void;
 }
 
 export function CloseMonthSection({
@@ -25,11 +25,17 @@ export function CloseMonthSection({
   status,
   billingCycles,
   isCyclesLoading,
+  onClosed,
 }: CloseMonthSectionProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const blockers = useMemo(
     () => billingCyclesBlockingCloseMonth(year, month, billingCycles ?? []),
     [billingCycles, month, year]);
+
+  const isFutureMonth = useMemo(() => {
+    const now = currentUtcYearMonth();
+    return year > now.year || (year === now.year && month > now.month);
+  }, [month, year]);
 
   const uniqueNames = useMemo(
     () =>
@@ -43,14 +49,28 @@ export function CloseMonthSection({
         <div className="flex flex-wrap items-center gap-3">
           <Lock className="size-5 text-warm-600" aria-hidden />
           <h3 className="font-display text-base font-semibold text-warm-900">
-            Tháng đã chốt
+            Báo cáo đã chốt
           </h3>
           <Badge variant="success" size="md">
             Đã chốt
           </Badge>
         </div>
         <p className="text-sm leading-relaxed text-warm-600">
-          Chỉ số tháng này đã được cố định. Chi tiết vẫn xem được ở biểu đồ và tổng quan phía trên.
+          Báo cáo tháng này đã được cố định. Dữ liệu không còn cập nhật được nữa.
+        </p>
+      </section>
+    );
+  }
+
+  if (isFutureMonth) {
+    return (
+      <section className="mt-10 flex flex-col gap-3 rounded-card border border-warm-200 bg-warm-25/60 p-5 shadow-inner">
+        <h3 className="font-display text-base font-semibold text-warm-900">
+          Chốt báo cáo tháng
+        </h3>
+        <p className="text-sm leading-relaxed text-warm-600">
+          Báo cáo tháng tương lai chỉ dùng để theo dõi dự kiến. Bạn có thể cập nhật dữ liệu,
+          nhưng chưa thể chốt cho đến khi tháng đó bắt đầu.
         </p>
       </section>
     );
@@ -64,10 +84,10 @@ export function CloseMonthSection({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="font-display text-base font-semibold text-warm-900">
-              Đóng sổ tháng
+              Chốt báo cáo tháng
             </h3>
             <p className="mt-1 max-w-xl text-sm text-warm-600">
-              Sau khi chốt tháng, hệ thống ghi nhận chỉ số hiện tại và yêu cầu không còn kỳ sao kê thẻ tin dụng mở nợ trong tháng.
+              Sau khi chốt, báo cáo được đóng băng và không thể cập nhật thêm. Yêu cầu không còn kỳ sao kê thẻ mở nợ trong tháng.
             </p>
           </div>
           <Button
@@ -77,7 +97,7 @@ export function CloseMonthSection({
             leftIcon={<Lock className="size-4" aria-hidden />}
             onClick={() => setModalOpen(true)}
           >
-            Chốt tháng
+            Chốt báo cáo
           </Button>
         </div>
 
@@ -100,11 +120,11 @@ export function CloseMonthSection({
       </section>
 
       <CloseMonthConfirmModal
-        
         year={year}
         month={month}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        onClosed={onClosed}
       />
     </>
   );

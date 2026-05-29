@@ -43,6 +43,7 @@ interface RemoteFinSourceDto {
   icon?: string | null;
   color?: string | null;
   sortOrder: number;
+  installmentRemainingAmount?: number;
 }
 
 interface SourcesListEnvelope {
@@ -77,6 +78,7 @@ function mapRemoteSource(row: RemoteFinSourceDto): FinSource {
     icon: row.icon ?? null,
     color: row.color ?? null,
     sortOrder: row.sortOrder,
+    installmentRemainingAmount: row.installmentRemainingAmount ?? 0,
   };
 }
 
@@ -97,6 +99,9 @@ function buildCreateBody(data: CreateSourceRequest) {
     minInstallmentAmt: isCard
       ? toApiWholeAmountOrNull(data.minInstallmentAmt ?? null)
       : null,
+    initialBalance: isCard
+      ? null
+      : toApiWholeAmountOrNull(data.initialBalance ?? null),
   };
 }
 

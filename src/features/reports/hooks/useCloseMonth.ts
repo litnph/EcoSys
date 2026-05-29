@@ -1,5 +1,3 @@
-"use client";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
@@ -29,12 +27,12 @@ export function useCloseMonth() {
         queryKey: reportKeys.list(),
       });
       void queryClient.invalidateQueries({ queryKey: billingCycleKeys.lists() });
-      addToast({ type: "success", title: "Đã chốt tháng" });
+      addToast({ type: "success", title: "Đã chốt báo cáo tháng" });
     },
     onError: (error) => {
       addToast({
         type: "error",
-        title: "Không chốt được tháng",
+        title: "Không chốt được báo cáo",
         message: getFinanceApiErrorMessage(error),
       });
     },

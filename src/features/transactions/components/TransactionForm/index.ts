@@ -5,6 +5,8 @@ export { TypeSelector } from "./TypeSelector";
 export { BaseFields } from "./BaseFields";
 export { ConditionalFields } from "./ConditionalFields";
 export { TransactionFormModal } from "./TransactionFormModal";
+export { BulkTransactionFormModal } from "./BulkTransactionFormModal";
+export { BulkTransactionForm } from "./BulkTransactionForm";
 
 export {
   buildTransactionSchema,

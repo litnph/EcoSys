@@ -1,12 +1,7 @@
-"use client";
-
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
-
+import { useSearchParams } from "react-router-dom";
 import type { ApiResponse } from "@/shared/types/api";
-import { ROUTES } from "@/config/routes";
 import { useRouter } from "@/i18n/navigation";
 import { useToastStore } from "@/shared/stores/toastStore";
 import {
@@ -33,13 +28,9 @@ function getApiErrorMessage(error: unknown): string {
 
 export function useLogin() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [searchParams] = useSearchParams();
   const addToast = useToastStore((s) => s.addToast);
   const setAuth = useAuthStore((s) => s.setAuth);
-
-  useEffect(() => {
-    router.prefetch(ROUTES.dashboard.home);
-  }, [router]);
 
   return useMutation({
     mutationFn: (data: LoginRequest) => login(data),

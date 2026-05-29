@@ -1,8 +1,6 @@
-"use client";
-
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "@/i18n/hooks";
 
 import { Badge } from "@/shared/components/ui/Badge";
 import { AnimatedAmount } from "@/shared/components/ui/AnimatedAmount";

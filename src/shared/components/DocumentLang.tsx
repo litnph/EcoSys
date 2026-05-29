@@ -1,6 +1,4 @@
-"use client";
-
-import { useLocale } from "next-intl";
+import { useLocale } from "@/i18n/navigation";
 import { useEffect } from "react";
 
 export function DocumentLang() {

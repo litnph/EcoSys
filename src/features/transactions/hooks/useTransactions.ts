@@ -1,5 +1,3 @@
-"use client";
-
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { getTransactions } from "../api/transactionsApi";
@@ -20,12 +18,16 @@ function stableInfiniteKey(
     pageSize,
     state.sourceIds.slice().sort().join(","),
     state.types.slice().sort().join(","),
+    state.parentCategoryId ?? "",
     state.categoryId ?? "",
     state.categoryKind,
     state.dateFrom ?? "",
     state.dateTo ?? "",
     state.amountMin ?? "",
     state.amountMax ?? "",
+    state.status ?? "",
+    state.groupBy,
+    state.sortBy,
   ];
 }
 

@@ -1,8 +1,6 @@
-"use client";
-
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronRight } from "lucide-react";
-import Image from "next/image";
+import { AvatarImage } from "@/shared/components/ui/AvatarImage";
 import { useEffect, useState } from "react";
 
 import { ROUTES } from "@/config/routes";
@@ -14,7 +12,6 @@ import {
   readJwtDisplayClaims,
 } from "@/shared/lib/jwt-display";
 import { getLocalStorageItem, logout } from "@/shared/lib/auth-session";
-import { avatarImageUnoptimized } from "@/shared/lib/avatar-image";
 import { cn } from "@/shared/lib/utils";
 
 export type TopNavUser = {
@@ -106,15 +103,12 @@ export function TopNav({
               aria-label="Account menu"
             >
               {avatarUrl ? (
-                <Image
+                <AvatarImage
                   src={avatarUrl}
                   alt=""
                   width={36}
                   height={36}
                   className="size-9 rounded-full border border-warm-200 object-cover"
-                  sizes="36px"
-                  priority
-                  unoptimized={avatarImageUnoptimized(avatarUrl)}
                 />
               ) : (
                 <span className="flex size-9 items-center justify-center rounded-full border border-warm-200 bg-accent/15 text-xs font-semibold text-warm-900">

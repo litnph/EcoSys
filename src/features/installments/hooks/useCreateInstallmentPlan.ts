@@ -1,7 +1,6 @@
-"use client";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { sourceKeys } from "@/features/sources/api/sourceKeys";
 import { transactionKeys } from "@/features/transactions/api/transactionKeys";
 import { useToastStore } from "@/shared/stores/toastStore";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
@@ -20,6 +19,7 @@ export function useCreateInstallmentPlan() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: installmentKeys.all });
       void qc.invalidateQueries({ queryKey: transactionKeys.lists() });
+      void qc.invalidateQueries({ queryKey: sourceKeys.all });
       addToast({
         type: "success",
         title: "Đã tạo kế hoạch trả góp",

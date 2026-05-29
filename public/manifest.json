@@ -2,8 +2,8 @@
   "name": "Personal Finance",
   "short_name": "PFP",
   "description": "Personal Finance Platform",
-  "theme_color": "#C4A882",
-  "background_color": "#F5F0E8",
+  "theme_color": "#0891B2",
+  "background_color": "#EEF2F7",
   "display": "standalone",
   "start_url": "/",
   "icons": [

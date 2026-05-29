@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 
 import type { FinSource } from "@/features/sources/types";

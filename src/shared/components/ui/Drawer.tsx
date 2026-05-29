@@ -1,11 +1,21 @@
-"use client";
-
 import * as Dialog from "@radix-ui/react-dialog";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type HTMLMotionProps } from "framer-motion";
 import { X } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/shared/lib/utils";
+
+const MotionOverlay = React.forwardRef<HTMLDivElement, HTMLMotionProps<"div">>(
+  function MotionOverlay(props, ref) {
+    return <motion.div ref={ref} {...props} />;
+  },
+);
+
+const DrawerPanel = React.forwardRef<HTMLDivElement, HTMLMotionProps<"div">>(
+  function DrawerPanel(props, ref) {
+    return <motion.div ref={ref} {...props} />;
+  },
+);
 
 export interface DrawerSide {
   side: "bottom" | "right";
@@ -18,7 +28,7 @@ export interface DrawerProps extends DrawerSide {
   onClose: () => void;
   title: string;
   description?: string;
-  size?: "sm" | "md" | "lg" | "full";
+  size?: "sm" | "md" | "lg" | "xl" | "full";
   children: React.ReactNode;
 }
 
@@ -26,6 +36,7 @@ const sizeClassDesktop: Record<NonNullable<DrawerProps["size"]>, string> = {
   sm: "w-full max-w-sm",
   md: "w-full max-w-md",
   lg: "w-full max-w-2xl",
+  xl: "w-full max-w-5xl",
   full: "w-[95vw] max-w-4xl",
 };
 
@@ -85,7 +96,7 @@ export function Drawer({
           {isOpen && (
             <>
               <Dialog.Overlay key="drawer-overlay" asChild forceMount>
-                <motion.div
+                <MotionOverlay
                   aria-hidden="true"
                   className={cn(
                     "fixed inset-0 z-[100] bg-warm-900/40 backdrop-blur-sm")}
@@ -98,7 +109,7 @@ export function Drawer({
               </Dialog.Overlay>
 
               <Dialog.Content key="drawer-panel" asChild forceMount>
-                <motion.div
+                <DrawerPanel
                   className={cn(
                     "fixed z-[101] bg-surface shadow-lg outline-none focus:outline-none",
                     "flex flex-col overflow-hidden border border-warm-200",
@@ -146,7 +157,7 @@ export function Drawer({
                   <div className="relative min-h-0 flex-1 overflow-y-auto px-5 py-4">
                     {children}
                   </div>
-                </motion.div>
+                </DrawerPanel>
               </Dialog.Content>
             </>
           )}

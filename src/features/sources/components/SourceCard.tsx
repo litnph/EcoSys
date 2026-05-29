@@ -1,5 +1,3 @@
-"use client";
-
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { motion } from "framer-motion";
 import { MoreVertical } from "lucide-react";
@@ -12,7 +10,14 @@ import { cardHoverMotion } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import type { FinSource } from "../types";
+import { supportsBalanceLedger } from "../utils/assetSource";
+import {
+  assetAvailableBalance,
+  creditSourceBreakdown,
+} from "../utils/creditSourceBreakdown";
 import { sourceTypeLabelVi } from "../utils/sourceLabels";
+
+import { CreditLimitBar, CreditLimitLegend } from "./CreditLimitBar";
 
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.trim().replace("#", "");
@@ -32,35 +37,24 @@ function cardTintColor(source: FinSource): string {
   return "rgba(0,0,0,0.03)";
 }
 
-function utilizationTone(usedPct: number | null): string {
-  if (usedPct === null) return "bg-accent";
-  if (usedPct > 90) return "bg-danger";
-  if (usedPct > 70) return "bg-warning";
-  return "bg-success";
-}
-
-function creditUsedPct(source: FinSource): number | null {
-  if (source.type !== "creditCard") return null;
-  const limit = source.creditLimit;
-  if (limit == null || limit <= 0) return null;
-  return Math.min(100, Math.round((source.balance / limit) * 1000) / 10);
-}
-
 export type SourceCardProps = {
   source: FinSource;
   onEdit: (source: FinSource) => void;
   onDelete: (source: FinSource) => void;
+  onViewLedger?: (source: FinSource) => void;
 };
 
-function SourceCardInner({ source, onEdit, onDelete }: SourceCardProps) {
+function SourceCardInner({ source, onEdit, onDelete, onViewLedger }: SourceCardProps) {
   const TypeIcon = sourceTypeIcon(source.type);
-  const usedPct = creditUsedPct(source);
   const isCard = source.type === "creditCard";
   const iconChar = source.icon?.trim();
+  const creditBreakdown = React.useMemo(
+    () => creditSourceBreakdown(source),
+    [source]);
 
-  const balanceLabel = React.useMemo(
-    () => formatCurrency(source.balance, source.currency),
-    [source.balance, source.currency]);
+  const availableBalance = React.useMemo(
+    () => assetAvailableBalance(source),
+    [source]);
 
   const handleEdit = React.useCallback(() => {
     onEdit(source);
@@ -69,6 +63,13 @@ function SourceCardInner({ source, onEdit, onDelete }: SourceCardProps) {
   const handleDelete = React.useCallback(() => {
     onDelete(source);
   }, [onDelete, source]);
+
+  const handleLedger = React.useCallback(() => {
+    onViewLedger?.(source);
+  }, [onViewLedger, source]);
+
+  const showLedger =
+    supportsBalanceLedger(source.type) && typeof onViewLedger === "function";
 
   return (
     <motion.article
@@ -120,6 +121,16 @@ function SourceCardInner({ source, onEdit, onDelete }: SourceCardProps) {
               className={cn(
                 "z-[120] min-w-[160px] rounded-card border border-warm-200 bg-surface p-1 shadow-lg outline-none")}
             >
+              {showLedger ? (
+                <DropdownMenu.Item
+                  className={cn(
+                    "cursor-pointer select-none rounded-md px-2 py-2 text-sm text-warm-800 outline-none",
+                    "hover:bg-warm-100 focus:bg-warm-100")}
+                  onSelect={handleLedger}
+                >
+                  Sổ số dư
+                </DropdownMenu.Item>
+              ) : null}
               <DropdownMenu.Item
                 className={cn(
                   "cursor-pointer select-none rounded-md px-2 py-2 text-sm text-warm-800 outline-none",
@@ -141,28 +152,27 @@ function SourceCardInner({ source, onEdit, onDelete }: SourceCardProps) {
         </DropdownMenu.Root>
       </div>
 
-      <p className="mt-4 font-mono text-xl font-semibold tabular-nums text-warm-900">
-        {balanceLabel}
-      </p>
-
-      {isCard && source.creditLimit != null && source.creditLimit > 0 ? (
-        <div className="mt-4 space-y-2">
-          <div className="flex justify-between text-xs text-warm-500">
-            <span>Đã dùng</span>
-            <span className="font-mono text-warm-700">
-              {usedPct !== null ? `${String(usedPct)}%` : "—"}
-            </span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-warm-100/90">
-            <div
-              className={cn(
-                "h-full rounded-full transition-all",
-                utilizationTone(usedPct))}
-              style={{
-                width: `${String(Math.min(100, usedPct ?? 0))}%`,
-              }}
-            />
-          </div>
+      {isCard && creditBreakdown ? (
+        <div className="mt-4 space-y-3">
+          <CreditLimitLegend
+            spentLabel="Đã dùng"
+            spentValue={formatCurrency(
+              creditBreakdown.spentAmount,
+              source.currency)}
+            installmentLabel="Trả góp"
+            installmentValue={formatCurrency(
+              creditBreakdown.installmentAmount,
+              source.currency)}
+            availableLabel="Khả dụng"
+            availableValue={formatCurrency(
+              creditBreakdown.availableAmount,
+              source.currency)}
+          />
+          <CreditLimitBar
+            spentPct={creditBreakdown.bar.spentPct}
+            installmentPct={creditBreakdown.bar.installmentPct}
+            availablePct={creditBreakdown.bar.availablePct}
+          />
           {source.statementDay != null ? (
             <p className="text-xs text-warm-500">
               Sao kê ngày{" "}
@@ -172,7 +182,31 @@ function SourceCardInner({ source, onEdit, onDelete }: SourceCardProps) {
             </p>
           ) : null}
         </div>
-      ) : null}
+      ) : isCard ? (
+        <div className="mt-4 space-y-1">
+          <p className="text-xs font-medium text-warm-500">Dư nợ</p>
+          <p className="font-mono text-xl font-semibold tabular-nums text-warm-900">
+            {formatCurrency(Math.max(0, source.balance), source.currency)}
+          </p>
+          {(source.installmentRemainingAmount ?? 0) > 0 ? (
+            <p className="text-xs text-amber-800">
+              Trả góp còn lại:{" "}
+              <span className="font-mono font-medium">
+                {formatCurrency(
+                  source.installmentRemainingAmount ?? 0,
+                  source.currency)}
+              </span>
+            </p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="mt-4">
+          <p className="text-xs font-medium text-warm-500">Số dư khả dụng</p>
+          <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-success">
+            {formatCurrency(availableBalance, source.currency)}
+          </p>
+        </div>
+      )}
     </motion.article>
   );
 }

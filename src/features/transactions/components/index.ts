@@ -8,4 +8,5 @@ export { TransactionList } from "./TransactionList";
 export {
   TransactionForm,
   TransactionFormModal,
+  BulkTransactionFormModal,
 } from "./TransactionForm";

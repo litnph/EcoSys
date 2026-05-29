@@ -1,5 +1,3 @@
-"use client";
-
 import { create } from "zustand";
 
 import { REFRESH_TOKEN_KEY, TOKEN_KEY } from "@/config/constants";

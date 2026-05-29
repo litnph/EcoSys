@@ -2,7 +2,12 @@ import type { ApiResponse } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
-import type { CategoryKind, FinCategory, FinCategoryFlat } from "../types";
+import type {
+  CategoryKind,
+  CategoryNecessityLevel,
+  FinCategory,
+  FinCategoryFlat,
+} from "../types";
 
 type ApiEnvelope<T> = ApiResponse<T>;
 
@@ -33,6 +38,8 @@ interface RemoteCategoryTreeNodeDto {
   color?: string | null;
   sortOrder: number;
   isDefault: boolean;
+  isSystem?: boolean;
+  necessityLevel?: CategoryNecessityLevel | null;
   children: RemoteCategoryTreeNodeDto[];
 }
 
@@ -45,6 +52,8 @@ interface RemoteCategoryFlatDto {
   color?: string | null;
   sortOrder: number;
   isDefault: boolean;
+  isSystem?: boolean;
+  necessityLevel?: CategoryNecessityLevel | null;
   depth: number;
 }
 
@@ -66,6 +75,8 @@ function mapTreeNode(row: RemoteCategoryTreeNodeDto): FinCategory {
     color: row.color ?? null,
     sortOrder: row.sortOrder,
     isDefault: row.isDefault,
+    isSystem: row.isSystem ?? false,
+    necessityLevel: row.necessityLevel ?? null,
     children:
       Array.isArray(row.children) && row.children.length > 0
         ? row.children.map(mapTreeNode)
@@ -83,6 +94,8 @@ function mapFlatRow(row: RemoteCategoryFlatDto): FinCategoryFlat {
     color: row.color ?? null,
     sortOrder: row.sortOrder,
     isDefault: row.isDefault,
+    isSystem: row.isSystem ?? false,
+    necessityLevel: row.necessityLevel ?? null,
     depth: row.depth,
   };
 }
@@ -117,6 +130,7 @@ export interface CreateCategoryRequest {
   color?: string | null;
   sortOrder?: number | null;
   isDefault?: boolean;
+  necessityLevel?: CategoryNecessityLevel | null;
 }
 
 export interface UpdateCategoryRequest {
@@ -127,6 +141,7 @@ export interface UpdateCategoryRequest {
   color?: string | null;
   sortOrder?: number | null;
   isDefault?: boolean;
+  necessityLevel?: CategoryNecessityLevel | null;
 }
 
 export async function createCategory(
@@ -140,6 +155,7 @@ export async function createCategory(
       color: data.color ?? null,
       sortOrder: data.sortOrder ?? null,
       isDefault: data.isDefault ?? false,
+      necessityLevel: data.necessityLevel ?? null,
     }));
   return mapTreeNode(envelope.category);
 }
@@ -156,6 +172,7 @@ export async function updateCategory(
       color: data.color ?? null,
       sortOrder: data.sortOrder ?? null,
       isDefault: data.isDefault ?? false,
+      necessityLevel: data.necessityLevel ?? null,
     }));
   return mapTreeNode(envelope.category);
 }

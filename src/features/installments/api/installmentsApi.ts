@@ -9,6 +9,10 @@ import type {
   InstallmentStatus,
   ConversionFeeStatus,
   CreateInstallmentPlanPayload,
+  InstallmentDashboard,
+  InstallmentDashboardSource,
+  InstallmentUpcomingPay,
+  InstallmentUpcomingPayBucket,
 } from "../types";
 
 type ApiEnvelope<T> = ApiResponse<T>;
@@ -42,10 +46,14 @@ interface RemotePayDto {
 }
 
 interface RemotePlanDetailDto {
-  id: string;  sourceId: string;
+  id: string;
+  sourceId: string;
   sourceName?: string | null;
+  sourceIcon?: string | null;
+  sourceColor?: string | null;
   originalTxnId: string;
   originalTxnDescription?: string | null;
+  originalTxnCategoryName?: string | null;
   totalAmount: number;
   totalMonths: number;
   monthlyAmount: number;
@@ -57,6 +65,7 @@ interface RemotePlanDetailDto {
   startDate: string;
   status: InstallmentStatus;
   cancellationReason?: string | null;
+  canDelete?: boolean;
   pays?: RemotePayDto[] | null;
 }
 
@@ -65,14 +74,67 @@ interface RemoteDetailEnvelope {
 }
 
 interface RemoteListItemDto {
-  id: string;  sourceId: string;
+  id: string;
+  sourceId: string;
   sourceName?: string | null;
+  sourceIcon?: string | null;
+  sourceColor?: string | null;
   originalTxnDescription?: string | null;
+  originalTxnCategoryName?: string | null;
   status: InstallmentStatus;
   paidInstallments: number;
   totalInstallments: number;
   remainingAmount: number;
+  totalAmount: number;
+  canDelete: boolean;
   createdAt: string;
+}
+
+interface RemoteDashboardSourceDto {
+  sourceId: string;
+  sourceName: string;
+  sourceIcon?: string | null;
+  sourceColor?: string | null;
+  activePlanCount: number;
+  remainingAmount: number;
+  overdueAmount: number;
+  thisMonthDueAmount: number;
+  nextMonthDueAmount: number;
+}
+
+interface RemoteUpcomingPayDto {
+  planId: string;
+  sourceId: string;
+  sourceName: string;
+  sourceIcon?: string | null;
+  planTitle: string;
+  installmentNumber: number;
+  totalInstallments: number;
+  dueDate: string;
+  amount: number;
+  bucket: string;
+}
+
+interface RemoteDashboardDto {
+  activePlanCount: number;
+  totalRemainingAmount: number;
+  dueCount: number;
+  dueAmount: number;
+  overdueCount: number;
+  overdueAmount: number;
+  upcomingCount: number;
+  upcomingAmount: number;
+  thisMonthDueCount: number;
+  thisMonthDueAmount: number;
+  nextMonthDueCount: number;
+  nextMonthDueAmount: number;
+  completionPercent: number;
+  bySource?: RemoteDashboardSourceDto[] | null;
+  upcomingPays?: RemoteUpcomingPayDto[] | null;
+}
+
+interface RemoteDashboardEnvelope {
+  dashboard: RemoteDashboardDto;
 }
 
 interface RemoteListEnvelope {
@@ -98,10 +160,14 @@ function mapPay(
 function mapPlan(dto: RemotePlanDetailDto): InstallmentPlan {
   const pays = (dto.pays ?? []).map((p) => mapPay(p, dto.id));
   return {
-    id: dto.id,    sourceId: dto.sourceId,
+    id: dto.id,
+    sourceId: dto.sourceId,
     sourceName: dto.sourceName ?? null,
+    sourceIcon: dto.sourceIcon ?? null,
+    sourceColor: dto.sourceColor ?? null,
     originalTxnId: dto.originalTxnId,
     originalTxnDescription: dto.originalTxnDescription ?? null,
+    originalTxnCategoryName: dto.originalTxnCategoryName ?? null,
     totalAmount: Number(dto.totalAmount),
     totalMonths: dto.totalMonths,
     monthlyAmount: Number(dto.monthlyAmount),
@@ -120,20 +186,82 @@ function mapPlan(dto: RemotePlanDetailDto): InstallmentPlan {
     startDate: dto.startDate,
     status: dto.status,
     cancellationReason: dto.cancellationReason ?? null,
+    canDelete: dto.canDelete ?? false,
     pays,
   };
 }
 
 function mapListItem(row: RemoteListItemDto): InstallmentPlanListItem {
   return {
-    id: row.id,    sourceId: row.sourceId,
+    id: row.id,
+    sourceId: row.sourceId,
     sourceName: row.sourceName ?? null,
+    sourceIcon: row.sourceIcon ?? null,
+    sourceColor: row.sourceColor ?? null,
     originalTxnDescription: row.originalTxnDescription ?? null,
+    originalTxnCategoryName: row.originalTxnCategoryName ?? null,
     status: row.status,
     paidInstallments: row.paidInstallments,
     totalInstallments: row.totalInstallments,
     remainingAmount: Number(row.remainingAmount),
+    totalAmount: Number(row.totalAmount),
+    canDelete: row.canDelete,
     createdAt: row.createdAt,
+  };
+}
+
+function normalizeUpcomingBucket(raw: string): InstallmentUpcomingPayBucket {
+  const map: Record<string, InstallmentUpcomingPayBucket> = {
+    overdue: "overdue",
+    dueToday: "dueToday",
+    thisMonth: "thisMonth",
+    nextMonth: "nextMonth",
+    later: "later",
+  };
+  return map[raw] ?? "later";
+}
+
+export async function getInstallmentDashboard(): Promise<InstallmentDashboard> {
+  const envelope = await unwrap<RemoteDashboardEnvelope>(
+    apiClient.get("/finance/installment-plans/dashboard"));
+  const d = envelope.dashboard;
+  return {
+    activePlanCount: d.activePlanCount,
+    totalRemainingAmount: d.totalRemainingAmount,
+    dueCount: d.dueCount,
+    dueAmount: d.dueAmount,
+    overdueCount: d.overdueCount,
+    overdueAmount: d.overdueAmount,
+    upcomingCount: d.upcomingCount,
+    upcomingAmount: d.upcomingAmount,
+    thisMonthDueCount: d.thisMonthDueCount ?? 0,
+    thisMonthDueAmount: d.thisMonthDueAmount ?? 0,
+    nextMonthDueCount: d.nextMonthDueCount ?? 0,
+    nextMonthDueAmount: d.nextMonthDueAmount ?? 0,
+    completionPercent: d.completionPercent ?? 0,
+    bySource: (d.bySource ?? []).map((s) => ({
+      sourceId: s.sourceId,
+      sourceName: s.sourceName,
+      sourceIcon: s.sourceIcon ?? null,
+      sourceColor: s.sourceColor ?? null,
+      activePlanCount: s.activePlanCount,
+      remainingAmount: s.remainingAmount,
+      overdueAmount: s.overdueAmount,
+      thisMonthDueAmount: s.thisMonthDueAmount,
+      nextMonthDueAmount: s.nextMonthDueAmount,
+    })),
+    upcomingPays: (d.upcomingPays ?? []).map((p) => ({
+      planId: p.planId,
+      sourceId: p.sourceId,
+      sourceName: p.sourceName,
+      sourceIcon: p.sourceIcon ?? null,
+      planTitle: p.planTitle,
+      installmentNumber: p.installmentNumber,
+      totalInstallments: p.totalInstallments,
+      dueDate: p.dueDate,
+      amount: p.amount,
+      bucket: normalizeUpcomingBucket(p.bucket),
+    })),
   };
 }
 
@@ -141,8 +269,12 @@ export async function getInstallmentPlans(
   status?: InstallmentStatus): Promise<InstallmentPlanListItem[]> {
   const qs = new URLSearchParams();
   if (status) qs.set("status", status);
-  const envelope = await unwrap<RemoteListEnvelope>(
-    apiClient.get("/finance/installment-plans"));
+  const query = qs.toString();
+  const url =
+    query.length > 0
+      ? `/finance/installment-plans?${query}`
+      : "/finance/installment-plans";
+  const envelope = await unwrap<RemoteListEnvelope>(apiClient.get(url));
   return (envelope.items ?? []).map(mapListItem);
 }
 
@@ -162,6 +294,13 @@ export async function createInstallmentPlan(
       conversionFeeRate: data.conversionFeeRate,
     }));
   return envelope;
+}
+
+export async function deleteInstallmentPlan(id: string): Promise<void> {
+  const { data: body } = await apiClient.delete<
+    ApiEnvelope<Record<string, never>>
+  >(`/finance/installment-plans/${id}`);
+  assertData(body);
 }
 
 export async function cancelInstallmentPlan(

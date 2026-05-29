@@ -1,30 +1,5 @@
-"use client";
-
-import dynamic from "next/dynamic";
-
-import { SkeletonText } from "@/shared/components/ui/Skeleton";
+import { TransactionForm } from "@/features/transactions/components/TransactionForm";
 import { Modal } from "@/shared/components/ui/Modal";
-
-function TransactionFormSkeleton() {
-  return (
-    <div className="space-y-4 py-1" aria-hidden>
-      <SkeletonText className="h-10 w-full rounded-input" />
-      <SkeletonText className="h-10 w-full rounded-input" />
-      <SkeletonText className="h-10 w-full rounded-input" />
-      <SkeletonText className="min-h-[140px] w-full rounded-input" />
-      <SkeletonText className="h-10 w-32 rounded-button" />
-    </div>
-  );
-}
-
-const TransactionForm = dynamic(
-  () =>
-    import("@/features/transactions/components/TransactionForm").then(
-      (m) => m.TransactionForm),
-  {
-    loading: () => <TransactionFormSkeleton />,
-    ssr: false,
-  });
 
 export interface TransactionFormModalProps {
   isOpen: boolean;
@@ -43,7 +18,7 @@ export function TransactionFormModal({
       description="Điền số tiền, loại và thông tin bổ sung theo loại."
       size="lg"
     >
-      <TransactionForm  onSucceeded={onClose} />
+      {isOpen ? <TransactionForm onSucceeded={onClose} /> : null}
     </Modal>
   );
 }

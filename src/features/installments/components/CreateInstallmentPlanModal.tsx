@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -10,7 +8,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { Input } from "@/shared/components/ui/Input";
 import { Modal } from "@/shared/components/ui/Modal";
 import { cn } from "@/shared/lib/utils";
-import { formatCurrency } from "@/shared/lib/formatters";
+import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 
 import {
   getInstallmentPlanDetail,
@@ -18,20 +16,12 @@ import {
 } from "../api/installmentsApi";
 import { installmentKeys } from "../api/installmentKeys";
 import { useCreateInstallmentPlan } from "../hooks/useCreateInstallmentPlan";
+import { countBackfillPaidInstallments } from "../utils/installmentPaySchedule";
+import { splitInstallmentSchedule } from "../utils/installmentScheduleSplit";
 
 const selectClassName = cn(
   "h-10 w-full rounded-button border border-warm-200 bg-warm-50 px-3 text-sm text-warm-900",
   "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30");
-
-function splitSchedule(total: number, months: number): {
-  monthlyShare: number;
-  lastShare: number;
-} {
-  const monthlyShare =
-    total > 0 ? Math.trunc(total / months) * Math.sign(total) : 0;
-  const lastShare = total - monthlyShare * (months - 1);
-  return { monthlyShare, lastShare };
-}
 
 async function fetchBlockedOriginalTxnIds(): Promise<
   Set<string>
@@ -61,7 +51,7 @@ export function CreateInstallmentPlanModal({
   const [txnId, setTxnId] = React.useState("");
   const [totalMonths, setTotalMonths] = React.useState(12);
   const [zeroInterest, setZeroInterest] = React.useState(true);
-  const [conversionFeeRate, setConversionFeeRate] = React.useState(2);
+  const [conversionFeeRate, setConversionFeeRate] = React.useState(0);
   const [interestRate, setInterestRate] = React.useState(1.5);
 
   const sourceFingerprint = (sources ?? [])
@@ -110,7 +100,7 @@ export function CreateInstallmentPlanModal({
       setTxnId("");
       setTotalMonths(12);
       setZeroInterest(true);
-      setConversionFeeRate(2);
+      setConversionFeeRate(0);
       setInterestRate(1.5);
       return;
     }
@@ -123,13 +113,17 @@ export function CreateInstallmentPlanModal({
   const preview = React.useMemo(() => {
     if (!selectedTxn) return null;
     const total = selectedTxn.amount;
-    const { monthlyShare, lastShare } = splitSchedule(total, totalMonths);
+    const { monthlyShare, lastShare } = splitInstallmentSchedule(total, totalMonths);
     const fee =
       zeroInterest && conversionFeeRate > 0
-        ? Math.round(total * (conversionFeeRate / 100) * 100) / 100
+        ? Math.round(total * (conversionFeeRate / 100))
         : 0;
     const grand = total + fee;
-    return { monthlyShare, lastShare, fee, grand };
+    const backfillPaid = countBackfillPaidInstallments(
+      selectedTxn.txnDate,
+      totalMonths,
+    );
+    return { monthlyShare, lastShare, fee, grand, backfillPaid };
   }, [selectedTxn, totalMonths, zeroInterest, conversionFeeRate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -142,9 +136,6 @@ export function CreateInstallmentPlanModal({
       conversionFeeRate:
         zeroInterest && conversionFeeRate > 0 ? conversionFeeRate : null,
     };
-    if (zeroInterest && (!conversionFeeRate || conversionFeeRate <= 0)) {
-      return;
-    }
     if (!zeroInterest && interestRate <= 0) {
       return;
     }
@@ -222,7 +213,7 @@ export function CreateInstallmentPlanModal({
           <div>
             <p className="text-sm font-medium text-warm-800">0% lãi suất</p>
             <p className="text-xs text-warm-500">
-              Bật: nhập phí chuyển đổi trả góp (theo % giao dịch).
+              Bật: có thể nhập phí chuyển đổi (% giao dịch); để 0 nếu không có phí.
             </p>
           </div>
           <button
@@ -246,7 +237,7 @@ export function CreateInstallmentPlanModal({
           <Input
             type="number"
             label="Phí chuyển đổi (%/giao dịch)"
-            min={0.01}
+            min={0}
             step={0.01}
             value={conversionFeeRate}
             onChange={(ev) => setConversionFeeRate(Number(ev.target.value))}
@@ -265,6 +256,25 @@ export function CreateInstallmentPlanModal({
         {preview && selectedTxn ? (
           <div className="rounded-card border border-warm-200 bg-warm-25/80 p-4 text-sm">
             <p className="mb-2 font-medium text-warm-800">Xem trước</p>
+            <p className="mb-3 text-xs text-warm-600">
+              Lịch kỳ tính từ ngày giao dịch{" "}
+              <span className="font-medium text-warm-800">
+                {formatDate(selectedTxn.txnDate)}
+              </span>
+              .
+              {preview.backfillPaid > 0 ? (
+                <>
+                  {" "}
+                  <span className="font-medium text-warm-800">
+                    {String(preview.backfillPaid)}
+                  </span>{" "}
+                  kỳ trước hôm nay sẽ ghi <span className="font-medium">đã trả</span>
+                  {preview.backfillPaid >= totalMonths
+                    ? " (kế hoạch hoàn tất)."
+                    : "."}
+                </>
+              ) : null}
+            </p>
             <dl className="grid grid-cols-2 gap-3">
               <div>
                 <dt className="text-warm-500">Mỗi kỳ (đa số)</dt>
@@ -303,7 +313,6 @@ export function CreateInstallmentPlanModal({
             isLoading={createM.isPending}
             disabled={
               !txnId ||
-              (zeroInterest && conversionFeeRate <= 0) ||
               (!zeroInterest && interestRate <= 0) ||
               eligibleQ.data?.length === 0
             }

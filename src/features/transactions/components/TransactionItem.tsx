@@ -1,117 +1,88 @@
-"use client";
-
 import { Trash2 } from "lucide-react";
 import * as React from "react";
 
+import type { FinCategoryFlat } from "@/features/categories/types";
+import type { FinSource } from "@/features/sources/types";
 import { cn } from "@/shared/lib/utils";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 
 import type { Transaction } from "../types";
+import { resolveCategoryColumns } from "../utils/categoryDisplay";
 import {
-  transactionTypeIcon,
-  txnAmountPresentation,
+  isExpenseTxnType,
+  isIncomeTxnType,
+  isTransferTxnType,
+  txnStatusBadgeClasses,
+  txnStatusLabel,
 } from "../utils/txnDisplay";
+import { TXN_BODY_ROW_GRID, TXN_CELL_CENTER } from "../utils/txnGridLayout";
 
-function categoryDotColor(id: string | null | undefined): string {
-  if (!id) return "var(--color-warm-300)";
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h + id.charCodeAt(i) * 13) % 360;
-  return `hsl(${String(h)} 42% 42%)`;
-}
+import { ColoredFieldTag } from "./ColoredFieldTag";
 
 export interface TransactionItemProps {
   transaction: Transaction;
+  rowNumber?: number;
+  categoryMap?: Map<string, FinCategoryFlat>;
+  sourceMap?: Map<string, FinSource>;
   onOpen: (tx: Transaction) => void;
   onDelete?: (tx: Transaction) => void;
 }
 
+function TransactionTags({ tags }: { tags: Transaction["tags"] }) {
+  if (!tags?.length) {
+    return <span className="text-xs text-warm-400">—</span>;
+  }
+
+  return (
+    <div className="flex max-w-full flex-wrap items-center justify-center gap-1">
+      {tags.map((tag) => (
+        <ColoredFieldTag
+          key={tag.id}
+          label={tag.name}
+          color={tag.color}
+          className="px-1.5 py-0.5 text-[10px]"
+        />
+      ))}
+    </div>
+  );
+}
+
 function TransactionItemInner({
   transaction: tx,
+  rowNumber,
+  categoryMap,
+  sourceMap,
   onOpen,
   onDelete,
 }: TransactionItemProps) {
-  const swipeEnabled = false;
+  const description = tx.description?.trim() || "—";
+  const note = tx.note?.trim() || "—";
 
-  const pointerId = React.useRef<number | null>(null);
-  const startX = React.useRef(0);
-  const [offset, setOffset] = React.useState(0);
-  const openDelete = offset <= -56;
+  const categoryCols = React.useMemo(
+    () => resolveCategoryColumns(tx.categoryId, categoryMap, tx.categoryName),
+    [tx.categoryId, tx.categoryName, categoryMap],
+  );
 
-  const Icon = React.useMemo(
-    () => transactionTypeIcon(tx.type),
-    [tx.type]);
+  const source = sourceMap?.get(tx.sourceId);
+  const sourceColor = source?.color ?? "#2563eb";
+  const sourceLabel = source?.name ?? tx.sourceName ?? "—";
 
-  const { label, sub } = React.useMemo(() => {
-    const rawLabel =
-      typeof tx.categoryName === "string" && tx.categoryName.length > 0
-        ? tx.categoryName
-        : (tx.note?.trim() || tx.description?.trim() || "Giao dịch");
-    const noteOrDesc = tx.note?.trim() || tx.description?.trim() || "";
-    const subLine =
-      noteOrDesc.length > 0 && rawLabel !== noteOrDesc ? noteOrDesc : null;
-    return { label: rawLabel, sub: subLine };
-  }, [tx.categoryName, tx.note, tx.description]);
-
-  const amountPresentation = React.useMemo(() => {
-    const { sign, className: amountClass } = txnAmountPresentation(
-      tx.type,
-      tx.amount);
-    const shownAmount = Math.abs(tx.amount);
-    return {
-      sign,
-      amountClass,
-      shownAmount,
-      amountText: formatCurrency(shownAmount, tx.currency),
-    };
+  const amountText = React.useMemo(() => {
+    const abs = formatCurrency(Math.abs(tx.amount), tx.currency);
+    if (tx.type === "reversal") return abs;
+    if (isTransferTxnType(tx.type) || tx.type === "balance_adjustment") {
+      if (tx.amount < 0) return `−${abs}`;
+      if (tx.amount > 0) return `+${abs}`;
+      return abs;
+    }
+    if (isIncomeTxnType(tx.type)) return `+${abs}`;
+    if (isExpenseTxnType(tx.type)) return `−${abs}`;
+    return abs;
   }, [tx.type, tx.amount, tx.currency]);
 
-  const categoryColor = React.useMemo(
-    () => categoryDotColor(tx.categoryId ?? null),
-    [tx.categoryId]);
-
-  const onPointerDown = React.useCallback(
-    (e: React.PointerEvent) => {
-      if (!swipeEnabled) return;
-      pointerId.current = e.pointerId;
-      startX.current = e.clientX;
-      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    },
-    [swipeEnabled]);
-
-  const onPointerMove = React.useCallback(
-    (e: React.PointerEvent) => {
-      if (!swipeEnabled || pointerId.current !== e.pointerId) return;
-      const dx = e.clientX - startX.current;
-      const next = Math.min(0, Math.max(-88, dx));
-      setOffset(next);
-    },
-    [swipeEnabled]);
-
-  const endSwipe = React.useCallback(
-    (e: React.PointerEvent) => {
-      if (!swipeEnabled || pointerId.current !== e.pointerId) return;
-      pointerId.current = null;
-      try {
-        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
-      } catch {
-        /* noop */
-      }
-      setOffset((o) => (o < -40 ? -72 : 0));
-    },
-    [swipeEnabled]);
-
-  const handleDeleteSwipe = React.useCallback(() => {
-    setOffset(0);
-    onDelete?.(tx);
-  }, [onDelete, tx]);
-
   const handleOpenClick = React.useCallback(() => {
-    if (swipeEnabled && openDelete) {
-      setOffset(0);
-      return;
-    }
     onOpen(tx);
-  }, [swipeEnabled, openDelete, onOpen, tx]);
+  }, [onOpen, tx]);
 
   const handleRowKeyDown = React.useCallback(
     (k: React.KeyboardEvent) => {
@@ -120,24 +91,23 @@ function TransactionItemInner({
         onOpen(tx);
       }
     },
-    [onOpen, tx]);
+    [onOpen, tx],
+  );
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-transparent">
-      {swipeEnabled ? (
-        <div
-          className="absolute inset-y-0 right-0 flex w-20 items-stretch justify-end bg-danger/10"
-          aria-hidden
+    <div className="group relative z-0">
+      {onDelete ? (
+        <button
+          type="button"
+          className="absolute right-1 top-1 z-[1] hidden rounded p-1 text-warm-400 hover:bg-warm-100 hover:text-danger group-hover:inline-flex"
+          aria-label="Xóa giao dịch"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(tx);
+          }}
         >
-          <button
-            type="button"
-            onClick={handleDeleteSwipe}
-            className="flex w-16 items-center justify-center bg-danger text-white"
-            aria-label="Xoá giao dịch"
-          >
-            <Trash2 className="size-5" />
-          </button>
-        </div>
+          <Trash2 className="size-3.5" />
+        </button>
       ) : null}
 
       <div
@@ -145,42 +115,72 @@ function TransactionItemInner({
         tabIndex={0}
         onClick={handleOpenClick}
         onKeyDown={handleRowKeyDown}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endSwipe}
-        onPointerCancel={endSwipe}
-        style={{
-          transform: swipeEnabled ? `translateX(${String(offset)}px)` : undefined,
-        }}
         className={cn(
-          "relative flex w-full cursor-pointer items-center gap-3 bg-surface px-3 py-3 text-left transition-[transform]",
-          "hover:bg-warm-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent")}
+          TXN_BODY_ROW_GRID,
+          "cursor-pointer bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
+        )}
       >
-        <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-warm-50 ring-1 ring-warm-200">
-          <span
-            className="absolute left-0.5 top-0.5 size-2 rounded-full ring-1 ring-white/80"
-            style={{ backgroundColor: categoryColor }}
-            aria-hidden
-          />
-          <Icon className="size-4 text-warm-700" aria-hidden />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-warm-900">{label}</p>
-          {sub ? (
-            <p className="truncate text-xs text-warm-500">{sub}</p>
-          ) : null}
-          <p className="text-xs text-warm-400">{formatDate(tx.txnDate)}</p>
-        </div>
-
         <p
           className={cn(
-            "shrink-0 text-right font-mono text-sm font-semibold tabular-nums",
-            amountPresentation.amountClass)}
+            TXN_CELL_CENTER,
+            "text-xs font-medium tabular-nums text-warm-500",
+          )}
         >
-          {amountPresentation.sign}
-          {amountPresentation.amountText}
+          {rowNumber ?? "—"}
         </p>
+
+        <div className={cn(TXN_CELL_CENTER, "text-xs font-semibold tabular-nums text-warm-700")}>
+          {formatDate(tx.txnDate)}
+        </div>
+
+        <p className={cn(TXN_CELL_CENTER, "font-mono text-sm font-semibold tabular-nums text-warm-900")}>
+          {amountText}
+        </p>
+
+        <div className={TXN_CELL_CENTER}>
+          <TransactionTags tags={tx.tags} />
+        </div>
+
+        <div className={TXN_CELL_CENTER}>
+          <ColoredFieldTag
+            label={categoryCols.parentLabel}
+            color={categoryCols.parentColor}
+          />
+        </div>
+
+        <div className={TXN_CELL_CENTER}>
+          <ColoredFieldTag
+            label={categoryCols.categoryLabel}
+            color={categoryCols.categoryColor}
+          />
+        </div>
+
+        <div className={TXN_CELL_CENTER}>
+          <ColoredFieldTag label={sourceLabel} color={sourceColor} />
+        </div>
+
+        <div className={TXN_CELL_CENTER}>
+          <span
+            className={cn(
+              "inline-flex max-w-full items-center rounded-md border px-1.5 py-0.5 text-[10px] font-medium leading-tight",
+              txnStatusBadgeClasses(tx.status),
+            )}
+          >
+            <span className="truncate">{txnStatusLabel(tx.status)}</span>
+          </span>
+        </div>
+
+        <p className="min-w-0 truncate pr-1 text-sm font-medium text-warm-900">
+          {description}
+        </p>
+
+        <div className="min-w-0">
+          {note !== "—" ? (
+            <ColoredFieldTag label={note} color="#78716c" />
+          ) : (
+            <span className="text-xs text-warm-400">—</span>
+          )}
+        </div>
       </div>
     </div>
   );

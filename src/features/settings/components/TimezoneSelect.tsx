@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 
 import * as Popover from "@radix-ui/react-popover";

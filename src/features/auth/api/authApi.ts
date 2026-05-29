@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { NEXT_PUBLIC_API_URL } from "@/config/env";
+import { VITE_API_URL } from "@/config/env";
 import type { ApiResponse } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
 import { getPreferredLocale } from "@/shared/lib/auth-session";
@@ -10,7 +10,7 @@ import type { AuthResponse, LoginRequest } from "../types";
 
 import { parseAuthPayload, parseTokenPair } from "./parseAuthPayload";
 
-const apiRoot = `${NEXT_PUBLIC_API_URL.replace(/\/$/, "")}/api/v1`;
+const apiRoot = `${VITE_API_URL.replace(/\/$/, "")}/api/v1`;
 
 function toSuccessResponse<T>(data: T): ApiResponse<T> {
   return { success: true, data };

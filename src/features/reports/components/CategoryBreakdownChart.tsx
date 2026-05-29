@@ -1,6 +1,5 @@
-"use client";
-
 import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -13,21 +12,33 @@ import {
 } from "recharts";
 
 import { warmPaletteColor } from "@/features/dashboard/utils/warmPalette";
+import { Button } from "@/shared/components/ui/Button";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { formatCurrency, formatPercentage } from "@/shared/lib/formatters";
 import { cardSlideUpMotion } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
-import type { CategoryBreakdownItem } from "../types";
+import type { CategoryBreakdownItem, MonthlyReport } from "../types";
+import {
+  buildFilteredCategoryBreakdown,
+  type CategoryExpenseFilter,
+} from "../utils/categoryBreakdownFilter";
+
+const FILTER_OPTIONS: { value: CategoryExpenseFilter; label: string }[] = [
+  { value: "all", label: "Tất cả" },
+  { value: "transactions", label: "Giao dịch" },
+  { value: "installments", label: "Trả góp" },
+];
 
 export interface CategoryBreakdownChartProps {
-  data: CategoryBreakdownItem[] | undefined;
+  report: MonthlyReport | undefined;
   isLoading: boolean;
   onCategorySelect?: (
     slice: Pick<CategoryBreakdownItem, "categoryId" | "categoryName"> & {
       year: number;
       month: number;
-    }) => void;
+    },
+  ) => void;
   year: number;
   month: number;
 }
@@ -59,13 +70,21 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 }
 
 export function CategoryBreakdownChart({
-  data,
+  report,
   isLoading,
   onCategorySelect,
   year,
   month,
 }: CategoryBreakdownChartProps) {
-  if (isLoading || data === undefined) {
+  const [expenseFilter, setExpenseFilter] =
+    useState<CategoryExpenseFilter>("all");
+
+  const data = useMemo(() => {
+    if (!report) return undefined;
+    return buildFilteredCategoryBreakdown(report, expenseFilter);
+  }, [report, expenseFilter]);
+
+  if (isLoading || report === undefined || data === undefined) {
     return (
       <motion.article
         {...cardSlideUpMotion}
@@ -110,16 +129,40 @@ export function CategoryBreakdownChart({
       {...cardSlideUpMotion}
       className={cn("flex flex-col rounded-card border border-warm-200 bg-surface p-5 shadow-sm")}
     >
-      <header className="mb-3 flex flex-col gap-1">
-        <h3 className="font-display text-base font-semibold text-warm-900">
-          Chi tiêu theo danh mục
-        </h3>
-        <p className="text-xs text-warm-500">
-          Click một cột để xem giao dịch đã lọc theo danh mục trong tháng.
-        </p>
+      <header className="mb-3 flex flex-col gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-display text-base font-semibold text-warm-900">
+              Chi tiêu theo danh mục
+            </h3>
+            <p className="mt-0.5 text-xs text-warm-500">
+              Click một cột để xem giao dịch đã lọc theo danh mục trong tháng.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-1 rounded-lg border border-warm-200 bg-warm-50/80 p-1">
+            {FILTER_OPTIONS.map((opt) => (
+              <Button
+                key={opt.value}
+                type="button"
+                variant={expenseFilter === opt.value ? "primary" : "ghost"}
+                size="sm"
+                className="h-7 px-2.5 text-xs"
+                onClick={() => setExpenseFilter(opt.value)}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
+        </div>
       </header>
       {empty ? (
-        <p className="py-24 text-center text-sm text-warm-400">Không có dữ liệu chi trong tháng</p>
+        <p className="py-24 text-center text-sm text-warm-400">
+          {expenseFilter === "installments"
+            ? "Không có chi trả góp theo danh mục trong tháng"
+            : expenseFilter === "transactions"
+              ? "Không có giao dịch chi theo danh mục trong tháng"
+              : "Không có dữ liệu chi trong tháng"}
+        </p>
       ) : (
         <div className={cn("h-[320px] w-full pb-10")}>
           <ResponsiveContainer width="100%" height="100%">

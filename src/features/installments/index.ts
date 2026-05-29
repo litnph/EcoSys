@@ -12,6 +12,7 @@ export {
   getInstallmentPlans,
   getInstallmentPlanDetail,
   createInstallmentPlan,
+  deleteInstallmentPlan,
   cancelInstallmentPlan,
   recordInstallmentPayment,
 } from "./api/installmentsApi";
@@ -32,4 +33,5 @@ export {
   PayInstallmentModal,
   CreateInstallmentPlanModal,
   CancelInstallmentPlanModal,
+  DeleteInstallmentPlanModal,
 } from "./components";

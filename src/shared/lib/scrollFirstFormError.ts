@@ -25,6 +25,27 @@ function findFirstInvalidPath(
   return undefined;
 }
 
+/** Lấy message lỗi đầu tiên từ object errors của react-hook-form. */
+export function firstHookFormErrorMessage(
+  errors: FieldErrors<FieldValues>): string | undefined {
+  const path = findFirstInvalidPath(errors);
+  if (!path) return undefined;
+  let node: unknown = errors;
+  for (const part of path.split(".")) {
+    if (!node || typeof node !== "object") return undefined;
+    node = (node as Record<string, unknown>)[part];
+  }
+  if (
+    node &&
+    typeof node === "object" &&
+    "message" in node &&
+    typeof (node as { message?: unknown }).message === "string"
+  ) {
+    return (node as { message: string }).message;
+  }
+  return undefined;
+}
+
 /** Sau submit thất bại: focus + cuộn tới field lỗi đầu tiên. */
 export function scrollFirstHookFormErrorIntoView<T extends FieldValues>(
   errors: FieldErrors<T>,

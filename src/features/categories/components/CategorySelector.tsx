@@ -1,5 +1,3 @@
-"use client";
-
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { ChevronDown, Search } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -80,8 +78,11 @@ export function CategorySelector({
   disabled,
   className,
 }: CategorySelectorProps) {
-  const { data: roots = [], isLoading, isError } = useCategories(
-    kind);
+  const { data, isPending, isError } = useCategories(kind);
+  const roots = useMemo(
+    () => (data ?? []).filter((row) => row.kind === kind),
+    [data, kind],
+  );
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -96,11 +97,12 @@ export function CategorySelector({
   const selectValue = value ?? NONE;
 
   const disableControl =
-    disabled || isLoading || isError || false;
+    disabled || isPending || isError || false;
 
   return (
     <div className={cn("w-full", className)}>
       <SelectPrimitive.Root
+        key={kind}
         value={selectValue}
         onValueChange={(v) => {
           onChange(v === NONE ? undefined : v);
@@ -139,7 +141,7 @@ export function CategorySelector({
           <SelectPrimitive.Content
             position="popper"
             className={cn(
-              "z-50 max-h-[min(360px,var(--radix-select-content-available-height))] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg")}
+              "z-[120] max-h-[min(360px,var(--radix-select-content-available-height))] overflow-hidden rounded-button border border-warm-200 bg-warm-50 shadow-lg")}
             sideOffset={4}
           >
             <div
@@ -166,13 +168,13 @@ export function CategorySelector({
                 </SelectPrimitive.ItemText>
               </SelectPrimitive.Item>
 
-              {!isLoading && filteredRoots.length === 0 ? (
+              {!isPending && filteredRoots.length === 0 ? (
                 <div className="px-2 py-3 text-center text-sm text-warm-500">
                   Không có danh mục phù hợp
                 </div>
               ) : null}
 
-              {isLoading ? (
+              {isPending ? (
                 <div className="px-2 py-3 text-center text-sm text-warm-500">
                   Đang tải…
                 </div>

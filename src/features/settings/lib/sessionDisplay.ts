@@ -1,5 +1,3 @@
-"use client";
-
 function pickBrowserLabel(ua: string | null | undefined): string {
   if (!ua) {
     return "—";

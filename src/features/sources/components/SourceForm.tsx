@@ -1,14 +1,17 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/shared/components/ui/Button";
+import { ColorPicker, IconPicker } from "@/shared/components/ui/IconColorPickers";
 import { CurrencyInput } from "@/shared/components/ui/CurrencyInput";
 import { Input } from "@/shared/components/ui/Input";
 import { cn } from "@/shared/lib/utils";
+import {
+  COLOR_PRESETS,
+  SOURCE_ICON_PRESETS,
+} from "@/shared/lib/iconColorPresets";
 import { scrollFirstHookFormErrorIntoView } from "@/shared/lib/scrollFirstFormError";
 
 import { useCreateSource } from "../hooks/useCreateSource";
@@ -34,6 +37,7 @@ const sourceFormSchema = z
     statementDay: z.number().optional().nullable(),
     paymentDueDay: z.number().optional().nullable(),
     minInstallmentAmt: z.number().optional().nullable(),
+    initialBalance: z.number().optional().nullable(),
   })
   .superRefine((data, ctx) => {
     if (data.type !== "creditCard") return;
@@ -92,29 +96,10 @@ const SOURCE_TYPE_OPTIONS: { value: FinSourceType; label: string }[] = [
   { value: "investment", label: "Đầu tư" },
 ];
 
-export const SOURCE_COLOR_PRESETS = [
-  "#b08968",
-  "#71896b",
-  "#6b8cae",
-  "#9b7eb3",
-  "#c17b7b",
-  "#5a9ea8",
-  "#a8946a",
-  "#7a6b9c",
-];
+export { SOURCE_COLOR_PRESETS } from "@/shared/lib/iconColorPresets";
 
-const EMOJI_PRESETS = [
-  "💵",
-  "🏦",
-  "💳",
-  "📱",
-  "📈",
-  "💰",
-  "🪙",
-  "💸",
-  "🏧",
-  "🛒",
-];
+const DEFAULT_ICON = SOURCE_ICON_PRESETS[0] ?? "💰";
+const DEFAULT_COLOR = COLOR_PRESETS[0] ?? "#0891b2";
 
 const selectClassName = cn(
   "h-10 w-full rounded-button border border-warm-200 bg-warm-50 px-3 text-sm text-warm-900",
@@ -133,24 +118,26 @@ function defaultValuesFromSource(
       name: "",
       type: "cash",
       currency: "VND",
-      icon: "💰",
-      color: SOURCE_COLOR_PRESETS[0] ?? "#b08968",
+      icon: DEFAULT_ICON,
+      color: DEFAULT_COLOR,
       creditLimit: null,
       statementDay: null,
       paymentDueDay: null,
       minInstallmentAmt: null,
+      initialBalance: null,
     };
   }
   return {
     name: row.name,
     type: row.type,
     currency: row.currency || "VND",
-    icon: row.icon ?? "💰",
-    color: row.color ?? SOURCE_COLOR_PRESETS[0] ?? "#b08968",
+    icon: row.icon ?? DEFAULT_ICON,
+    color: row.color ?? DEFAULT_COLOR,
     creditLimit: row.creditLimit ?? null,
     statementDay: row.statementDay ?? null,
     paymentDueDay: row.paymentDueDay ?? null,
     minInstallmentAmt: row.minInstallmentAmt ?? null,
+    initialBalance: null,
   };
 }
 
@@ -169,7 +156,6 @@ export function SourceForm({
   const form = useForm<SourceFormValues>({
     resolver: zodResolver(sourceFormSchema),
     defaultValues: defaults,
-    values: defaults,
     mode: "onBlur",
     reValidateMode: "onChange",
   });
@@ -179,14 +165,27 @@ export function SourceForm({
     handleSubmit,
     control,
     watch,
-    setValue,
     formState: { errors, isDirty },
   } = form;
 
   const type = watch("type");
   const currency = watch("currency");
-  const colorValue = watch("color");
-  const iconValue = watch("icon");
+
+  const iconPresets = useMemo(() => {
+    const current = initial?.icon?.trim();
+    if (current && !SOURCE_ICON_PRESETS.includes(current as (typeof SOURCE_ICON_PRESETS)[number])) {
+      return [current, ...SOURCE_ICON_PRESETS];
+    }
+    return SOURCE_ICON_PRESETS;
+  }, [initial]);
+
+  const colorPresets = useMemo(() => {
+    const current = initial?.color?.trim();
+    if (current && !COLOR_PRESETS.includes(current as (typeof COLOR_PRESETS)[number])) {
+      return [current, ...COLOR_PRESETS];
+    }
+    return COLOR_PRESETS;
+  }, [initial]);
 
   const pending = createM.isPending || updateM.isPending;
 
@@ -208,6 +207,12 @@ export function SourceForm({
             values.minInstallmentAmt != null &&
             values.minInstallmentAmt > 0
               ? values.minInstallmentAmt
+              : null,
+          initialBalance:
+            !isCard &&
+            values.initialBalance != null &&
+            values.initialBalance > 0
+              ? values.initialBalance
               : null,
         });
       } else if (initial) {
@@ -284,52 +289,30 @@ export function SourceForm({
         </select>
       </div>
 
-      <div>
-        <span className="mb-1 block text-sm font-medium text-warm-700">
-          Icon
-        </span>
-        <div className="flex flex-wrap gap-1.5">
-          {EMOJI_PRESETS.map((e) => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => setValue("icon", e, { shouldValidate: true })}
-              className={cn(
-                "flex size-10 items-center justify-center rounded-button border text-lg transition-colors",
-                iconValue === e
-                  ? "border-accent bg-accent/10"
-                  : "border-warm-200 bg-warm-50 hover:border-warm-300")}
-              aria-label={e}
-            >
-              {e}
-            </button>
-          ))}
-        </div>
-        <input type="hidden" {...register("icon")} />
-      </div>
+      <Controller
+        name="icon"
+        control={control}
+        render={({ field }) => (
+          <IconPicker
+            value={field.value ?? DEFAULT_ICON}
+            onChange={field.onChange}
+            presets={iconPresets}
+          />
+        )}
+      />
 
-      <fieldset className="space-y-2">
-        <legend className="mb-1 text-sm font-medium text-warm-700">
-          Màu nền thẻ
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {SOURCE_COLOR_PRESETS.map((hex) => (
-            <button
-              key={hex}
-              type="button"
-              onClick={() => setValue("color", hex, { shouldValidate: true })}
-              className={cn(
-                "size-8 rounded-full border-2 shadow-sm transition-transform",
-                colorValue === hex
-                  ? "border-warm-900 scale-110"
-                  : "border-transparent ring-1 ring-warm-200")}
-              style={{ backgroundColor: hex }}
-              aria-label={`Màu ${hex}`}
-            />
-          ))}
-        </div>
-        <input type="hidden" {...register("color")} />
-      </fieldset>
+      <Controller
+        name="color"
+        control={control}
+        render={({ field }) => (
+          <ColorPicker
+            label="Màu nền thẻ"
+            value={field.value ?? DEFAULT_COLOR}
+            onChange={field.onChange}
+            presets={colorPresets}
+          />
+        )}
+      />
 
       {type === "creditCard" ? (
         <div className="space-y-4 rounded-card border border-warm-200 bg-warm-25/80 p-4">
@@ -390,6 +373,20 @@ export function SourceForm({
             )}
           />
         </div>
+      ) : mode === "create" ? (
+        <Controller
+          name="initialBalance"
+          control={control}
+          render={({ field }) => (
+            <CurrencyInput
+              label="Số dư ban đầu (tùy chọn)"
+              value={field.value ?? 0}
+              onChange={field.onChange}
+              currency={currency}
+              error={errors.initialBalance?.message}
+            />
+          )}
+        />
       ) : null}
 
       <div className="flex justify-end gap-2 pt-2">

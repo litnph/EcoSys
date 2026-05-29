@@ -1,8 +1,6 @@
-"use client";
-
 import type { ReactNode } from "react";
 
-import { useTranslations } from "next-intl";
+import { useTranslations } from "@/i18n/hooks";
 
 import { ROUTES } from "@/config/routes";
 import { Link, usePathname } from "@/i18n/navigation";

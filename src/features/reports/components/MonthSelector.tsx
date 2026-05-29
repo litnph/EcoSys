@@ -1,17 +1,16 @@
-"use client";
-
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/Button";
 import { cn } from "@/shared/lib/utils";
-
-import { currentUtcYearMonth } from "../utils/months";
 
 export interface MonthSelectorProps {
   year: number;
   month: number;
   onChange: (next: { year: number; month: number }) => void;
   className?: string;
+  /** Upper bound for month navigation (inclusive). Defaults to year 2100-12. */
+  maxYear?: number;
+  maxMonth?: number;
 }
 
 function shiftMonth(y: number, m: number, delta: number): { year: number; month: number } {
@@ -24,15 +23,14 @@ export function MonthSelector({
   month,
   onChange,
   className,
+  maxYear = 2100,
+  maxMonth = 12,
 }: MonthSelectorProps) {
-  const now = currentUtcYearMonth();
-  const isFuture = (cy: number, cm: number) =>
-    cy > now.year || (cy === now.year && cm > now.month);
-
   const nextYm = shiftMonth(year, month, 1);
 
   const canGoNext =
-    !(isFuture(nextYm.year, nextYm.month));
+    nextYm.year < maxYear
+    || (nextYm.year === maxYear && nextYm.month <= maxMonth);
 
   const label = `Tháng ${String(month)}/${String(year)}`;
 

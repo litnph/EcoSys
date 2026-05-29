@@ -1,25 +1,31 @@
+import type { FinSource } from "@/features/sources/types";
 import { toApiWholeAmount } from "@/shared/lib/currencyUnits";
 
 import type { CreateTransactionBody } from "../../api/transactionsApi";
 
 import type { TransactionCreateFormType, TransactionFormValues } from "./transactionFormSchema";
+import { resolveExpenseApiType } from "./resolveExpenseApiType";
 
-function apiTypeFromForm(t: TransactionCreateFormType): CreateTransactionBody["type"] {
+function apiTypeFromForm(
+  t: TransactionCreateFormType,
+  values: TransactionFormValues,
+  sources: FinSource[]): CreateTransactionBody["type"] {
+  if (t === "direct") {
+    return resolveExpenseApiType(values.sourceId, sources);
+  }
   const m = {
-    direct: "direct",
     income: "income",
     transfer: "transfer",
-    deferred: "deferred",
     split: "split",
     debt_borrow: "debtBorrow",
     debt_repay: "debtRepay",
     loan_give: "loanGive",
     loan_collect: "loanCollect",
   } satisfies Record<
-    TransactionCreateFormType,
+    Exclude<TransactionCreateFormType, "direct">,
     NonNullable<CreateTransactionBody["type"]>
   >;
-  return m[t];
+  return m[t as Exclude<TransactionCreateFormType, "direct">];
 }
 
 function cleanNote(v: string | undefined): string | null {
@@ -29,19 +35,20 @@ function cleanNote(v: string | undefined): string | null {
 
 /** Map form → POST /finance/transactions (camelCase trong OpenAPI). */
 export function mapFormValuesToCreateBody(
-  v: TransactionFormValues): CreateTransactionBody {
+  v: TransactionFormValues,
+  sources: FinSource[]): CreateTransactionBody {
   const base: CreateTransactionBody = {
-    type: apiTypeFromForm(v.type),
+    type: apiTypeFromForm(v.type, v, sources),
     amount: toApiWholeAmount(v.amount),
     sourceId: v.sourceId.trim(),
     txnDate: v.txnDate.trim(),
+    description: v.description?.trim() ?? "",
     note: cleanNote(v.note),
   };
 
   switch (v.type) {
     case "direct":
     case "income":
-    case "deferred":
       return {
         ...base,
         categoryId: v.categoryId?.trim() ?? null,
@@ -55,7 +62,7 @@ export function mapFormValuesToCreateBody(
     case "split":
       return {
         ...base,
-        categoryId: null,
+        categoryId: v.categoryId?.trim() ?? null,
         splits: (v.splits ?? []).map((r) => ({
           personName: r.personName.trim(),
           amount: toApiWholeAmount(r.amount),

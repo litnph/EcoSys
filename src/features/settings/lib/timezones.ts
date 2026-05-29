@@ -14,9 +14,16 @@ const FALLBACK_ZONES = [
 
 export function getAllTimeZoneIds(): string[] {
   try {
-    const list = Intl.supportedValuesOf("timeZone");
-    return [...list];
+    const supportedValuesOf = (
+      Intl as typeof Intl & {
+        supportedValuesOf?: (key: string) => string[];
+      }
+    ).supportedValuesOf;
+    if (supportedValuesOf) {
+      return [...supportedValuesOf("timeZone")];
+    }
   } catch {
-    return [...FALLBACK_ZONES];
+    /* use fallback */
   }
+  return [...FALLBACK_ZONES];
 }

@@ -5,4 +5,6 @@ export const sourceKeys = {
   detail: (id: string) => [...sourceKeys.all, "detail", id] as const,
   txCount: (sourceId: string) =>
     [...sourceKeys.all, "txCount", sourceId] as const,
+  balanceLedger: (sourceId: string) =>
+    [...sourceKeys.all, "balanceLedger", sourceId] as const,
 };

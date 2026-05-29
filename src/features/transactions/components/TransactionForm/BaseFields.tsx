@@ -1,11 +1,10 @@
-"use client";
-
 import { subDays } from "date-fns";
 import { Controller, useFormContext } from "react-hook-form";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
 
 import type { FinSource } from "@/features/sources/types";
+import { TagPicker } from "@/features/tags/components/TagPicker";
 import { CurrencyInput } from "@/shared/components/ui/CurrencyInput";
 import { formatCurrency } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
@@ -17,6 +16,8 @@ export interface BaseFieldsProps {
   disabled?: boolean;
   currency: string;
   className?: string;
+  /** Chỉ nguồn + ghi chú (nhập hàng loạt). */
+  variant?: "default" | "sharedOnly";
 }
 
 export function BaseFields({
@@ -24,6 +25,7 @@ export function BaseFields({
   disabled,
   currency,
   className,
+  variant = "default",
 }: BaseFieldsProps) {
   const {
     control,
@@ -34,26 +36,29 @@ export function BaseFields({
   const dateErr = errors.txnDate?.message as string | undefined;
   const sourceErr = errors.sourceId?.message as string | undefined;
   const noteWatch = watch("note") ?? "";
+  const descriptionWatch = watch("description") ?? "";
   const sourceIdWatch = watch("sourceId");
 
   return (
     <div className={cn("flex flex-col gap-5", className)}>
-      <Controller
-        name="amount"
-        control={control}
-        render={({ field }) => (
-          <CurrencyInput
-            currency={currency}
-            value={field.value}
-            onChange={field.onChange}
-            disabled={disabled}
-            label="Số tiền"
-            className={cn("[&_input]:h-14 [&_input]:text-center [&_input]:text-2xl [&_input]:font-semibold")}
-            error={errors.amount?.message as string | undefined}
-            required
-          />
-        )}
-      />
+      {variant === "default" ? (
+        <Controller
+          name="amount"
+          control={control}
+          render={({ field }) => (
+            <CurrencyInput
+              currency={currency}
+              value={field.value}
+              onChange={field.onChange}
+              disabled={disabled}
+              label="Số tiền"
+              className={cn("[&_input]:h-14 [&_input]:text-center [&_input]:text-2xl [&_input]:font-semibold")}
+              error={errors.amount?.message as string | undefined}
+              required
+            />
+          )}
+        />
+      ) : null}
 
       <div>
         <label className="mb-1 block text-sm font-medium text-warm-700">
@@ -146,6 +151,7 @@ export function BaseFields({
         ) : null}
       </div>
 
+      {variant === "default" ? (
       <div>
         <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
           <label htmlFor="txn-date" className="text-sm font-medium text-warm-700">
@@ -200,6 +206,64 @@ export function BaseFields({
         {dateErr ? (
           <p className="mt-1 text-sm text-danger">{dateErr}</p>
         ) : null}
+      </div>
+      ) : null}
+
+      <div>
+        <div className="mb-2 flex justify-between gap-2">
+          <label
+            htmlFor="txn-description"
+            className="text-sm font-medium text-warm-700"
+          >
+            Mô tả{" "}
+            <span className="font-normal text-warm-500">(không bắt buộc)</span>
+          </label>
+          <span className="text-xs tabular-nums text-warm-500">
+            {descriptionWatch.length}/512
+          </span>
+        </div>
+        <Controller
+          name="description"
+          control={control}
+          render={({ field }) => (
+            <input
+              {...field}
+              id="txn-description"
+              type="text"
+              disabled={disabled}
+              maxLength={512}
+              placeholder="Tên cửa hàng, dịch vụ…"
+              className={cn(
+                "h-11 w-full rounded-button border px-3 text-sm text-warm-900 placeholder:text-warm-400",
+                errors.description?.message ? "border-danger" : "border-warm-200",
+                "bg-warm-50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60",
+              )}
+            />
+          )}
+        />
+        {errors.description?.message ? (
+          <p className="mt-1 text-sm text-danger">
+            {String(errors.description.message)}
+          </p>
+        ) : null}
+      </div>
+
+      <div>
+        <label className="mb-2 block text-sm font-medium text-warm-700">
+          Thẻ{" "}
+          <span className="font-normal text-warm-500">(không bắt buộc)</span>
+        </label>
+        <Controller
+          name="tagIds"
+          control={control}
+          render={({ field }) => (
+            <TagPicker
+              value={field.value ?? []}
+              onChange={field.onChange}
+              disabled={disabled}
+            />
+          )}
+        />
       </div>
 
       <div>

@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback, useLayoutEffect } from "react";
 
 import { ROUTES } from "@/config/routes";

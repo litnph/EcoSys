@@ -1,14 +1,9 @@
-"use client";
-
-import dynamic from "next/dynamic";
 import { useMemo } from "react";
 
-import { useTranslations } from "next-intl";
+import { useTranslations } from "@/i18n/hooks";
 
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
-import { SkeletonText } from "@/shared/components/ui/Skeleton";
-
 
 import {
   useDashboardSources,
@@ -19,32 +14,12 @@ import {
   useUpcomingDues,
 } from "../hooks";
 import { MonthlySummaryCard } from "./MonthlySummaryCard";
+import { MonthlyTrendChart } from "./MonthlyTrendChart";
 import { NetWorthCard } from "./NetWorthCard";
 import { RecentTransactionsCard } from "./RecentTransactionsCard";
 import { SourcesOverviewCard } from "./SourcesOverviewCard";
+import { SpendingPieChart } from "./SpendingPieChart";
 import { UpcomingDuesCard } from "./UpcomingDuesCard";
-
-const SpendingPieChart = dynamic(
-  () => import("./SpendingPieChart").then((m) => m.SpendingPieChart),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex min-h-[260px] items-center justify-center rounded-card border border-warm-200 bg-surface p-6 shadow-sm">
-        <SkeletonText className="h-52 w-full rounded-lg" />
-      </div>
-    ),
-  });
-
-const MonthlyTrendChart = dynamic(
-  () => import("./MonthlyTrendChart").then((m) => m.MonthlyTrendChart),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex min-h-[300px] items-center justify-center rounded-card border border-warm-200 bg-surface p-6 shadow-sm">
-        <SkeletonText className="h-56 w-full rounded-lg" />
-      </div>
-    ),
-  });
 
 export function DashboardOverview() {
   const t = useTranslations("dashboard");

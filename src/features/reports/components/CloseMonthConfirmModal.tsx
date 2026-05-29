@@ -1,5 +1,3 @@
-"use client";
-
 import { AlertTriangle } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/Button";
@@ -13,6 +11,7 @@ export interface CloseMonthConfirmModalProps {
   month: number;
   open: boolean;
   onClose: () => void;
+  onClosed?: () => void;
 }
 
 export function CloseMonthConfirmModal({
@@ -20,6 +19,7 @@ export function CloseMonthConfirmModal({
   month,
   open,
   onClose,
+  onClosed,
 }: CloseMonthConfirmModalProps) {
   const closeM = useCloseMonth();
 
@@ -30,6 +30,7 @@ export function CloseMonthConfirmModal({
         month,
       });
       onClose();
+      onClosed?.();
     } catch {
       /* toast in hook */
     }
@@ -39,8 +40,8 @@ export function CloseMonthConfirmModal({
     <Modal
       isOpen={open}
       onClose={onClose}
-      title="Chốt tháng?"
-      description="Tổng thu chi và phân loại của tháng sẽ được đóng băng. Thao tác chỉ được phép sau khi tất cả kỳ sao kê thẻ của tháng đã được xử lý."
+      title="Chốt báo cáo tháng?"
+      description="Báo cáo sẽ được đóng băng sau khi chốt. Chỉ thực hiện khi tất cả kỳ sao kê thẻ của tháng đã được xử lý."
       size="sm"
     >
       <div className="flex flex-col gap-4">
@@ -54,7 +55,7 @@ export function CloseMonthConfirmModal({
             aria-hidden
           />
           <p>
-            Bạn <strong>không thể mở lại</strong> tháng sau khi chốt. Hãy chắc chắn số liệu đã đầy đủ.
+            Bạn <strong>không thể cập nhật</strong> báo cáo sau khi chốt. Hãy chắc chắn số liệu đã đầy đủ.
           </p>
         </div>
         <div className="flex justify-end gap-2">
@@ -67,7 +68,7 @@ export function CloseMonthConfirmModal({
             isLoading={closeM.isPending}
             onClick={() => void handleConfirm()}
           >
-            Chốt tháng
+            Chốt báo cáo
           </Button>
         </div>
       </div>

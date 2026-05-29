@@ -1,5 +1,3 @@
-"use client";
-
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMemo, type ReactNode } from "react";

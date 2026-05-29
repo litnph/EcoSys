@@ -1,5 +1,3 @@
-"use client";
-
 import { Tag } from "lucide-react";
 import { motion } from "framer-motion";
 

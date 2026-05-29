@@ -1,11 +1,43 @@
-"use client";
-
 import * as Dialog from "@radix-ui/react-dialog";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type HTMLMotionProps } from "framer-motion";
 import { X } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/shared/lib/utils";
+
+const MotionOverlay = React.forwardRef<HTMLDivElement, HTMLMotionProps<"div">>(
+  function MotionOverlay({ className, style, ...props }, ref) {
+    return (
+      <motion.div
+        ref={ref}
+        {...props}
+        className={cn(
+          "fixed inset-0 z-[100] bg-warm-900/40 backdrop-blur-sm",
+          className)}
+        style={style}
+      />
+    );
+  },
+);
+
+const ModalContentShell = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(function ModalContentShell({ className, style, children, ...props }, ref) {
+  return (
+    <div
+      ref={ref}
+      {...props}
+      className={cn(
+        "fixed inset-0 z-[101] flex items-center justify-center p-4",
+        "pointer-events-none outline-none focus:outline-none",
+        className)}
+      style={style}
+    >
+      {children}
+    </div>
+  );
+});
 
 export type ModalSize = "sm" | "md" | "lg" | "full";
 
@@ -58,10 +90,8 @@ export function Modal({
           {isOpen && (
             <>
               <Dialog.Overlay key="modal-overlay" asChild forceMount>
-                <motion.div
+                <MotionOverlay
                   aria-hidden="true"
-                  className={cn(
-                    "fixed inset-0 z-[100] bg-warm-900/40 backdrop-blur-sm")}
                   role="presentation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -70,15 +100,10 @@ export function Modal({
                 />
               </Dialog.Overlay>
               <Dialog.Content key="modal-content" asChild forceMount>
-                <div
-                  className={cn(
-                    "fixed top-0 right-0 bottom-0 z-[101] flex items-center justify-center p-4",
-                    "outline-none focus:outline-none")}
-                  style={{ left: "var(--dashboard-sidebar, 0px)" }}
-                >
+                <ModalContentShell>
                   <motion.div
                     className={cn(
-                      "flex w-full flex-col",
+                      "pointer-events-auto flex w-full flex-col",
                       sizeClass[size],
                       "rounded-card border border-warm-200 bg-surface shadow-lg",
                       "max-h-[min(90vh,700px)]")}
@@ -120,7 +145,7 @@ export function Modal({
                       {children}
                     </div>
                   </motion.div>
-                </div>
+                </ModalContentShell>
               </Dialog.Content>
             </>
           )}

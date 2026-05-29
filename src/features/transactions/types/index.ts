@@ -9,11 +9,28 @@ export const TRANSACTION_TYPES = [
   "loan_give",
   "loan_collect",
   "reversal",
+  "balance_adjustment",
 ] as const;
 
 export type TransactionType = (typeof TRANSACTION_TYPES)[number];
 
-export type TxnStatus = "pending" | "completed" | "cancelled";
+export type TxnStatus =
+  | "new"
+  | "transferredToInstallment"
+  | "completed"
+  | "cancelled";
+
+export type TransactionGroupBy = "none" | "day";
+
+export type TransactionSortBy =
+  | "dateDesc"
+  | "dateAsc"
+  | "categoryAsc"
+  | "categoryDesc"
+  | "typeAsc"
+  | "typeDesc"
+  | "amountDesc"
+  | "amountAsc";
 
 export type HistoryChangeType =
   | "created"
@@ -23,13 +40,15 @@ export type HistoryChangeType =
   | "cancelled";
 
 /** Bộ lọc gửi API (một type / một source theo contract backend hiện tại). */
-export interface TransactionFilters {  sourceId?: string;
+export interface TransactionFilters {
+  sourceId?: string;
   type?: TransactionType;
   categoryId?: string;
   dateFrom?: string;
   dateTo?: string;
   amountMin?: number;
   amountMax?: number;
+  status?: TxnStatus;
   page: number;
   pageSize: number;
 }
@@ -38,16 +57,27 @@ export interface TransactionFilters {  sourceId?: string;
 export interface TransactionFilterState {
   sourceIds: string[];
   types: TransactionType[];
+  parentCategoryId?: string;
   categoryId?: string;
   categoryKind: "expense" | "income" | "transfer";
   dateFrom?: string;
   dateTo?: string;
   amountMin?: number;
   amountMax?: number;
+  status?: TxnStatus;
+  groupBy: TransactionGroupBy;
+  sortBy: TransactionSortBy;
+}
+
+export interface TransactionTag {
+  id: string;
+  name: string;
+  color: string;
 }
 
 export interface Transaction {
-  id: string;  type: TransactionType;
+  id: string;
+  type: TransactionType;
   amount: number;
   currency: string;
   sourceId: string;
@@ -58,10 +88,16 @@ export interface Transaction {
   note?: string | null;
   description?: string | null;
   refTxnId?: string | null;
-  billingCycleId?: string | null;
+  /** Present on billing-cycle detail lines only. */
+  inclusionSource?: "refresh" | "manualAdd";
   status: TxnStatus;
   createdAt: string;
   version?: number;
+  /** Giao dịch gốc đã chuyển sang trả góp. */
+  hasInstallmentPlan?: boolean;
+  /** Giao dịch thanh toán một kỳ trả góp. */
+  isInstallmentPayment?: boolean;
+  tags?: TransactionTag[];
 }
 
 export interface TransactionSourceInfo {
@@ -81,6 +117,10 @@ export interface TransactionDetail extends Transaction {
   monthlyPeriodId?: string | null;
   updatedAt: string;
   version: number;
+  canEditAmount?: boolean;
+  canDelete?: boolean;
+  hasInstallmentPlan?: boolean;
+  isInstallmentPayment?: boolean;
   source: TransactionSourceInfo | null;
   category: TransactionCategoryInfo | null;
 }

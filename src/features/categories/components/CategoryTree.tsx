@@ -1,5 +1,3 @@
-"use client";
-
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCallback, useState } from "react";
@@ -9,6 +7,7 @@ import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 
 import { useCategories } from "../hooks/useCategories";
+import { necessityLevelLabel } from "../lib/necessityLevelLabel";
 import type { CategoryKind, FinCategory } from "../types";
 
 export interface CategoryTreeProps {
@@ -68,6 +67,14 @@ function CategoryTreeBranch({ node, depth }: CategoryTreeBranchProps) {
         {node.isDefault ? (
           <span className="shrink-0 rounded-badge bg-warm-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warm-600">
             Mặc định
+          </span>
+        ) : null}
+        {depth > 0 && node.necessityLevel ? (
+          <span
+            className="shrink-0 max-w-[9rem] truncate rounded-badge bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-800"
+            title={necessityLevelLabel(node.necessityLevel) ?? undefined}
+          >
+            {necessityLevelLabel(node.necessityLevel)}
           </span>
         ) : null}
       </button>

@@ -55,3 +55,33 @@ export async function updateTag(
 export async function deleteTag(id: string): Promise<void> {
   await unwrap<{ id: string }>(apiClient.delete(`/finance/tags/${id}`));
 }
+
+const FIN_TRANSACTION_ENTITY = "FinTransaction";
+
+export async function attachTagToEntity(
+  tagId: string,
+  entityId: string,
+  entityType = FIN_TRANSACTION_ENTITY,
+): Promise<void> {
+  await unwrap<{ tagId: string }>(
+    apiClient.post(`/finance/tags/${tagId}/attach`, {
+      entityType,
+      entityId,
+    }),
+  );
+}
+
+export async function detachTagFromEntity(
+  tagId: string,
+  entityId: string,
+  entityType = FIN_TRANSACTION_ENTITY,
+): Promise<void> {
+  await unwrap<{ tagId: string }>(
+    apiClient.delete(`/finance/tags/${tagId}/detach`, {
+      params: {
+        entity_type: entityType,
+        entity_id: entityId,
+      },
+    }),
+  );
+}

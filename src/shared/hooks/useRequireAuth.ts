@@ -1,7 +1,5 @@
-"use client";
-
 import { useEffect } from "react";
-import { useLocale } from "next-intl";
+import { useLocale } from "@/i18n/navigation";
 
 import { ROUTES } from "@/config/routes";
 import { usePathname, useRouter } from "@/i18n/navigation";

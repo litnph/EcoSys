@@ -1,5 +1,3 @@
-"use client";
-
 import { AnimatedAmount } from "@/shared/components/ui/AnimatedAmount";
 import { cn } from "@/shared/lib/utils";
 

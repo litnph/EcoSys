@@ -99,6 +99,7 @@
       "deferred": "Card / deferred",
       "split": "Split bill",
       "debt_borrow": "Borrow",
+      "balance_adjustment": "Balance adjustment",
       "debt_repay": "Repay debt",
       "loan_give": "Lend",
       "loan_collect": "Collect loan",
@@ -150,7 +151,14 @@
     "amountMax": "Maximum amount",
     "reset": "Reset",
     "clearDates": "Clear dates",
-    "done": "Done"
+    "done": "Done",
+    "presetAll": "All",
+    "presetThisMonth": "This month",
+    "presetLast30Days": "30 days",
+    "datePresets": "Quick date filters",
+    "moreFilters": "More",
+    "activeFilters": "Active",
+    "categoryChip": "Category"
   },
   "form": {
     "amount": "Amount",

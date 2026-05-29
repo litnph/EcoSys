@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef } from "react";
 
 import { TOKEN_KEY } from "@/config/constants";
@@ -11,6 +9,7 @@ import { getLocalStorageItem } from "@/shared/lib/auth-session";
 export function useBootstrapUser() {
   const user = useAuthStore((s) => s.user);
   const updateUser = useAuthStore((s) => s.updateUser);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
   const started = useRef(false);
 
   useEffect(() => {
@@ -26,6 +25,7 @@ export function useBootstrapUser() {
       .then((me) => updateUser(mapMeToUser(me)))
       .catch(() => {
         started.current = false;
+        clearAuth();
       });
-  }, [user, updateUser]);
+  }, [user, updateUser, clearAuth]);
 }

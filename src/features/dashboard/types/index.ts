@@ -10,7 +10,11 @@ export type TransactionType =
   | "loan_collect"
   | "reversal";
 
-export type TxnStatus = "pending" | "completed" | "cancelled";
+export type TxnStatus =
+  | "new"
+  | "transferredToInstallment"
+  | "completed"
+  | "cancelled";
 
 export interface Transaction {
   id: string;  type: TransactionType;

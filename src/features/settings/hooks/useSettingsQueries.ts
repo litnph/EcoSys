@@ -1,5 +1,3 @@
-"use client";
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "@/i18n/navigation";
 
@@ -55,7 +53,7 @@ export function usePatchPreferences() {
         ? window.location.pathname.split("/").filter(Boolean)[0]
         : "";
       if (seg !== lang) {
-        router.replace(pathname, { locale: lang });
+        router.replace(pathname, { locale: lang, preserveSearch: true });
       }
     },
     onError: (e: Error) => {

@@ -2,13 +2,7 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   darkMode: "class",
-  content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/features/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/shared/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
@@ -40,8 +34,10 @@ const config: Config = {
           200: "var(--color-warm-200)",
           300: "var(--color-warm-300)",
           400: "var(--color-warm-400)",
+          500: "var(--color-warm-500)",
           600: "var(--color-warm-600)",
           700: "var(--color-warm-700)",
+          800: "var(--color-warm-800)",
           900: "var(--color-warm-900)",
         },
         success: "var(--color-success)",

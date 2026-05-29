@@ -1,5 +1,3 @@
-"use client";
-
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { useMemo } from "react";
@@ -23,6 +21,7 @@ import type {
   TransactionCreateFormType,
   TransactionFormValues,
 } from "./transactionFormSchema";
+import { isCreditCardExpenseSource } from "./resolveExpenseApiType";
 import { categoryKindFor } from "./transactionFormSchema";
 
 export interface ConditionalFieldsProps {
@@ -49,6 +48,12 @@ export function ConditionalFields({
   const sourceId = useWatch({ control, name: "sourceId" });
   const mainAmount = useWatch({ control, name: "amount" }) ?? 0;
   const splitsWatch = useWatch({ control, name: "splits" });
+
+  const expenseViaCard =
+    txnType === "direct" &&
+    typeof sourceId === "string" &&
+    sourceId.length > 0 &&
+    isCreditCardExpenseSource(sourceId, sources ?? []);
 
   const destCandidates = useMemo(
     () =>
@@ -80,7 +85,9 @@ export function ConditionalFields({
 
   return (
     <div className={cn("mt-6 flex flex-col gap-6", className)}>
-      {(txnType === "direct" || txnType === "income" || txnType === "deferred") && (
+      {(txnType === "direct" ||
+        txnType === "income" ||
+        txnType === "split") && (
         <Controller
           name="categoryId"
           control={control}
@@ -89,14 +96,29 @@ export function ConditionalFields({
               <span className="mb-2 block text-sm font-medium text-warm-700">
                 Danh mục
               </span>
+              <input
+                type="hidden"
+                name="categoryId"
+                value={field.value ?? ""}
+                readOnly
+                tabIndex={-1}
+                aria-hidden
+              />
               <CategorySelector
-                
+                key={`${txnType}-${categoryKindFor(txnType)}`}
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(id) => {
+                  field.onChange(id);
+                }}
                 kind={categoryKindFor(txnType)}
                 disabled={disabled}
                 error={categoryErr}
               />
+              {expenseViaCard ? (
+                <p className="mt-1.5 text-xs text-warm-600">
+                  Nguồn là thẻ tín dụng — giao dịch sẽ ghi vào kỳ sao kê (quẹt thẻ).
+                </p>
+              ) : null}
             </div>
           )}
         />

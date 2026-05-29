@@ -1,5 +1,3 @@
-"use client";
-
 import { create } from "zustand";
 
 export type ToastType = "success" | "error" | "warning" | "info";

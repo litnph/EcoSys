@@ -9,6 +9,7 @@ export {
 
 export {
   useBillingCycles,
+  useBillingCycleDetail,
   useGenerateCycle,
   useCloseCycle,
   usePayCycle,

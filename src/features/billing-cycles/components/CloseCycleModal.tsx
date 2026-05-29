@@ -1,5 +1,3 @@
-"use client";
-
 import { AlertTriangle } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/Button";
@@ -8,6 +6,7 @@ import { cn } from "@/shared/lib/utils";
 
 import { useCloseCycle } from "../hooks/useCloseCycle";
 import type { BillingCycle } from "../types";
+import { billingCycleDisplayName } from "../utils/billingCycleDisplay";
 
 export interface CloseCycleModalProps {
   cycle: BillingCycle | null;
@@ -39,7 +38,7 @@ export function CloseCycleModal({
       title="Đóng kỳ sao kê?"
       description={
         cycle
-          ? `Kỳ ${cycle.sourceName} sẽ chốt số dư và không nhận thêm giao dịch hoãn thanh toán.`
+          ? `${billingCycleDisplayName(cycle)} · ${cycle.sourceName} sẽ chốt số dư và không nhận thêm giao dịch trả sau.`
           : undefined
       }
       size="sm"

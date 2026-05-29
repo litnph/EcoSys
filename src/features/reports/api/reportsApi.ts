@@ -9,6 +9,13 @@ import type {
   MonthlyPeriodListItem,
   MonthlyPeriodStatus,
   MonthlyReport,
+  MonthlyReportBillingCycleItem,
+  MonthlyReportBillingCycleInstallmentDue,
+  MonthlyReportBillingCycleStatus,
+  MonthlyReportBillingCyclesSection,
+  MonthlyReportDirectExpenseItem,
+  MonthlyReportDirectExpenseSection,
+  MonthlyReportInstallmentPayStatus,
   SourceBreakdownItem,
 } from "../types";
 import { daysInMonth } from "../utils/months";
@@ -41,6 +48,9 @@ interface PeriodsEnvelope {
     totalIncome: number;
     totalExpense: number;
     net: number;
+    reportCreatedAt: string;
+    lastRefreshedAt?: string | null;
+    closedAt?: string | null;
   }>;
 }
 
@@ -77,6 +87,65 @@ interface MonthOverMonthComparisonDto {
   netChangePercent: number | null;
 }
 
+interface MonthlyReportDirectExpenseItemDto {
+  id: string;
+  amount: number;
+  currency: string;
+  txnDate: string;
+  description: string;
+  categoryName?: string | null;
+  sourceName: string;
+}
+
+interface MonthlyReportDirectExpenseSectionDto {
+  totalAmount: number;
+  transactionCount: number;
+  items: MonthlyReportDirectExpenseItemDto[];
+}
+
+interface MonthlyReportBillingCycleTxnItemDto {
+  id: string;
+  amount: number;
+  txnDate: string;
+  description: string;
+  categoryName?: string | null;
+}
+
+interface MonthlyReportBillingCycleInstallmentDueDto {
+  payId: string;
+  planId: string;
+  planDescription: string;
+  categoryName?: string | null;
+  installmentNumber: number;
+  totalInstallments: number;
+  dueDate: string;
+  amount: number;
+  paidAmount: number;
+  status: string;
+}
+
+interface MonthlyReportBillingCycleItemDto {
+  id: string;
+  sourceId: string;
+  sourceName: string;
+  name: string;
+  periodStart: string;
+  periodEnd: string;
+  statementDate: string;
+  paymentDueDate: string;
+  totalAmount: number;
+  paidAmount: number;
+  status: string;
+  transactions: MonthlyReportBillingCycleTxnItemDto[];
+  installmentDues?: MonthlyReportBillingCycleInstallmentDueDto[];
+}
+
+interface MonthlyReportBillingCyclesSectionDto {
+  totalAmount: number;
+  cycleCount: number;
+  cycles: MonthlyReportBillingCycleItemDto[];
+}
+
 interface ReportEnvelope {
   report: {
     summary: MonthlyReportSummaryDto;
@@ -84,6 +153,8 @@ interface ReportEnvelope {
     sourceBreakdown: MonthSourceSlice[] | null;
     dailyBreakdown: DailyCashflowSlice[] | null;
     comparisonWithPreviousMonth: MonthOverMonthComparisonDto | null;
+    directExpenses: MonthlyReportDirectExpenseSectionDto | null;
+    billingCycles: MonthlyReportBillingCyclesSectionDto | null;
   };
 }
 
@@ -121,6 +192,9 @@ export async function getMonthlyPeriods(
     totalIncome: Number(p.totalIncome),
     totalExpense: Number(p.totalExpense),
     net: Number(p.net),
+    reportCreatedAt: p.reportCreatedAt,
+    lastRefreshedAt: p.lastRefreshedAt ?? null,
+    closedAt: p.closedAt ?? null,
   }));
 }
 
@@ -166,6 +240,105 @@ function mapComparison(dto: MonthOverMonthComparisonDto | null): Comparison {
       dto.netChangePercent === undefined || dto.netChangePercent === null
         ? null
         : Number(dto.netChangePercent),
+  };
+}
+
+function mapDirectExpenseItem(
+  row: MonthlyReportDirectExpenseItemDto,
+): MonthlyReportDirectExpenseItem {
+  return {
+    id: row.id,
+    amount: Number(row.amount),
+    currency: row.currency,
+    txnDate: row.txnDate,
+    description: row.description?.trim()?.length ? row.description : "—",
+    categoryName: row.categoryName?.trim()?.length ? row.categoryName : null,
+    sourceName: row.sourceName?.trim()?.length ? row.sourceName : "—",
+  };
+}
+
+function mapDirectExpenses(
+  dto: MonthlyReportDirectExpenseSectionDto | null | undefined,
+): MonthlyReportDirectExpenseSection {
+  const items = (dto?.items ?? []).map(mapDirectExpenseItem);
+  return {
+    totalAmount: Number(dto?.totalAmount ?? 0),
+    transactionCount: Number(dto?.transactionCount ?? items.length),
+    items,
+  };
+}
+
+function normalizeBillingCycleStatus(status: string): MonthlyReportBillingCycleStatus {
+  if (
+    status === "open"
+    || status === "closed"
+    || status === "paid"
+    || status === "overdue"
+  ) {
+    return status;
+  }
+  return "open";
+}
+
+function normalizeInstallmentPayStatus(status: string): MonthlyReportInstallmentPayStatus {
+  const s = status.toLowerCase();
+  if (s === "paid") return "paid";
+  if (s === "due") return "due";
+  if (s === "overdue") return "overdue";
+  return "upcoming";
+}
+
+function mapBillingCycleInstallmentDue(
+  row: MonthlyReportBillingCycleInstallmentDueDto,
+): MonthlyReportBillingCycleInstallmentDue {
+  return {
+    payId: row.payId,
+    planId: row.planId,
+    planDescription: row.planDescription?.trim()?.length ? row.planDescription : "Trả góp",
+    categoryName: row.categoryName?.trim()?.length ? row.categoryName : null,
+    installmentNumber: row.installmentNumber,
+    totalInstallments: row.totalInstallments,
+    dueDate: row.dueDate,
+    amount: Number(row.amount),
+    paidAmount: Number(row.paidAmount),
+    status: normalizeInstallmentPayStatus(row.status),
+  };
+}
+
+function mapBillingCycleItem(
+  row: MonthlyReportBillingCycleItemDto,
+): MonthlyReportBillingCycleItem {
+  return {
+    id: row.id,
+    sourceId: row.sourceId,
+    sourceName: row.sourceName?.trim()?.length ? row.sourceName : "—",
+    name: row.name?.trim()?.length ? row.name : "—",
+    periodStart: row.periodStart,
+    periodEnd: row.periodEnd,
+    statementDate: row.statementDate,
+    paymentDueDate: row.paymentDueDate,
+    totalAmount: Number(row.totalAmount),
+    paidAmount: Number(row.paidAmount),
+    status: normalizeBillingCycleStatus(row.status),
+    transactions: (row.transactions ?? []).map((txn) => ({
+      id: txn.id,
+      amount: Number(txn.amount),
+      txnDate: txn.txnDate,
+      description: txn.description?.trim()?.length ? txn.description : "—",
+      categoryName: txn.categoryName?.trim()?.length ? txn.categoryName : null,
+    })),
+    installmentDues: (row.installmentDues ?? []).map(mapBillingCycleInstallmentDue),
+  };
+}
+
+function mapBillingCycles(
+  dto: MonthlyReportBillingCyclesSectionDto | null | undefined,
+): MonthlyReportBillingCyclesSection {
+  const cycles = (dto?.cycles ?? []).map(mapBillingCycleItem);
+  return {
+    totalAmount: Number(dto?.totalAmount ?? 0),
+    cycleCount: Number(dto?.cycleCount ?? cycles.length),
+    cycles,
   };
 }
 
@@ -224,6 +397,8 @@ export async function getMonthlyReport(
     sourceBreakdown: mapSourceSlices(sourcesRaw),
     dailyBreakdown: mappedDaily.length > 0 ? mappedDaily : fillEmptyDaily(year, month),
     comparisonWithPrevious: mapComparison(reportSlice.comparisonWithPreviousMonth),
+    directExpenses: mapDirectExpenses(reportSlice.directExpenses),
+    billingCycles: mapBillingCycles(reportSlice.billingCycles),
   };
 }
 
@@ -244,4 +419,35 @@ export async function closeMonth(
       year,
       month,
     }));
+}
+
+export async function createMonthlyReport(
+  year: number,
+  month: number,
+): Promise<void> {
+  await unwrap<unknown>(
+    apiClient.post(`/finance/monthly-periods/reports`, { year, month }),
+  );
+}
+
+export async function refreshMonthlyReport(
+  year: number,
+  month: number,
+): Promise<void> {
+  await unwrap<unknown>(
+    apiClient.post(
+      `/finance/monthly-periods/${String(year)}/${String(month)}/refresh`,
+    ),
+  );
+}
+
+export async function deleteMonthlyReport(
+  year: number,
+  month: number,
+): Promise<void> {
+  await unwrap<unknown>(
+    apiClient.delete(
+      `/finance/monthly-periods/${String(year)}/${String(month)}`,
+    ),
+  );
 }

@@ -13,7 +13,7 @@ import type {
   TransactionsPage,
   TxnStatus,
 } from "../types";
-import { normalizeTxnType } from "../utils/txnDisplay";
+import { normalizeTxnType, normalizeTxnStatus } from "../utils/txnDisplay";
 
 type ApiEnvelope<T> = ApiResponse<T>;
 
@@ -49,6 +49,9 @@ interface RemoteListItem {
   description: string;
   note?: string | null;
   createdAt: string;
+  hasInstallmentPlan?: boolean;
+  isInstallmentPayment?: boolean;
+  tags?: Array<{ id: string; name: string; color: string }>;
 }
 
 interface RemoteListEnvelope {
@@ -63,7 +66,7 @@ function mapListItem(row: RemoteListItem): Transaction {
   return {
     id: row.id,
     type: normalizeTxnType(row.type),
-    status: row.status as TxnStatus,
+    status: normalizeTxnStatus(row.status),
     amount: row.amount,
     currency: row.currency,
     sourceId: row.sourceId,
@@ -74,6 +77,13 @@ function mapListItem(row: RemoteListItem): Transaction {
     note: row.note,
     description: row.description,
     createdAt: row.createdAt,
+    hasInstallmentPlan: row.hasInstallmentPlan ?? false,
+    isInstallmentPayment: row.isInstallmentPayment ?? false,
+    tags: (row.tags ?? []).map((tag) => ({
+      id: tag.id,
+      name: tag.name,
+      color: tag.color,
+    })),
   };
 }
 
@@ -88,12 +98,15 @@ interface RemoteDetailDto {
   categoryId?: string | null;
   description: string;
   note?: string | null;
-  billingCycleId?: string | null;
   monthlyPeriodId?: string | null;
   refTxnId?: string | null;
   createdAt: string;
   updatedAt: string;
   version: number;
+  canEditAmount?: boolean;
+  canDelete?: boolean;
+  hasInstallmentPlan?: boolean;
+  isInstallmentPayment?: boolean;
   source?: {
     id: string;
     name: string;
@@ -105,6 +118,7 @@ interface RemoteDetailDto {
     name: string;
     kind: string;
   } | null;
+  tags?: Array<{ id: string; name: string; color: string }>;
 }
 
 interface RemoteDetailEnvelope {
@@ -115,7 +129,7 @@ function mapDetailDto(t: RemoteDetailDto): TransactionDetail {
   return {
     id: t.id,
     type: normalizeTxnType(t.type),
-    status: t.status as TxnStatus,
+    status: normalizeTxnStatus(t.status),
     amount: t.amount,
     currency: t.currency,
     sourceId: t.sourceId,
@@ -126,11 +140,14 @@ function mapDetailDto(t: RemoteDetailDto): TransactionDetail {
     note: t.note,
     description: t.description,
     refTxnId: t.refTxnId ?? null,
-    billingCycleId: t.billingCycleId ?? null,
     monthlyPeriodId: t.monthlyPeriodId ?? null,
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
     version: t.version,
+    canEditAmount: t.canEditAmount ?? true,
+    canDelete: t.canDelete ?? true,
+    hasInstallmentPlan: t.hasInstallmentPlan ?? false,
+    isInstallmentPayment: t.isInstallmentPayment ?? false,
     source: t.source
       ? {
           id: t.source.id,
@@ -146,6 +163,11 @@ function mapDetailDto(t: RemoteDetailDto): TransactionDetail {
           kind: t.category.kind,
         }
       : null,
+    tags: (t.tags ?? []).map((tag) => ({
+      id: tag.id,
+      name: tag.name,
+      color: tag.color,
+    })),
   };
 }
 
@@ -205,7 +227,18 @@ function buildQueryParams(filters: TransactionFilters): URLSearchParams {
     qs.set("amount_min", String(toApiWholeAmount(filters.amountMin)));
   if (typeof filters.amountMax === "number")
     qs.set("amount_max", String(toApiWholeAmount(filters.amountMax)));
+  if (filters.status) qs.set("status", serializeStatusForQuery(filters.status));
   return qs;
+}
+
+function serializeStatusForQuery(status: TxnStatus): string {
+  const map: Record<TxnStatus, string> = {
+    new: "new",
+    transferredToInstallment: "transferredToInstallment",
+    completed: "completed",
+    cancelled: "cancelled",
+  };
+  return map[status];
 }
 
 function paginationFromResponse(
@@ -240,6 +273,7 @@ function serializeTypeForQuery(t: TransactionType): string {
     loan_give: "loanGive",
     loan_collect: "loanCollect",
     reversal: "reversal",
+    balance_adjustment: "balanceAdjustment",
   };
   return toApi[t];
 }
@@ -322,10 +356,10 @@ export interface CreateTransactionBody {
   sourceId: string;
   categoryId?: string | null;
   txnDate: string;
+  description?: string | null;
   note?: string | null;
   monthlyPeriodId?: string | null;
   toSourceId?: string | null;
-  billingCycleId?: string | null;
   personName?: string | null;
   personContact?: string | null;
   debtRecordId?: string | null;
@@ -362,6 +396,7 @@ export type UpdateTransactionPayload = {
   description: string;
   note?: string | null;
   monthlyPeriodId?: string | null;
+  amount?: number | null;
 };
 
 export async function updateTransaction(
@@ -375,6 +410,7 @@ export async function updateTransaction(
       description: payload.description,
       note: payload.note ?? null,
       monthlyPeriodId: payload.monthlyPeriodId ?? null,
+      amount: payload.amount ?? null,
     });
   assertData(body);
   return mapDetailDto(body.data.transaction);

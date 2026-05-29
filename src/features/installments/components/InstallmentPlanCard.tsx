@@ -1,21 +1,15 @@
-"use client";
-
-import { Link } from "@/i18n/navigation";
-import { ChevronDown } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { ROUTES } from "@/config/routes";
+import { sourceTypeIcon } from "@/features/dashboard/utils/financeDisplay";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { cn } from "@/shared/lib/utils";
 import { cardHoverMotion } from "@/shared/lib/animations";
-import { formatCurrency, formatDate } from "@/shared/lib/formatters";
+import { formatCurrency } from "@/shared/lib/formatters";
 
-import type {
-  InstallmentPlan,
-  InstallmentPlanListItem,
-  InstallmentStatus,
-} from "../types";
+import type { InstallmentPlanListItem, InstallmentStatus } from "../types";
+import { sourceCardTintColor } from "../utils/sourceCardTint";
 
 function statusBadgeClasses(status: InstallmentStatus): string {
   switch (status) {
@@ -43,200 +37,129 @@ function statusLabel(status: InstallmentStatus): string {
   }
 }
 
-function conversionFeeBadge(
-  status: NonNullable<InstallmentPlan["conversionFeeStatus"]>): { label: string; className: string } {
-  switch (status) {
-    case "pending":
-      return {
-        label: "Phí chuyển đổi · Chờ",
-        className: "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
-      };
-    case "billed":
-      return {
-        label: "Phí chuyển đổi · Đã ghi",
-        className: "bg-accent/10 text-accent ring-1 ring-accent/25",
-      };
-    case "paid":
-      return {
-        label: "Phí chuyển đổi · Đã trả",
-        className: "bg-success/15 text-success ring-1 ring-success/20",
-      };
-    default:
-      return { label: "", className: "" };
-  }
+function planTitle(listItem: InstallmentPlanListItem): string {
+  return (
+    listItem.originalTxnCategoryName?.trim() ||
+    listItem.originalTxnDescription?.trim() ||
+    "Trả góp"
+  );
 }
 
 export interface InstallmentPlanCardProps {
   listItem: InstallmentPlanListItem;
-  plan: InstallmentPlan | null;
-  isDetailLoading: boolean;
   currency: string;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onCancel?: () => void;
+  onOpenDetail: () => void;
+  onDelete?: () => void;
 }
 
 export function InstallmentPlanCard({
   listItem,
-  plan,
-  isDetailLoading,
   currency,
-  isExpanded,
-  onToggle,
-  onCancel,
+  onOpenDetail,
+  onDelete,
 }: InstallmentPlanCardProps) {
-  const title =
-    plan?.originalTxnDescription?.trim() ||
-    listItem.originalTxnDescription?.trim() ||
-    "Giao dịch gốc";
-  const originalTxnId = plan?.originalTxnId;
+  const title = planTitle(listItem);
+  const description = listItem.originalTxnDescription?.trim() ?? "";
+  const showDescription =
+    description.length > 0 && description !== title.trim();
 
   const paid = listItem.paidInstallments;
   const total = listItem.totalInstallments;
   const pct =
     total > 0 ? Math.min(100, Math.round((paid / total) * 1000) / 10) : 0;
 
-  const totalAmount = plan?.totalAmount;
-  const monthlyAmount = plan?.monthlyAmount;
-
-  const showFeeBadge =
-    plan?.conversionFeeStatus != null &&
-    plan.conversionFeeAmount != null &&
-    plan.conversionFeeAmount > 0;
-
-  const canCancel =
-    listItem.status === "active" && typeof onCancel === "function";
+  const tint = sourceCardTintColor(listItem.sourceColor);
+  const iconChar = listItem.sourceIcon?.trim();
+  const FallbackIcon = sourceTypeIcon("creditCard");
 
   return (
     <motion.article
       {...cardHoverMotion}
+      role="button"
+      tabIndex={0}
+      onClick={onOpenDetail}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpenDetail();
+        }
+      }}
       className={cn(
-        "flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-4 shadow-sm transition",
-        isExpanded ? "border-accent/40 ring-1 ring-accent/15" : "hover:border-warm-300")}
+        "flex cursor-pointer flex-col gap-2 rounded-card border border-warm-200/80 p-3 shadow-sm transition outline-none",
+        "hover:border-warm-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-accent")}
+      style={{ backgroundColor: tint }}
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <button
-            type="button"
-            onClick={onToggle}
-            className="min-w-0 flex-1 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-start gap-2.5">
+          <span
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface/80 text-base ring-1 ring-warm-200/60"
+            aria-hidden
           >
-            <div className="flex items-start gap-2">
-              <h3 className="min-w-0 flex-1 font-display text-base font-semibold text-warm-900">
-                {originalTxnId ? (
-                  <Link
-                    href={{
-                      pathname: ROUTES.dashboard.transactions,
-                      query: { highlight: originalTxnId },
-                    }}
-                    className="inline-flex items-center gap-1 underline decoration-warm-300 underline-offset-2 hover:text-accent"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <span className="truncate">{title}</span>
-                  </Link>
-                ) : (
-                  <span className="truncate">{title}</span>
-                )}
-              </h3>
-              <ChevronDown
-                className={cn(
-                  "mt-0.5 size-5 shrink-0 text-warm-500 transition-transform",
-                  isExpanded && "rotate-180")}
-                aria-hidden
-              />
-            </div>
-            {listItem.sourceName ? (
-              <p className="mt-1 text-sm text-warm-600">{listItem.sourceName}</p>
+            {iconChar ? (
+              <span>{iconChar}</span>
+            ) : (
+              <FallbackIcon className="size-4 text-warm-600" />
+            )}
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate font-display text-sm font-semibold text-warm-900">
+              {title}
+            </h3>
+            {showDescription ? (
+              <p className="mt-0.5 line-clamp-2 text-xs text-warm-600">
+                {description}
+              </p>
             ) : null}
-          </button>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {showFeeBadge && plan?.conversionFeeStatus ? (
-              <Badge
-                size="sm"
-                className={conversionFeeBadge(plan.conversionFeeStatus).className}
-              >
-                {conversionFeeBadge(plan.conversionFeeStatus).label}
-              </Badge>
-            ) : null}
-            <Badge
-              size="sm"
-              className={cn(
-                "shrink-0 capitalize",
-                statusBadgeClasses(listItem.status))}
-            >
-              {statusLabel(listItem.status)}
-            </Badge>
+            <p className="mt-0.5 truncate text-[11px] text-warm-500">
+              {listItem.sourceName ?? "Thẻ tín dụng"}
+              {" · "}
+              {String(paid)}/{String(total)} kỳ
+              {" · "}
+              <span className="font-mono tabular-nums">
+                {listItem.status === "active"
+                  ? formatCurrency(listItem.remainingAmount, currency)
+                  : formatCurrency(listItem.totalAmount, currency)}
+              </span>
+            </p>
           </div>
         </div>
-
-        <dl className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <dt className="text-warm-500">Tổng tiền</dt>
-            <dd className="font-mono font-semibold tabular-nums text-warm-900">
-              {isDetailLoading && totalAmount === undefined ? (
-                <span className="inline-block h-5 w-28 animate-pulse rounded bg-warm-100" />
-              ) : typeof totalAmount === "number" ? (
-                formatCurrency(totalAmount, currency)
-              ) : (
-                "—"
-              )}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-warm-500">Mỗi kỳ</dt>
-            <dd className="font-mono font-semibold tabular-nums text-warm-900">
-              {isDetailLoading && monthlyAmount === undefined ? (
-                <span className="inline-block h-5 w-24 animate-pulse rounded bg-warm-100" />
-              ) : typeof monthlyAmount === "number" ? (
-                formatCurrency(monthlyAmount, currency)
-              ) : (
-                "—"
-              )}
-            </dd>
-          </div>
-        </dl>
-
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-sm text-warm-600">
-            <span>
-              Đã trả {String(paid)}/{String(total)} kỳ
-            </span>
-            <span className="tabular-nums">{String(pct)}%</span>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-warm-100">
-            <div
-              className="h-full rounded-full bg-accent transition-all"
-              style={{ width: `${String(pct)}%` }}
-            />
-          </div>
-        </div>
-
-        {plan?.startDate ? (
-          <p className="text-xs text-warm-500">
-            Bắt đầu:{" "}
-            <span className="font-medium text-warm-700">
-              {formatDate(plan.startDate)}
-            </span>
-          </p>
-        ) : null}
+        <Badge
+          size="sm"
+          className={cn("shrink-0 capitalize", statusBadgeClasses(listItem.status))}
+        >
+          {statusLabel(listItem.status)}
+        </Badge>
       </div>
 
-      {canCancel ? (
-        <div className="flex flex-wrap gap-2 border-t border-warm-100 pt-2">
+      <div className="flex items-center gap-2">
+        <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-warm-100/80">
+          <div
+            className={cn(
+              "h-full rounded-full transition-all",
+              listItem.status === "completed" ? "bg-success" : "bg-accent")}
+            style={{ width: `${String(pct)}%` }}
+          />
+        </div>
+        <span className="shrink-0 text-[11px] tabular-nums text-warm-500">
+          {String(pct)}%
+        </span>
+        {listItem.canDelete && onDelete ? (
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="text-warm-600"
+            className="h-7 shrink-0 px-2 text-xs text-danger hover:bg-danger/10"
+            aria-label="Xóa kế hoạch"
+            leftIcon={<Trash2 className="size-3.5" aria-hidden />}
             onClick={(e) => {
               e.stopPropagation();
-              onCancel?.();
+              onDelete();
             }}
           >
-            Hủy kế hoạch
+            Xóa
           </Button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </motion.article>
   );
 }

@@ -1,5 +1,3 @@
-"use client";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
@@ -29,7 +27,7 @@ export function useDeleteSource() {
 
       return { previous, listKey };
     },
-    onError: (error, variables, context) => {
+    onError: (error, _variables, context) => {
       if (context?.previous !== undefined) {
         queryClient.setQueryData(context.listKey, context.previous);
       }

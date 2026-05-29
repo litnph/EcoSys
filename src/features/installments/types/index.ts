@@ -23,10 +23,14 @@ export interface InstallmentPay {
 
 /** Kế hoạch trả góp đầy đủ (từ GET …/installment-plans/:id). */
 export interface InstallmentPlan {
-  id: string;  originalTxnId: string;
+  id: string;
+  originalTxnId: string;
   sourceId: string;
   sourceName: string | null;
+  sourceIcon?: string | null;
+  sourceColor?: string | null;
   originalTxnDescription: string | null;
+  originalTxnCategoryName?: string | null;
   totalAmount: number;
   totalMonths: number;
   monthlyAmount: number;
@@ -38,19 +42,76 @@ export interface InstallmentPlan {
   startDate: string;
   status: InstallmentStatus;
   cancellationReason?: string | null;
+  canDelete?: boolean;
   pays: InstallmentPay[];
 }
 
 /** Bản tóm tắt danh sách (GET …/installment-plans). */
 export interface InstallmentPlanListItem {
-  id: string;  sourceId: string;
+  id: string;
+  sourceId: string;
   sourceName: string | null;
+  sourceIcon?: string | null;
+  sourceColor?: string | null;
   originalTxnDescription: string | null;
+  originalTxnCategoryName?: string | null;
   status: InstallmentStatus;
   paidInstallments: number;
   totalInstallments: number;
   remainingAmount: number;
+  totalAmount: number;
+  canDelete: boolean;
   createdAt: string;
+}
+
+export interface InstallmentDashboard {
+  activePlanCount: number;
+  totalRemainingAmount: number;
+  dueCount: number;
+  dueAmount: number;
+  overdueCount: number;
+  overdueAmount: number;
+  upcomingCount: number;
+  upcomingAmount: number;
+  thisMonthDueCount: number;
+  thisMonthDueAmount: number;
+  nextMonthDueCount: number;
+  nextMonthDueAmount: number;
+  completionPercent: number;
+  bySource: InstallmentDashboardSource[];
+  upcomingPays: InstallmentUpcomingPay[];
+}
+
+export type InstallmentUpcomingPayBucket =
+  | "overdue"
+  | "dueToday"
+  | "thisMonth"
+  | "nextMonth"
+  | "later";
+
+export interface InstallmentDashboardSource {
+  sourceId: string;
+  sourceName: string;
+  sourceIcon?: string | null;
+  sourceColor?: string | null;
+  activePlanCount: number;
+  remainingAmount: number;
+  overdueAmount: number;
+  thisMonthDueAmount: number;
+  nextMonthDueAmount: number;
+}
+
+export interface InstallmentUpcomingPay {
+  planId: string;
+  sourceId: string;
+  sourceName: string;
+  sourceIcon?: string | null;
+  planTitle: string;
+  installmentNumber: number;
+  totalInstallments: number;
+  dueDate: string;
+  amount: number;
+  bucket: InstallmentUpcomingPayBucket;
 }
 
 export interface CreateInstallmentPlanPayload {

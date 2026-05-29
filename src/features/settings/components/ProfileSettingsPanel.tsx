@@ -1,12 +1,9 @@
-"use client";
-
-import Image from "next/image";
+import { AvatarImage } from "@/shared/components/ui/AvatarImage";
 import { useEffect, useRef, useState } from "react";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { Input } from "@/shared/components/ui/Input";
 import { Button } from "@/shared/components/ui/Button";
-import { avatarImageUnoptimized } from "@/shared/lib/avatar-image";
 import { cn } from "@/shared/lib/utils";
 
 import {
@@ -45,14 +42,7 @@ function UserAvatar({
       aria-label="Đổi ảnh đại diện"
     >
       {url ? (
-        <Image
-          src={url}
-          alt=""
-          fill
-          className="object-cover"
-          sizes="96px"
-          unoptimized={avatarImageUnoptimized(url)}
-        />
+        <AvatarImage src={url} alt="" fill className="object-cover" />
       ) : (
         initials || "?"
       )}

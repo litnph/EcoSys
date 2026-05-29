@@ -13,4 +13,6 @@ export const billingCycleKeys = {
     ] as const,
   details: () => [...billingCycleKeys.all, "detail"] as const,
   detail: (id: string) => [...billingCycleKeys.details(), id] as const,
+  addable: (cycleId: string) =>
+    [...billingCycleKeys.all, "addable", cycleId] as const,
 };
