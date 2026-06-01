@@ -15,8 +15,10 @@ import {
   type EmptyStateAction,
 } from "@/shared/components/ui/EmptyState";
 import { Button } from "@/shared/components/ui/Button";
-import { SkeletonTable } from "@/shared/components/ui/Skeleton";
+import { SkeletonTable, SkeletonText } from "@/shared/components/ui/Skeleton";
+import { useIsMdUp } from "@/shared/hooks/useMediaQuery";
 import { formatCurrency } from "@/shared/lib/formatters";
+import { cn } from "@/shared/lib/utils";
 
 import type { Transaction } from "../types";
 import {
@@ -32,6 +34,7 @@ import {
 } from "../utils/txnGridLayout";
 
 import { TransactionItem } from "./TransactionItem";
+import { TransactionItemCard } from "./TransactionItemCard";
 
 function dateKey(iso: string): string {
   return iso.length >= 10 ? iso.slice(0, 10) : iso;
@@ -131,6 +134,7 @@ export function TransactionList({
   onDelete,
   emptyAction,
 }: TransactionListProps) {
+  const isMdUp = useIsMdUp();
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const sentinelRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -217,6 +221,20 @@ export function TransactionList({
     />
   );
 
+  const renderCard = (tx: Transaction) => (
+    <TransactionItemCard
+      key={tx.id}
+      transaction={tx}
+      isHighlighted={tx.id === highlightedTransactionId}
+      categoryMap={categoryMap}
+      sourceMap={sourceMap}
+      onOpen={onOpen}
+      onDelete={onDelete}
+    />
+  );
+
+  const tableScrollClass = "overflow-x-auto overscroll-x-contain";
+
   const paginationBlock = hasNextPage ? (
     <div className="flex flex-col items-center gap-3 border-t border-warm-100 py-3">
       <div ref={sentinelRef} className="h-1 w-full" aria-hidden />
@@ -241,7 +259,15 @@ export function TransactionList({
   if (isLoading) {
     return (
       <div className={listShellClass}>
-        <SkeletonTable rows={6} cols={3} showHeaderRow className="p-4" />
+        {isMdUp ? (
+          <SkeletonTable rows={6} cols={3} showHeaderRow className="p-4" />
+        ) : (
+          <div className="space-y-3 p-3" aria-busy="true">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <SkeletonText key={index} className="h-28 w-full rounded-lg" />
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -259,6 +285,50 @@ export function TransactionList({
     );
   }
 
+  if (!isMdUp) {
+    return (
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-warm-200/80 bg-surface shadow-sm ring-1 ring-warm-100/50">
+        <div
+          ref={scrollRef}
+          className="min-h-0 flex-1 overflow-auto overscroll-contain"
+        >
+          {groupBy === "none" ? (
+            <div className="space-y-2 p-2">
+              {visibleItems.map((tx) => renderCard(tx))}
+            </div>
+          ) : (
+            <div className="space-y-4 p-2">
+              {groups.map((g) => (
+                <section key={g.key}>
+                  <header className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-1">
+                    <h3 className="font-display text-xs font-semibold uppercase tracking-wide text-warm-600">
+                      {g.label}
+                    </h3>
+                    <p className="font-mono text-[11px] text-warm-500">
+                      {g.thu > 0 ? (
+                        <span className="text-success">Thu {g.thuFmt}</span>
+                      ) : null}
+                      {g.thu > 0 && g.chi > 0 ? (
+                        <span className="mx-1">·</span>
+                      ) : null}
+                      {g.chi > 0 ? (
+                        <span className="text-danger">Chi {g.chiFmt}</span>
+                      ) : null}
+                    </p>
+                  </header>
+                  <div className="space-y-2">
+                    {g.rows.map((tx) => renderCard(tx))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+          {paginationBlock}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-warm-200/80 bg-surface shadow-sm ring-1 ring-warm-100/50">
       <div
@@ -266,13 +336,15 @@ export function TransactionList({
         className="min-h-0 flex-1 overflow-auto overscroll-contain"
       >
         {groupBy === "none" ? (
-          <table className={TXN_TABLE_CLASS}>
-            <TxnTableColGroup />
-            <TxnTableHeader />
-            <tbody>
-              {visibleItems.map((tx, index) => renderRow(tx, index))}
-            </tbody>
-          </table>
+          <div className={tableScrollClass}>
+            <table className={TXN_TABLE_CLASS}>
+              <TxnTableColGroup />
+              <TxnTableHeader />
+              <tbody>
+                {visibleItems.map((tx, index) => renderRow(tx, index))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="space-y-4 p-2">
             {groups.map((g) => (
@@ -293,7 +365,11 @@ export function TransactionList({
                     ) : null}
                   </p>
                 </header>
-                <div className="overflow-x-auto overflow-hidden rounded-md border border-warm-100">
+                <div
+                  className={cn(
+                    tableScrollClass,
+                    "rounded-md border border-warm-100")}
+                >
                   <table className={TXN_TABLE_CLASS}>
                     <TxnTableColGroup />
                     <tbody>

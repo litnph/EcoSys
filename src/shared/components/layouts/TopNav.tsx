@@ -1,7 +1,8 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Menu } from "lucide-react";
 import { AvatarImage } from "@/shared/components/ui/AvatarImage";
 import { useEffect, useState } from "react";
+import { useTranslations } from "@/i18n/hooks";
 
 import { ROUTES } from "@/config/routes";
 import { TOKEN_KEY } from "@/config/constants";
@@ -24,14 +25,17 @@ export type TopNavProps = {
   sidebarCollapsed: boolean;
   user?: TopNavUser;
   bannerInsetPx?: number;
+  onMenuClick?: () => void;
 };
 
 export function TopNav({
   sidebarCollapsed,
   user: userProp,
   bannerInsetPx = 0,
+  onMenuClick,
 }: TopNavProps) {
   const pathname = usePathname();
+  const tNav = useTranslations("nav");
   const crumbs = buildDashboardBreadcrumbs(pathname);
 
   const [name, setName] = useState(() => userProp?.name ?? "User");
@@ -59,9 +63,24 @@ export function TopNav({
     <header
       style={{ top: bannerInsetPx }}
       className={cn(
-        "fixed right-0 z-40 flex h-14 items-center gap-3 border-b border-warm-200 bg-warm-25/80 px-6 backdrop-blur transition-[left] duration-200 ease-out",
-        sidebarCollapsed ? "left-16" : "left-[240px]")}
+        "fixed right-0 z-40 flex h-14 items-center gap-2 border-b border-warm-200 bg-warm-25/80 px-4 backdrop-blur transition-[left] duration-200 ease-out md:gap-3 md:px-6",
+        "left-0",
+        sidebarCollapsed ? "md:left-16" : "md:left-[240px]")}
     >
+      {onMenuClick ? (
+        <button
+          type="button"
+          onClick={onMenuClick}
+          className={cn(
+            "shrink-0 rounded-button p-2 text-warm-700 md:hidden",
+            "outline-none hover:bg-warm-100 hover:text-warm-900",
+            "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2")}
+          aria-label={tNav("openMenu")}
+        >
+          <Menu className="size-5" aria-hidden />
+        </button>
+      ) : null}
+
       <nav
         className="flex min-w-0 flex-1 items-center"
         aria-label="Breadcrumb"

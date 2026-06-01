@@ -64,7 +64,9 @@
     "collapseSidebar": "Thu gọn sidebar",
     "expand": "Mở rộng",
     "collapse": "Thu gọn",
-    "mainNav": "Điều hướng chính"
+    "mainNav": "Điều hướng chính",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu"
   },
   "settings": {
     "title": "Cài đặt",

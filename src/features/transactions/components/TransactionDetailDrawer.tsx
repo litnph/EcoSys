@@ -14,6 +14,7 @@ import * as React from "react";
 import { Drawer } from "@/shared/components/ui/Drawer";
 import { Button } from "@/shared/components/ui/Button";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
+import { useIsMdUp } from "@/shared/hooks/useMediaQuery";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
 
@@ -88,6 +89,7 @@ export function TransactionDetailDrawer({
   const t = useTranslations("transaction");
   const tFilters = useTranslations("filters");
   const tCommon = useTranslations("common");
+  const isMdUp = useIsMdUp();
   const del = useDeleteTransaction();
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
@@ -179,7 +181,7 @@ export function TransactionDetailDrawer({
             ? formatDate(mergedDisplay.txnDate)
             : t("detailLoadingDesc")
         }
-        side="right"
+        side={isMdUp ? "right" : "bottom"}
         size="lg"
       >
         {detailQ.isError ? (

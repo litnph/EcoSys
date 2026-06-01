@@ -64,7 +64,9 @@
     "collapseSidebar": "Collapse sidebar",
     "expand": "Expand",
     "collapse": "Collapse",
-    "mainNav": "Main navigation"
+    "mainNav": "Main navigation",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "settings": {
     "title": "Settings",

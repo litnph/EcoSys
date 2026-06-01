@@ -141,15 +141,17 @@ function TransactionsPageInner() {
 
   return (
     <div className="flex h-[calc(100dvh-56px-2rem)] w-full flex-col overflow-hidden">
-      <div className="flex shrink-0 flex-row items-end justify-between gap-4">
+      <div className="flex shrink-0 flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
         <PageHeader
           title={t("pageTitle")}
           description={t("pageDescription")}
+          className="mb-0"
         />
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row md:w-auto md:flex-wrap">
           <Button
             type="button"
             variant="secondary"
+            className="w-full sm:flex-1 md:w-auto"
             leftIcon={<Layers className="size-4" aria-hidden />}
             onClick={() => setBulkOpen(true)}
           >
@@ -157,7 +159,7 @@ function TransactionsPageInner() {
           </Button>
           <Button
             type="button"
-            className="shrink-0"
+            className="w-full shrink-0 sm:flex-1 md:w-auto"
             leftIcon={<Plus className="size-4" aria-hidden />}
             onClick={() => setCreateOpen(true)}
           >

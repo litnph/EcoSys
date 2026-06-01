@@ -47,8 +47,8 @@ function mapProfileToUser(profile: BeUserProfileDto): UserDto {
     profile.role?.toLowerCase() === "admin" ? "admin" : "member";
   return {
     id: profile.userId,
-    email: profile.email,
-    fullName: profile.fullName,
+    email: profile.email ?? "",
+    fullName: profile.fullName ?? "",
     avatarUrl: profile.avatarUrl ?? null,
     isVerified: true,
     role,

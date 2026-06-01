@@ -27,6 +27,8 @@ export type SidebarProps = {
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
   bannerInsetPx?: number;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 };
 
 function NavLink({
@@ -36,16 +38,19 @@ function NavLink({
   collapsed,
   pathname,
   t,
+  onNavigate,
 }: SidebarNavItem & {
   collapsed: boolean;
   pathname: string;
   t: (key: SidebarNavItem["labelKey"]) => string;
+  onNavigate?: () => void;
 }) {
   const label = t(labelKey);
   const active = isDashboardNavActive(pathname, href);
   const content = (
     <Link
       href={href}
+      onClick={() => onNavigate?.()}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-warm-600 transition-colors",
         "hover:bg-warm-100 hover:text-warm-900",
@@ -89,10 +94,14 @@ export function Sidebar({
   collapsed,
   onCollapsedChange,
   bannerInsetPx = 0,
+  mobileOpen = false,
+  onMobileClose,
 }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("nav");
   const isAdmin = useIsAdmin();
+
+  const isCollapsed = mobileOpen ? false : collapsed;
 
   const sectionTitle = (key: SidebarNavSectionKey): string =>
     t(
@@ -109,14 +118,25 @@ export function Sidebar({
 
   return (
     <Tooltip.Provider delayDuration={200}>
+      {mobileOpen ? (
+        <button
+          type="button"
+          aria-label={t("closeMenu")}
+          className="fixed inset-0 z-40 bg-warm-900/40 backdrop-blur-[1px] md:hidden"
+          onClick={onMobileClose}
+        />
+      ) : null}
+
       <aside
         style={{
           top: bannerInsetPx,
           height: `calc(100dvh - ${String(bannerInsetPx)}px)`,
         }}
         className={cn(
-          "fixed left-0 z-30 flex shrink-0 flex-col border-r border-warm-200 bg-warm-25 transition-[width] duration-200 ease-out",
-          collapsed ? "w-16" : "w-[240px]")}
+          "fixed left-0 z-50 flex shrink-0 flex-col border-r border-warm-200 bg-warm-25 transition-[width] duration-200 ease-out md:z-30",
+          "w-[240px]",
+          isCollapsed ? "md:w-16" : "md:w-[240px]",
+          mobileOpen ? "flex" : "hidden md:flex")}
         aria-label={t("mainNav")}
       >
         <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-3">
@@ -131,7 +151,7 @@ export function Sidebar({
                 key={section.sectionKey}
                 className={cn(sectionIdx > 0 && "mt-2 border-t border-warm-200/80 pt-2")}
               >
-                {!collapsed ? (
+                {!isCollapsed ? (
                   <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-warm-400">
                     {sectionTitle(section.sectionKey)}
                   </p>
@@ -140,9 +160,10 @@ export function Sidebar({
                   <NavLink
                     key={item.href}
                     {...item}
-                    collapsed={collapsed}
+                    collapsed={isCollapsed}
                     pathname={pathname}
                     t={t}
+                    onNavigate={onMobileClose}
                   />
                 ))}
               </div>
@@ -150,7 +171,7 @@ export function Sidebar({
           })}
         </div>
 
-        <div className="border-t border-warm-200 p-2">
+        <div className="hidden border-t border-warm-200 p-2 md:block">
           <button
             type="button"
             onClick={() => onCollapsedChange(!collapsed)}
@@ -158,11 +179,11 @@ export function Sidebar({
               "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-warm-600 transition-colors",
               "hover:bg-warm-100 hover:text-warm-900",
               "outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
-              collapsed && "justify-center px-0")}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
+              isCollapsed && "justify-center px-0")}
+            aria-expanded={!isCollapsed}
+            aria-label={isCollapsed ? t("expandSidebar") : t("collapseSidebar")}
           >
-            {collapsed ? (
+            {isCollapsed ? (
               <ChevronRight className="size-5 shrink-0" aria-hidden />
             ) : (
               <ChevronLeft className="size-5 shrink-0" aria-hidden />
@@ -170,9 +191,9 @@ export function Sidebar({
             <span
               className={cn(
                 "text-sm font-medium",
-                collapsed ? "sr-only" : "inline")}
+                isCollapsed ? "sr-only" : "inline")}
             >
-              {collapsed ? t("expand") : t("collapse")}
+              {isCollapsed ? t("expand") : t("collapse")}
             </span>
           </button>
         </div>

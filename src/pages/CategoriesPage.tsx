@@ -27,7 +27,7 @@ export function CategoriesPage() {
   const activeTab = KIND_TABS.find((tab) => tab.value === kind);
 
   return (
-    <div className="w-full max-w-6xl">
+    <div className="w-full">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <PageHeader
           title="Danh mục"

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { Input } from "@/shared/components/ui/Input";
 import { Button } from "@/shared/components/ui/Button";
+import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { cn } from "@/shared/lib/utils";
 
 import {
@@ -23,7 +24,7 @@ function UserAvatar({
   onPick: () => void;
   disabled?: boolean;
 }) {
-  const initials = label
+  const initials = (label ?? "")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -136,6 +137,10 @@ export function ProfileSettingsPanel() {
       });
   };
 
+  if (profileQuery.isLoading && !user) {
+    return <SkeletonCard lines={6} className="p-8" />;
+  }
+
   if (!user) {
     return (
       <p className="text-sm text-warm-600">
@@ -143,6 +148,9 @@ export function ProfileSettingsPanel() {
       </p>
     );
   }
+
+  const displayLabel =
+    user.fullName?.trim() || user.email?.trim() || user.id || "?";
 
   return (
     <div className="flex flex-col gap-6">
@@ -163,7 +171,7 @@ export function ProfileSettingsPanel() {
         <form className="mt-6 flex flex-col gap-6 md:flex-row" onSubmit={onSaveProfile}>
           <UserAvatar
             url={displayAvatar}
-            label={user.fullName || user.email}
+            label={displayLabel}
             onPick={onAvatarClick}
             disabled={updateProfile.isPending}
           />
@@ -182,7 +190,7 @@ export function ProfileSettingsPanel() {
               <input
                 id="profile-email"
                 readOnly
-                value={user.email}
+                value={user.email ?? ""}
                 aria-readonly
                 className={cn(
                   "h-10 w-full max-w-md rounded-input border border-warm-200 bg-warm-50 px-3 text-sm text-warm-700")}

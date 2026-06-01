@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
+import { useIsMdUp } from "@/shared/hooks/useMediaQuery";
 import { cn } from "@/shared/lib/utils";
 
 import { PageTransition } from "./PageTransition";
@@ -23,9 +24,36 @@ export function DashboardLayout({
   user,
 }: DashboardLayoutProps) {
   const queryClient = useQueryClient();
+  const isMdUp = useIsMdUp();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [offline, setOffline] = useState(
     () => typeof navigator !== "undefined" && !navigator.onLine);
+
+  const closeMobileSidebar = useCallback(() => {
+    setMobileSidebarOpen(false);
+  }, []);
+
+  const openMobileSidebar = useCallback(() => {
+    setMobileSidebarOpen(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMdUp) {
+      setMobileSidebarOpen(false);
+    }
+  }, [isMdUp]);
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === "Escape") {
+        setMobileSidebarOpen(false);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileSidebarOpen]);
 
   useEffect(() => {
     function handleOnline(): void {
@@ -46,7 +74,8 @@ export function DashboardLayout({
   const bannerInsetPx = offline ? OFFLINE_BANNER_HEIGHT_PX : 0;
   const mainPaddingTopPx = TOP_NAV_HEIGHT_PX + bannerInsetPx;
 
-  const sidebarWidth = sidebarCollapsed ? "4rem" : "240px";
+  const sidebarWidth =
+    !isMdUp ? "0px" : sidebarCollapsed ? "4rem" : "240px";
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -74,6 +103,8 @@ export function DashboardLayout({
           collapsed={sidebarCollapsed}
           onCollapsedChange={setSidebarCollapsed}
           bannerInsetPx={bannerInsetPx}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={closeMobileSidebar}
         />
       </ErrorBoundary>
 
@@ -82,14 +113,15 @@ export function DashboardLayout({
           sidebarCollapsed={sidebarCollapsed}
           user={user}
           bannerInsetPx={bannerInsetPx}
+          onMenuClick={openMobileSidebar}
         />
       </ErrorBoundary>
 
       <main
         style={{ paddingTop: mainPaddingTopPx }}
         className={cn(
-          "min-h-screen bg-warm-50 px-6 transition-[margin] duration-200 ease-out",
-          sidebarCollapsed ? "ml-16" : "ml-[240px]")}
+          "min-h-screen bg-warm-50 px-4 transition-[margin] duration-200 ease-out md:px-6",
+          sidebarCollapsed ? "md:ml-16" : "md:ml-[240px]")}
       >
         <ErrorBoundary fallbackTitle="Không tải được nội dung trang">
           <PageTransition>{children}</PageTransition>
