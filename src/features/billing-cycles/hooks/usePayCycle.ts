@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
 
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { transactionKeys } from "@/features/transactions/api/transactionKeys";
 
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
@@ -20,6 +21,7 @@ export function usePayCycle() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: billingCycleKeys.all });
       void queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
+      invalidateDashboard(queryClient);
       addToast({
         type: "success",
         title: "Đã ghi nhận thanh toán",

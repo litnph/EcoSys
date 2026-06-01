@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
 
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 
 import { billingCycleKeys } from "../api/billingCycleKeys";
@@ -15,6 +16,7 @@ export function useRefreshCycle() {
     mutationFn: (cycleId: string) => refreshCycle(cycleId),
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: billingCycleKeys.all });
+      invalidateDashboard(queryClient);
       const added = result.addedCount;
       addToast({
         type: "success",

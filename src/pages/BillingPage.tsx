@@ -119,7 +119,7 @@ export function BillingPage() {
   };
 
   return (
-    <div className="w-full max-w-[1400px] pb-8">
+    <div className="w-full pb-8">
       <PageHeader
         title="Kỳ sao kê thẻ"
         description="Theo dõi kỳ hoạch toán, đóng sao kê và thanh toán cho từng thẻ tín dụng."

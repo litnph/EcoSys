@@ -1,8 +1,11 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
 import * as React from "react";
 
+import { sourceTypeIcon } from "@/features/dashboard/utils/financeDisplay";
+import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
+import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { cn } from "@/shared/lib/utils";
 import { formatCurrency } from "@/shared/lib/formatters";
 
@@ -11,17 +14,124 @@ import {
   useSourcesRecalculatePreview,
 } from "../hooks/useSourcesRecalculate";
 import type { SourceRecalculatePreviewItem } from "../types/recalculate";
+import { creditSourceBreakdown } from "../utils/creditSourceBreakdown";
 import { sourceTypeLabelVi } from "../utils/sourceLabels";
 
-function formatUtil(pct: number | null): string {
-  if (pct === null) return "—";
-  return `${String(pct)}%`;
+import { CreditLimitBar } from "./CreditLimitBar";
+
+function isCreditCardRow(row: SourceRecalculatePreviewItem): boolean {
+  return row.type === "creditCard" && row.creditLimit != null && row.creditLimit > 0;
 }
 
-function formatDrift(drift: number, currency: string): string {
-  if (drift === 0) return "—";
+function previewAsSource(row: SourceRecalculatePreviewItem, balance: number) {
+  return {
+    id: row.sourceId,
+    name: row.name,
+    type: row.type,
+    balance,
+    creditLimit: row.creditLimit,
+    statementDay: null,
+    paymentDueDay: null,
+    minInstallmentAmt: null,
+    currency: row.currency,
+    icon: null,
+    color: null,
+    sortOrder: 0,
+    installmentRemainingAmount: row.installmentRemainingAmount,
+  };
+}
+
+function formatDriftShort(drift: number, currency: string): string {
+  if (drift === 0) return "Khớp";
   const sign = drift > 0 ? "+" : "";
   return `${sign}${formatCurrency(drift, currency)}`;
+}
+
+interface RecalculateSourceRowProps {
+  row: SourceRecalculatePreviewItem;
+  checked: boolean;
+  onToggle: () => void;
+}
+
+function RecalculateSourceRow({
+  row,
+  checked,
+  onToggle,
+}: RecalculateSourceRowProps) {
+  const isCard = isCreditCardRow(row);
+  const TypeIcon = sourceTypeIcon(row.type);
+  const hasDrift = row.drift !== 0;
+  const stored = isCard ? Math.max(0, row.storedBalance) : row.storedBalance;
+  const computed = isCard ? Math.max(0, row.computedBalance) : row.computedBalance;
+  const breakdown = isCard
+    ? creditSourceBreakdown(previewAsSource(row, row.computedBalance))
+    : null;
+
+  return (
+    <label
+      className={cn(
+        "flex cursor-pointer gap-2.5 rounded-lg border px-2.5 py-2 transition-colors",
+        checked
+          ? "border-accent/30 bg-accent/[0.04]"
+          : "border-warm-200 bg-surface hover:bg-warm-50/80",
+        hasDrift && !checked && "border-warning/20")}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        aria-label={`Chọn ${row.name}`}
+        onChange={onToggle}
+        className="mt-0.5 size-3.5 shrink-0 rounded border-warm-300 text-accent"
+      />
+
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <TypeIcon className="size-3.5 shrink-0 text-warm-500" aria-hidden />
+          <span className="truncate text-sm font-medium text-warm-900">
+            {row.name}
+          </span>
+          <span className="text-[11px] text-warm-400">
+            {sourceTypeLabelVi(row.type)}
+          </span>
+          {hasDrift ? (
+            <Badge size="sm" variant="warning" className="ml-auto shrink-0">
+              {formatDriftShort(row.drift, row.currency)}
+            </Badge>
+          ) : (
+            <Badge size="sm" variant="success" className="ml-auto shrink-0">
+              Khớp
+            </Badge>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="font-mono tabular-nums text-warm-600">
+            {formatCurrency(stored, row.currency)}
+          </span>
+          <ArrowRight className="size-3 text-warm-300" aria-hidden />
+          <span className="font-mono font-semibold tabular-nums text-accent">
+            {formatCurrency(computed, row.currency)}
+          </span>
+        </div>
+
+        {breakdown ? (
+          <div className="space-y-1">
+            <CreditLimitBar
+              spentPct={breakdown.bar.spentPct}
+              installmentPct={breakdown.bar.installmentPct}
+              availablePct={breakdown.bar.availablePct}
+              className="h-1.5"
+            />
+            <p className="text-[11px] tabular-nums text-warm-500">
+              Chi {formatCurrency(breakdown.spentAmount, row.currency)}
+              {" · "}TG {formatCurrency(breakdown.installmentAmount, row.currency)}
+              {" · "}KD {formatCurrency(breakdown.availableAmount, row.currency)}
+            </p>
+          </div>
+        ) : null}
+      </div>
+    </label>
+  );
 }
 
 export interface RecalculateSourcesModalProps {
@@ -36,12 +146,14 @@ export function RecalculateSourcesModal({
   const previewQ = useSourcesRecalculatePreview(isOpen);
   const applyM = useApplySourcesRecalculate();
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const [showDriftOnly, setShowDriftOnly] = React.useState(false);
   const initialized = React.useRef(false);
 
   React.useEffect(() => {
     if (!isOpen) {
       initialized.current = false;
       setSelected(new Set());
+      setShowDriftOnly(false);
       return;
     }
     if (previewQ.data && !initialized.current) {
@@ -50,8 +162,20 @@ export function RecalculateSourcesModal({
         .filter((row) => row.drift !== 0)
         .map((row) => row.sourceId);
       setSelected(new Set(withDrift));
+      setShowDriftOnly(
+        withDrift.length > 0 && withDrift.length < previewQ.data.length,
+      );
     }
   }, [isOpen, previewQ.data]);
+
+  const rows = previewQ.data ?? [];
+  const visibleRows = showDriftOnly
+    ? rows.filter((row) => row.drift !== 0)
+    : rows;
+  const driftCount = rows.filter((row) => row.drift !== 0).length;
+  const allVisibleSelected =
+    visibleRows.length > 0 &&
+    visibleRows.every((row) => selected.has(row.sourceId));
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -62,10 +186,15 @@ export function RecalculateSourcesModal({
     });
   };
 
-  const toggleAll = (rows: SourceRecalculatePreviewItem[]) => {
+  const toggleAllVisible = () => {
     setSelected((prev) => {
-      if (prev.size === rows.length) return new Set();
-      return new Set(rows.map((r) => r.sourceId));
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        for (const row of visibleRows) next.delete(row.sourceId);
+      } else {
+        for (const row of visibleRows) next.add(row.sourceId);
+      }
+      return next;
     });
   };
 
@@ -80,147 +209,92 @@ export function RecalculateSourcesModal({
     }
   };
 
-  const rows = previewQ.data ?? [];
-  const allSelected = rows.length > 0 && selected.size === rows.length;
-  const hasDrift = rows.some((r) => r.drift !== 0);
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="reCal — đối chiếu số dư & hạn mức"
-      description="Tính lại số dư từ giao dịch. Hạn mức thẻ giữ nguyên; % sử dụng được tính từ balance ÷ credit limit."
-      size="xl"
+      title="reCal"
+      description="So sánh số lưu và số tính lại."
+      size="lg"
     >
-      <div className="flex flex-col gap-4">
-        {hasDrift ? (
-          <div
-            className="flex gap-2 rounded-button border border-warning/35 bg-warning/10 px-3 py-2 text-sm text-warm-800"
-            role="alert"
-          >
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
-            <p>
-              Có nguồn lệch số dư. Chọn nguồn cần áp dụng rồi bấm「Xác nhận áp dụng」.
-            </p>
-          </div>
-        ) : null}
-
+      <div className="flex flex-col gap-3">
         {previewQ.isLoading ? (
-          <p className="py-8 text-center text-sm text-warm-500">Đang tính toán…</p>
+          <div className="space-y-2">
+            {[0, 1, 2].map((i) => (
+              <SkeletonText key={i} className="h-12 w-full rounded-lg" />
+            ))}
+          </div>
         ) : previewQ.isError ? (
-          <p className="py-8 text-center text-sm text-danger">
-            Không tải được bản xem trước reCal.
+          <p className="py-6 text-center text-sm text-danger">
+            Không tải được bản xem trước.
           </p>
         ) : rows.length === 0 ? (
-          <p className="py-8 text-center text-sm text-warm-500">Chưa có nguồn tài chính.</p>
+          <p className="py-6 text-center text-sm text-warm-500">
+            Chưa có nguồn tài chính.
+          </p>
         ) : (
-          <div className="max-h-[min(420px,55vh)] overflow-auto rounded-lg border border-warm-200">
-            <table className="w-full min-w-[720px] border-collapse text-sm">
-              <thead className="sticky top-0 z-10 bg-warm-50/95 backdrop-blur-sm">
-                <tr className="border-b border-warm-200 text-left text-xs font-semibold uppercase tracking-wide text-warm-500">
-                  <th className="px-3 py-2 w-10">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      aria-label="Chọn tất cả"
-                      onChange={() => toggleAll(rows)}
-                    />
-                  </th>
-                  <th className="px-3 py-2">Nguồn</th>
-                  <th className="px-3 py-2 text-right">Đang lưu</th>
-                  <th className="px-3 py-2 text-right">Tính lại</th>
-                  <th className="px-3 py-2 text-right">Lệch</th>
-                  <th className="px-3 py-2 text-right">Hạn mức</th>
-                  <th className="px-3 py-2 text-right">% dùng (cũ→mới)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-warm-100">
-                {rows.map((row) => {
-                  const checked = selected.has(row.sourceId);
-                  const driftTone =
-                    row.drift === 0
-                      ? "text-warm-500"
-                      : row.drift > 0
-                        ? "text-warning"
-                        : "text-accent";
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-warm-500">
+              <span className="inline-flex items-center gap-2">
+                {driftCount > 0 ? (
+                  <>
+                    <AlertTriangle className="size-3.5 text-warning" aria-hidden />
+                    {String(driftCount)} lệch
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="size-3.5 text-success" aria-hidden />
+                    Tất cả khớp
+                  </>
+                )}
+                <span>· Chọn {String(selected.size)}/{String(rows.length)}</span>
+              </span>
+              <span className="flex gap-2">
+                {driftCount > 0 && driftCount < rows.length ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowDriftOnly((v) => !v)}
+                    className="text-accent hover:underline"
+                  >
+                    {showDriftOnly ? "Tất cả" : "Chỉ lệch"}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={toggleAllVisible}
+                  className="text-warm-600 hover:underline"
+                >
+                  {allVisibleSelected ? "Bỏ chọn" : "Chọn hết"}
+                </button>
+              </span>
+            </div>
 
-                  return (
-                    <tr
-                      key={row.sourceId}
-                      className={cn(
-                        "bg-surface",
-                        row.drift !== 0 && "bg-warning/[0.03]")}
-                    >
-                      <td className="px-3 py-2">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          aria-label={`Chọn ${row.name}`}
-                          onChange={() => toggle(row.sourceId)}
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <p className="font-medium text-warm-900">{row.name}</p>
-                        <p className="text-xs text-warm-500">
-                          {sourceTypeLabelVi(row.type)}
-                        </p>
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums">
-                        {formatCurrency(row.storedBalance, row.currency)}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
-                        {formatCurrency(row.computedBalance, row.currency)}
-                      </td>
-                      <td
-                        className={cn(
-                          "px-3 py-2 text-right font-mono tabular-nums font-semibold",
-                          driftTone)}
-                      >
-                        {formatDrift(row.drift, row.currency)}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-warm-600">
-                        {row.creditLimit != null && row.creditLimit > 0
-                          ? formatCurrency(row.creditLimit, row.currency)
-                          : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-xs text-warm-700">
-                        {row.creditLimit != null && row.creditLimit > 0 ? (
-                          <>
-                            {formatUtil(row.storedUtilizationPercent)}
-                            {" → "}
-                            <span className="font-semibold text-warm-900">
-                              {formatUtil(row.computedUtilizationPercent)}
-                            </span>
-                          </>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+            <div className="max-h-[min(360px,50vh)] space-y-1.5 overflow-y-auto">
+              {visibleRows.map((row) => (
+                <RecalculateSourceRow
+                  key={row.sourceId}
+                  row={row}
+                  checked={selected.has(row.sourceId)}
+                  onToggle={() => toggle(row.sourceId)}
+                />
+              ))}
+            </div>
+          </>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-warm-100 pt-3">
-          <p className="text-xs text-warm-500">
-            Đã chọn {String(selected.size)}/{String(rows.length)} nguồn
-          </p>
-          <div className="flex gap-2">
-            <Button type="button" variant="ghost" onClick={onClose}>
-              Hủy
-            </Button>
-            <Button
-              type="button"
-              isLoading={applyM.isPending}
-              disabled={selected.size === 0 || previewQ.isLoading}
-              onClick={() => void handleApply()}
-            >
-              Xác nhận áp dụng
-            </Button>
-          </div>
+        <div className="flex justify-end gap-2 border-t border-warm-100 pt-3">
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            Hủy
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            isLoading={applyM.isPending}
+            disabled={selected.size === 0 || previewQ.isLoading}
+            onClick={() => void handleApply()}
+          >
+            Áp dụng{selected.size > 0 ? ` (${String(selected.size)})` : ""}
+          </Button>
         </div>
       </div>
     </Modal>

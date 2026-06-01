@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { sourceKeys } from "@/features/sources/api/sourceKeys";
 import { transactionKeys } from "@/features/transactions/api/transactionKeys";
 import { useToastStore } from "@/shared/stores/toastStore";
@@ -20,6 +21,7 @@ export function useCreateInstallmentPlan() {
       void qc.invalidateQueries({ queryKey: installmentKeys.all });
       void qc.invalidateQueries({ queryKey: transactionKeys.lists() });
       void qc.invalidateQueries({ queryKey: sourceKeys.all });
+      invalidateDashboard(qc);
       addToast({
         type: "success",
         title: "Đã tạo kế hoạch trả góp",

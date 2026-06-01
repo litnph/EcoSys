@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { debtKeys } from "@/features/debt/api/debtKeys";
-import { dashboardKeys } from "@/features/dashboard/api/dashboardKeys";
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { sourceKeys } from "@/features/sources/api/sourceKeys";
 import { useToastStore } from "@/shared/stores/toastStore";
 
@@ -19,8 +19,7 @@ export function useCreateTransaction() {
       void qc.invalidateQueries({ queryKey: transactionKeys.all });
       void qc.invalidateQueries({ queryKey: debtKeys.all });
       void qc.invalidateQueries({ queryKey: sourceKeys.lists() });
-      void qc.invalidateQueries({ queryKey: dashboardKeys.summary() });
-      void qc.invalidateQueries({ queryKey: dashboardKeys.all });
+      invalidateDashboard(qc);
       addToast({
         type: "success",
         title: "Đã tạo giao dịch",

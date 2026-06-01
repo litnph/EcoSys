@@ -110,7 +110,7 @@ export function DebtPage() {
     "shrink-0 rounded-md px-4 py-2.5 font-medium transition outline-none whitespace-nowrap");
 
   return (
-    <div className="w-full max-w-[1400px] pb-8">
+    <div className="w-full pb-8">
       <PageHeader
         title="Nợ & cho vay"
         description="Theo dõi khoản bạn đang nợ và khoản bạn cho mượn. Tạo khoản mới từ giao dịch trong form giao dịch."

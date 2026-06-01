@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToastStore } from "@/shared/stores/toastStore";
 import { getFinanceApiErrorMessage } from "../utils/apiError";
 
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
+
 import { sourceKeys } from "../api/sourceKeys";
 import {
   applySourcesRecalculate,
@@ -26,6 +28,7 @@ export function useApplySourcesRecalculate() {
     mutationFn: (sourceIds: string[]) => applySourcesRecalculate(sourceIds),
     onSuccess: (results) => {
       void qc.invalidateQueries({ queryKey: sourceKeys.all });
+      invalidateDashboard(qc);
       const changed = results.filter((r) => r.applied).length;
       addToast({
         type: "success",

@@ -1,37 +1,39 @@
-import type { Transaction, TransactionFilterState, TransactionFilters, TxnStatus } from "../types";
+import type { FinSource } from "@/features/sources/types";
 
-export const DEFAULT_TXN_STATUS: TxnStatus = "new";
+import type { Transaction, TransactionFilterState, TransactionFilters } from "../types";
+import {
+  apiDateRangeForBillingPeriod,
+  currentBillingPeriodKey,
+  isDefaultBillingPeriod,
+  passesBillingPeriodFilter,
+} from "./periodFilter";
 
+export const DEFAULT_TXN_STATUS = "new" as const;
+
+/** @deprecated Dùng billingPeriod; giữ cho tương thích URL cũ. */
 export function currentMonthRange(): { dateFrom: string; dateTo: string } {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const dim = new Date(y, m + 1, 0).getDate();
-  const mm = String(m + 1).padStart(2, "0");
+  const key = currentBillingPeriodKey();
+  const [yStr, mStr] = key.split("-");
+  const y = Number(yStr);
+  const m = Number(mStr);
+  const dim = new Date(y, m, 0).getDate();
+  const mm = String(m).padStart(2, "0");
   return {
-    dateFrom: `${y}-${mm}-01`,
-    dateTo: `${y}-${mm}-${String(dim).padStart(2, "0")}`,
+    dateFrom: `${String(y)}-${mm}-01`,
+    dateTo: `${String(y)}-${mm}-${String(dim).padStart(2, "0")}`,
   };
 }
 
-export function isDefaultMonthRange(
-  dateFrom?: string,
-  dateTo?: string,
-): boolean {
-  const month = currentMonthRange();
-  return dateFrom === month.dateFrom && dateTo === month.dateTo;
-}
-
 export function defaultTransactionFilterState(): TransactionFilterState {
-  const month = currentMonthRange();
   return {
+    billingPeriod: currentBillingPeriodKey(),
     sourceIds: [],
     types: [],
     categoryKind: "expense",
     parentCategoryId: undefined,
     categoryId: undefined,
-    dateFrom: month.dateFrom,
-    dateTo: month.dateTo,
+    dateFrom: undefined,
+    dateTo: undefined,
     amountMin: undefined,
     amountMax: undefined,
     status: DEFAULT_TXN_STATUS,
@@ -40,16 +42,35 @@ export function defaultTransactionFilterState(): TransactionFilterState {
   };
 }
 
+export function resolveApiDateRange(
+  state: TransactionFilterState,
+  sources: FinSource[] | undefined,
+): { dateFrom?: string; dateTo?: string } {
+  if (state.billingPeriod === "all") {
+    return {};
+  }
+  if (state.billingPeriod === "custom") {
+    return {
+      dateFrom: state.dateFrom,
+      dateTo: state.dateTo,
+    };
+  }
+  return apiDateRangeForBillingPeriod(state.billingPeriod, sources);
+}
+
 export function transactionFiltersFromState(
   state: TransactionFilterState,
   page: number,
-  pageSize: number): TransactionFilters {
+  pageSize: number,
+  sources?: FinSource[],
+): TransactionFilters {
+  const dates = resolveApiDateRange(state, sources);
   return {
     sourceId: state.sourceIds.length === 1 ? state.sourceIds[0] : undefined,
     type: state.types.length === 1 ? state.types[0] : undefined,
     categoryId: state.categoryId,
-    dateFrom: state.dateFrom,
-    dateTo: state.dateTo,
+    dateFrom: dates.dateFrom,
+    dateTo: dates.dateTo,
     amountMin: state.amountMin,
     amountMax: state.amountMax,
     status: state.status,
@@ -58,14 +79,24 @@ export function transactionFiltersFromState(
   };
 }
 
-/** Khi chọn nhiều nguồn / nhiều loại, backend không lọc OR — lọc phía client trên từng trang đã tải. */
+/** Lọc client: nhiều nguồn/loại + kỳ sao kê thẻ. */
 export function passesClientTxnFilters(
   tx: Transaction,
-  state: TransactionFilterState): boolean {
+  state: TransactionFilterState,
+  sourceMap: Map<string, FinSource>,
+): boolean {
   if (state.types.length > 1 && !state.types.includes(tx.type)) {
     return false;
   }
   if (state.sourceIds.length > 1 && !state.sourceIds.includes(tx.sourceId)) {
+    return false;
+  }
+  if (state.billingPeriod === "custom") {
+    if (state.dateFrom && tx.txnDate < state.dateFrom) return false;
+    if (state.dateTo && tx.txnDate > state.dateTo) return false;
+    return true;
+  }
+  if (!passesBillingPeriodFilter(tx, state.billingPeriod, sourceMap)) {
     return false;
   }
   return true;
@@ -77,7 +108,9 @@ export function countActiveFilters(state: TransactionFilterState): number {
   if (state.types.length > 0) n += 1;
   if (state.parentCategoryId) n += 1;
   if (state.categoryId) n += 1;
-  if ((state.dateFrom || state.dateTo) && !isDefaultMonthRange(state.dateFrom, state.dateTo)) {
+  if (state.billingPeriod === "all" || state.billingPeriod === "custom") {
+    n += 1;
+  } else if (!isDefaultBillingPeriod(state.billingPeriod)) {
     n += 1;
   }
   if (typeof state.amountMin === "number" && state.amountMin > 0) n += 1;

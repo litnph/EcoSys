@@ -16,7 +16,6 @@ import {
 } from "@/shared/components/ui/EmptyState";
 import { Button } from "@/shared/components/ui/Button";
 import { SkeletonTable } from "@/shared/components/ui/Skeleton";
-import { cn } from "@/shared/lib/utils";
 import { formatCurrency } from "@/shared/lib/formatters";
 
 import type { Transaction } from "../types";
@@ -26,9 +25,10 @@ import {
   isTransferTxnType,
 } from "../utils/txnDisplay";
 import {
-  TXN_HEADER_CENTER,
-  TXN_HEADER_GRID,
-  TXN_TABLE_MIN_WIDTH,
+  TXN_TABLE_CLASS,
+  TXN_TABLE_COLS,
+  TXN_TH,
+  TXN_TH_LAST,
 } from "../utils/txnGridLayout";
 
 import { TransactionItem } from "./TransactionItem";
@@ -59,6 +59,7 @@ function dayTotals(rows: Transaction[]): { thu: number; chi: number } {
 export interface TransactionListProps {
   items: Transaction[];
   isLoading: boolean;
+  highlightedTransactionId?: string | null;
   groupBy?: "none" | "day";
   categoryMap?: Map<string, FinCategoryFlat>;
   sourceMap?: Map<string, FinSource>;
@@ -70,26 +71,56 @@ export interface TransactionListProps {
   emptyAction?: EmptyStateAction;
 }
 
-function ListHeader() {
+function TxnTableColGroup() {
   return (
-    <div className={cn(TXN_HEADER_GRID, "bg-warm-50")}>
-      <span className={TXN_HEADER_CENTER}>STT</span>
-      <span className={TXN_HEADER_CENTER}>Ngày</span>
-      <span className={TXN_HEADER_CENTER}>Số tiền</span>
-      <span className={TXN_HEADER_CENTER}>Tag</span>
-      <span className={TXN_HEADER_CENTER}>Danh mục cha</span>
-      <span className={TXN_HEADER_CENTER}>Danh mục</span>
-      <span className={TXN_HEADER_CENTER}>Nguồn tiền</span>
-      <span className={TXN_HEADER_CENTER}>Trạng thái</span>
-      <span>Mô tả</span>
-      <span>Ghi chú</span>
-    </div>
+    <colgroup>
+      {TXN_TABLE_COLS.map((width, index) => (
+        <col key={index} className={width || undefined} />
+      ))}
+    </colgroup>
+  );
+}
+
+function TxnTableHeader() {
+  return (
+    <thead className="sticky top-0 z-20 bg-warm-50 shadow-[0_1px_0_0_rgb(245,245,244)]">
+      <tr>
+        <th scope="col" className={TXN_TH}>
+          STT
+        </th>
+        <th scope="col" className={TXN_TH}>
+          Ngày
+        </th>
+        <th scope="col" className={TXN_TH}>
+          Số tiền
+        </th>
+        <th scope="col" className={TXN_TH}>
+          Tag
+        </th>
+        <th scope="col" className={TXN_TH}>
+          Danh mục cha
+        </th>
+        <th scope="col" className={TXN_TH}>
+          Danh mục
+        </th>
+        <th scope="col" className={TXN_TH}>
+          Nguồn tiền
+        </th>
+        <th scope="col" className={TXN_TH}>
+          Trạng thái
+        </th>
+        <th scope="col" className={TXN_TH_LAST}>
+          Mô tả
+        </th>
+      </tr>
+    </thead>
   );
 }
 
 export function TransactionList({
   items,
   isLoading,
+  highlightedTransactionId,
   groupBy = "none",
   categoryMap,
   sourceMap,
@@ -172,11 +203,13 @@ export function TransactionList({
     return map;
   }, [groupBy, groups, visibleItems]);
 
-  const renderRow = (tx: Transaction) => (
+  const renderRow = (tx: Transaction, rowIndex: number) => (
     <TransactionItem
       key={tx.id}
       transaction={tx}
       rowNumber={rowNumberById.get(tx.id)}
+      rowIndex={rowIndex}
+      isHighlighted={tx.id === highlightedTransactionId}
       categoryMap={categoryMap}
       sourceMap={sourceMap}
       onOpen={onOpen}
@@ -232,47 +265,47 @@ export function TransactionList({
         ref={scrollRef}
         className="min-h-0 flex-1 overflow-auto overscroll-contain"
       >
-        <div className={TXN_TABLE_MIN_WIDTH}>
-          <div className="sticky top-0 z-20 border-b border-warm-100 bg-warm-50 shadow-sm">
-            <ListHeader />
+        {groupBy === "none" ? (
+          <table className={TXN_TABLE_CLASS}>
+            <TxnTableColGroup />
+            <TxnTableHeader />
+            <tbody>
+              {visibleItems.map((tx, index) => renderRow(tx, index))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="space-y-4 p-2">
+            {groups.map((g) => (
+              <section key={g.key}>
+                <header className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-1">
+                  <h3 className="font-display text-xs font-semibold uppercase tracking-wide text-warm-600">
+                    {g.label}
+                  </h3>
+                  <p className="font-mono text-[11px] text-warm-500">
+                    {g.thu > 0 ? (
+                      <span className="text-success">Thu {g.thuFmt}</span>
+                    ) : null}
+                    {g.thu > 0 && g.chi > 0 ? (
+                      <span className="mx-1">·</span>
+                    ) : null}
+                    {g.chi > 0 ? (
+                      <span className="text-danger">Chi {g.chiFmt}</span>
+                    ) : null}
+                  </p>
+                </header>
+                <div className="overflow-x-auto overflow-hidden rounded-md border border-warm-100">
+                  <table className={TXN_TABLE_CLASS}>
+                    <TxnTableColGroup />
+                    <tbody>
+                      {g.rows.map((tx, index) => renderRow(tx, index))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            ))}
           </div>
-          {groupBy === "none" ? (
-            <ul className="relative z-0 divide-y divide-warm-100">
-              {visibleItems.map((tx) => (
-                <li key={tx.id} className="scroll-mt-2">
-                  {renderRow(tx)}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="space-y-4 p-2">
-              {groups.map((g) => (
-                <section key={g.key}>
-                  <header className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-1">
-                    <h3 className="font-display text-xs font-semibold uppercase tracking-wide text-warm-600">
-                      {g.label}
-                    </h3>
-                    <p className="font-mono text-[11px] text-warm-500">
-                      {g.thu > 0 ? (
-                        <span className="text-success">Thu {g.thuFmt}</span>
-                      ) : null}
-                      {g.thu > 0 && g.chi > 0 ? <span className="mx-1">·</span> : null}
-                      {g.chi > 0 ? (
-                        <span className="text-danger">Chi {g.chiFmt}</span>
-                      ) : null}
-                    </p>
-                  </header>
-                  <ul className="divide-y divide-warm-100 overflow-hidden rounded-md border border-warm-100">
-                    {g.rows.map((tx) => (
-                      <li key={tx.id}>{renderRow(tx)}</li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
-          )}
-          {paginationBlock}
-        </div>
+        )}
+        {paginationBlock}
       </div>
     </div>
   );

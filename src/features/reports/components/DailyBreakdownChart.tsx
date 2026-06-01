@@ -76,7 +76,7 @@ export function DailyBreakdownChart({
             Dòng tiền theo ngày
           </h3>
           <p className="mt-1 text-xs text-warm-500">
-            Bar: chi · Line: thu trong tháng đang xem.
+            Bar: chi trực tiếp theo ngày · Line: thu. Chi quẹt thẻ xem ở kỳ sao kê.
           </p>
         </div>
         <div className="flex flex-wrap gap-3 text-[11px] text-warm-500">

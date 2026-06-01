@@ -108,6 +108,7 @@ interface RemotePreviewItem {
   computedBalance: number;
   drift: number;
   creditLimit?: number | null;
+  installmentRemainingAmount?: number;
   storedUtilizationPercent?: number | null;
   computedUtilizationPercent?: number | null;
 }
@@ -127,6 +128,10 @@ function mapPreviewItem(row: RemotePreviewItem): SourceRecalculatePreviewItem {
     drift: row.drift,
     creditLimit:
       typeof row.creditLimit === "number" ? row.creditLimit : null,
+    installmentRemainingAmount:
+      typeof row.installmentRemainingAmount === "number"
+        ? row.installmentRemainingAmount
+        : 0,
     storedUtilizationPercent:
       typeof row.storedUtilizationPercent === "number"
         ? row.storedUtilizationPercent

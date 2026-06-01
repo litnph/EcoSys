@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 
 import { reportKeys } from "../api/reportKeys";
@@ -23,6 +24,7 @@ export function useRefreshMonthlyReport() {
         queryKey: reportKeys.detail(year, month),
       });
       void queryClient.invalidateQueries({ queryKey: reportKeys.list() });
+      invalidateDashboard(queryClient);
       addToast({ type: "success", title: "Đã cập nhật báo cáo" });
     },
     onError: (error) => {

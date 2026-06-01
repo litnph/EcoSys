@@ -2,7 +2,10 @@
 export * from "./hooks";
 export * from "./types";
 export { dashboardKeys } from "./api/dashboardKeys";
+export { invalidateDashboard } from "./lib/invalidateDashboard";
 export {
+  getCategorySpendingTrendBundle,
+  getDashboardMetrics,
   getMonthlyTrend,
   getRecentTransactions,
   getSpendingByCategory,
@@ -10,4 +13,5 @@ export {
   getSummary,
   getUpcomingDues,
 } from "./api/dashboardApi";
+export { Dashboard } from "./components/Dashboard";
 export { DashboardOverview } from "./components/DashboardOverview";

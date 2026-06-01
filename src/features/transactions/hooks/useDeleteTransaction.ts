@@ -1,7 +1,7 @@
 import type { InfiniteData } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { dashboardKeys } from "@/features/dashboard/api/dashboardKeys";
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { sourceKeys } from "@/features/sources/api/sourceKeys";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 import { useToastStore } from "@/shared/stores/toastStore";
@@ -72,8 +72,7 @@ export function useDeleteTransaction() {
 
       void qc.invalidateQueries({ queryKey: sourceKeys.lists() });
 
-      void qc.invalidateQueries({ queryKey: dashboardKeys.summary() });
-      void qc.invalidateQueries({ queryKey: dashboardKeys.all });
+      invalidateDashboard(qc);
 
       addToast({
         type: "success",

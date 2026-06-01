@@ -33,7 +33,7 @@ export function SourceBalanceLedgerPage({ sourceId }: SourceBalanceLedgerPagePro
 
   if (source && !supportsBalanceLedger(source.type)) {
     return (
-      <div className="w-full max-w-[1400px] pb-8">
+      <div className="w-full pb-8">
         <Link
           href={ROUTES.dashboard.sources}
           className="mb-4 inline-flex items-center gap-2 text-sm text-warm-600 hover:text-accent"
@@ -52,7 +52,7 @@ export function SourceBalanceLedgerPage({ sourceId }: SourceBalanceLedgerPagePro
   const hasDrift = ledger != null && ledger.drift !== 0;
 
   return (
-    <div className="w-full max-w-[1400px] pb-8">
+    <div className="w-full pb-8">
       <Link
         href={ROUTES.dashboard.sources}
         className="mb-4 inline-flex items-center gap-2 text-sm text-warm-600 hover:text-accent"

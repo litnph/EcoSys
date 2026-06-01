@@ -1,3 +1,4 @@
+export { useTransactionHighlight } from "./useTransactionHighlight";
 export { useTransactions } from "./useTransactions";
 export { useDeleteTransaction } from "./useDeleteTransaction";
 export { useTransactionHistory } from "./useTransactionHistory";

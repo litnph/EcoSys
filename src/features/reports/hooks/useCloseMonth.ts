@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToastStore } from "@/shared/stores/toastStore";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 import { billingCycleKeys } from "@/features/billing-cycles/api/billingCycleKeys";
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 
 import { reportKeys } from "../api/reportKeys";
 import { closeMonth } from "../api/reportsApi";
@@ -27,6 +28,7 @@ export function useCloseMonth() {
         queryKey: reportKeys.list(),
       });
       void queryClient.invalidateQueries({ queryKey: billingCycleKeys.lists() });
+      invalidateDashboard(queryClient);
       addToast({ type: "success", title: "Đã chốt báo cáo tháng" });
     },
     onError: (error) => {

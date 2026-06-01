@@ -78,7 +78,7 @@ const SettingsMembersPage = lazy(() =>
 function DashboardLoading() {
   return (
     <div
-      className="w-full max-w-[1400px] animate-pulse space-y-6 pb-8"
+      className="w-full animate-pulse space-y-6 pb-8"
       aria-busy="true"
       aria-label="Đang tải trang"
     >

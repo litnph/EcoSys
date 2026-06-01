@@ -15,13 +15,21 @@ import {
   txnStatusBadgeClasses,
   txnStatusLabel,
 } from "../utils/txnDisplay";
-import { TXN_BODY_ROW_GRID, TXN_CELL_CENTER } from "../utils/txnGridLayout";
+import {
+  TXN_ROW_HOVER,
+  TXN_TD_CENTER,
+  TXN_TD_LEFT,
+  TXN_TD_LEFT_LAST,
+  TXN_TD_RIGHT,
+} from "../utils/txnGridLayout";
 
 import { ColoredFieldTag } from "./ColoredFieldTag";
 
 export interface TransactionItemProps {
   transaction: Transaction;
   rowNumber?: number;
+  rowIndex?: number;
+  isHighlighted?: boolean;
   categoryMap?: Map<string, FinCategoryFlat>;
   sourceMap?: Map<string, FinSource>;
   onOpen: (tx: Transaction) => void;
@@ -34,7 +42,7 @@ function TransactionTags({ tags }: { tags: Transaction["tags"] }) {
   }
 
   return (
-    <div className="flex max-w-full flex-wrap items-center justify-center gap-1">
+    <div className="flex max-w-full flex-wrap items-center justify-start gap-1">
       {tags.map((tag) => (
         <ColoredFieldTag
           key={tag.id}
@@ -50,13 +58,14 @@ function TransactionTags({ tags }: { tags: Transaction["tags"] }) {
 function TransactionItemInner({
   transaction: tx,
   rowNumber,
+  rowIndex = 0,
+  isHighlighted = false,
   categoryMap,
   sourceMap,
   onOpen,
   onDelete,
 }: TransactionItemProps) {
   const description = tx.description?.trim() || "—";
-  const note = tx.note?.trim() || "—";
 
   const categoryCols = React.useMemo(
     () => resolveCategoryColumns(tx.categoryId, categoryMap, tx.categoryName),
@@ -85,7 +94,7 @@ function TransactionItemInner({
   }, [onOpen, tx]);
 
   const handleRowKeyDown = React.useCallback(
-    (k: React.KeyboardEvent) => {
+    (k: React.KeyboardEvent<HTMLTableRowElement>) => {
       if (k.key === "Enter" || k.key === " ") {
         k.preventDefault();
         onOpen(tx);
@@ -95,94 +104,84 @@ function TransactionItemInner({
   );
 
   return (
-    <div className="group relative z-0">
-      {onDelete ? (
-        <button
-          type="button"
-          className="absolute right-1 top-1 z-[1] hidden rounded p-1 text-warm-400 hover:bg-warm-100 hover:text-danger group-hover:inline-flex"
-          aria-label="Xóa giao dịch"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(tx);
-          }}
-        >
-          <Trash2 className="size-3.5" />
-        </button>
-      ) : null}
+    <tr
+      role="button"
+      tabIndex={0}
+      data-txn-id={tx.id}
+      onClick={handleOpenClick}
+      onKeyDown={handleRowKeyDown}
+      className={cn(
+        TXN_ROW_HOVER,
+        "group border-b border-warm-100/80 last:border-b-0",
+        rowIndex % 2 === 1 ? "bg-warm-50/80" : "bg-surface",
+        isHighlighted &&
+          "bg-accent/10 ring-2 ring-inset ring-accent animate-pulse [animation-iteration-count:2]",
+      )}
+    >
+      <td className={cn(TXN_TD_CENTER, "text-xs font-medium tabular-nums text-warm-500")}>
+        {rowNumber ?? "—"}
+      </td>
 
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={handleOpenClick}
-        onKeyDown={handleRowKeyDown}
-        className={cn(
-          TXN_BODY_ROW_GRID,
-          "cursor-pointer bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
-        )}
-      >
-        <p
+      <td className={cn(TXN_TD_CENTER, "text-xs font-semibold tabular-nums text-warm-700")}>
+        {formatDate(tx.txnDate)}
+      </td>
+
+      <td className={cn(TXN_TD_RIGHT, "font-mono text-sm font-semibold text-warm-900")}>
+        {amountText}
+      </td>
+
+      <td className={TXN_TD_LEFT}>
+        <TransactionTags tags={tx.tags} />
+      </td>
+
+      <td className={TXN_TD_LEFT}>
+        <ColoredFieldTag
+          label={categoryCols.parentLabel}
+          color={categoryCols.parentColor}
+        />
+      </td>
+
+      <td className={TXN_TD_LEFT}>
+        <ColoredFieldTag
+          label={categoryCols.categoryLabel}
+          color={categoryCols.categoryColor}
+        />
+      </td>
+
+      <td className={TXN_TD_LEFT}>
+        <ColoredFieldTag label={sourceLabel} color={sourceColor} />
+      </td>
+
+      <td className={TXN_TD_LEFT}>
+        <span
           className={cn(
-            TXN_CELL_CENTER,
-            "text-xs font-medium tabular-nums text-warm-500",
+            "inline-flex max-w-full items-center rounded-md border px-1.5 py-0.5 text-[10px] font-medium leading-tight",
+            txnStatusBadgeClasses(tx.status),
           )}
         >
-          {rowNumber ?? "—"}
-        </p>
+          <span className="truncate">{txnStatusLabel(tx.status)}</span>
+        </span>
+      </td>
 
-        <div className={cn(TXN_CELL_CENTER, "text-xs font-semibold tabular-nums text-warm-700")}>
-          {formatDate(tx.txnDate)}
-        </div>
-
-        <p className={cn(TXN_CELL_CENTER, "font-mono text-sm font-semibold tabular-nums text-warm-900")}>
-          {amountText}
-        </p>
-
-        <div className={TXN_CELL_CENTER}>
-          <TransactionTags tags={tx.tags} />
-        </div>
-
-        <div className={TXN_CELL_CENTER}>
-          <ColoredFieldTag
-            label={categoryCols.parentLabel}
-            color={categoryCols.parentColor}
-          />
-        </div>
-
-        <div className={TXN_CELL_CENTER}>
-          <ColoredFieldTag
-            label={categoryCols.categoryLabel}
-            color={categoryCols.categoryColor}
-          />
-        </div>
-
-        <div className={TXN_CELL_CENTER}>
-          <ColoredFieldTag label={sourceLabel} color={sourceColor} />
-        </div>
-
-        <div className={TXN_CELL_CENTER}>
-          <span
-            className={cn(
-              "inline-flex max-w-full items-center rounded-md border px-1.5 py-0.5 text-[10px] font-medium leading-tight",
-              txnStatusBadgeClasses(tx.status),
-            )}
-          >
-            <span className="truncate">{txnStatusLabel(tx.status)}</span>
-          </span>
-        </div>
-
-        <p className="min-w-0 truncate pr-1 text-sm font-medium text-warm-900">
+      <td className={cn(TXN_TD_LEFT_LAST, "relative min-w-0")}>
+        <span className="block truncate pr-6 text-sm font-medium text-warm-900">
           {description}
-        </p>
-
-        <div className="min-w-0">
-          {note !== "—" ? (
-            <ColoredFieldTag label={note} color="#78716c" />
-          ) : (
-            <span className="text-xs text-warm-400">—</span>
-          )}
-        </div>
-      </div>
-    </div>
+        </span>
+        {onDelete ? (
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 z-[1] hidden -translate-y-1/2 rounded p-1 text-warm-400 hover:bg-warm-100 hover:text-danger group-hover:inline-flex"
+            aria-label="Xóa giao dịch"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(tx);
+            }}
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        ) : null}
+      </td>
+    </tr>
   );
 }
 

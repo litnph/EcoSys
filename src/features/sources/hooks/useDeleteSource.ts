@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
 
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
+
 import { sourceKeys } from "../api/sourceKeys";
 import { deleteSource } from "../api/sourcesApi";
 import { getFinanceApiErrorMessage } from "../utils/apiError";
@@ -45,6 +47,7 @@ export function useDeleteSource() {
       void queryClient.removeQueries({
         queryKey: sourceKeys.txCount( variables.id),
       });
+      invalidateDashboard(queryClient);
       addToast({
         type: "success",
         title: "Đã xóa nguồn",

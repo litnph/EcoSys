@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
 
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 
 import { billingCycleKeys } from "../api/billingCycleKeys";
@@ -15,6 +16,7 @@ export function useCloseCycle() {
     mutationFn: (id: string) => closeCycle(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: billingCycleKeys.all });
+      invalidateDashboard(queryClient);
       addToast({
         type: "success",
         title: "Đã đóng kỳ sao kê",

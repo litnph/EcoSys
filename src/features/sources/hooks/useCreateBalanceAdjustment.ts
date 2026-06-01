@@ -3,6 +3,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToastStore } from "@/shared/stores/toastStore";
 import { getFinanceApiErrorMessage } from "../utils/apiError";
 
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
+import { transactionKeys } from "@/features/transactions/api/transactionKeys";
+
 import { sourceKeys } from "../api/sourceKeys";
 import { createBalanceAdjustment } from "../api/sourceBalanceApi";
 import type { CreateBalanceAdjustmentPayload } from "../types/balanceLedger";
@@ -16,6 +19,8 @@ export function useCreateBalanceAdjustment(sourceId: string) {
       createBalanceAdjustment(sourceId, payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: sourceKeys.all });
+      void qc.invalidateQueries({ queryKey: transactionKeys.lists() });
+      invalidateDashboard(qc);
       addToast({ type: "success", title: "Đã ghi điều chỉnh số dư" });
     },
     onError: (e) => {

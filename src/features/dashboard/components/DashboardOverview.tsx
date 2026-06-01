@@ -36,7 +36,7 @@ export function DashboardOverview() {
   const trendQ = useMonthlyTrend();
 
   return (
-    <div className="w-full max-w-[1400px]">
+    <div className="w-full">
       <PageHeader title={t("title")} description={t("description")} />
       <div className="grid grid-cols-1 gap-4 md:auto-rows-fr md:grid-cols-2 md:gap-6 xl:grid-cols-3">
               <ErrorBoundary fallbackTitle="Không tải được tài sản ròng">

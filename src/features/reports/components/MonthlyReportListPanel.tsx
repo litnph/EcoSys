@@ -55,7 +55,7 @@ export function MonthlyReportListPanel({
       <div className="mt-8 flex flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-warm-600">
-            Tạo báo cáo tháng khi bạn sẵn sàng tổng hợp chi trả trực tiếp và kỳ sao kê.
+            Mỗi báo cáo tổng hợp chi tiêu giao dịch, trả góp và thu nhập của một tháng.
           </p>
           <Button
             type="button"
@@ -112,13 +112,13 @@ export function MonthlyReportListPanel({
                       </p>
                     </div>
                     <div>
-                      <p className="text-warm-500">Chi</p>
+                      <p className="text-warm-500">Tổng chi</p>
                       <p className="font-mono font-semibold tabular-nums text-danger">
                         {formatCurrency(item.totalExpense)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-warm-500">Ròng</p>
+                      <p className="text-warm-500">Còn lại</p>
                       <p
                         className={cn(
                           "font-mono font-semibold tabular-nums",

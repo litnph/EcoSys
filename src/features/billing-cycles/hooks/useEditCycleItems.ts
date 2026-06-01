@@ -4,6 +4,8 @@ import { useToastStore } from "@/shared/stores/toastStore";
 
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
+
 import { billingCycleKeys } from "../api/billingCycleKeys";
 import { addCycleItem, removeCycleItem } from "../api/billingCyclesApi";
 
@@ -11,6 +13,7 @@ function invalidateCycle(queryClient: ReturnType<typeof useQueryClient>, cycleId
   void queryClient.invalidateQueries({ queryKey: billingCycleKeys.all });
   void queryClient.invalidateQueries({ queryKey: billingCycleKeys.detail(cycleId) });
   void queryClient.invalidateQueries({ queryKey: billingCycleKeys.addable(cycleId) });
+  invalidateDashboard(queryClient);
 }
 
 export function useAddCycleItem(cycleId: string) {

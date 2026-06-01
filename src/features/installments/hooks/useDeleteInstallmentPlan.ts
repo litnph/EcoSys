@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { sourceKeys } from "@/features/sources/api/sourceKeys";
 import { transactionKeys } from "@/features/transactions/api/transactionKeys";
 import { useToastStore } from "@/shared/stores/toastStore";
@@ -29,6 +30,7 @@ export function useDeleteInstallmentPlan() {
           queryKey: transactionKeys.detail(variables.originalTxnId),
         });
       }
+      invalidateDashboard(qc);
       addToast({
         type: "success",
         title: "Đã xóa kế hoạch trả góp",

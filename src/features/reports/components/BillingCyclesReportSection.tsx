@@ -141,6 +141,16 @@ export function BillingCyclesReportSection({
   const cycles = section?.cycles ?? [];
   const total = section?.totalAmount ?? 0;
   const count = section?.cycleCount ?? cycles.length;
+  const installmentTotal = cycles.reduce(
+    (sum, cycle) =>
+      sum + cycle.installmentDues.reduce((s, due) => s + due.amount, 0),
+    0,
+  );
+  const cardSpendTotal = cycles.reduce(
+    (sum, cycle) =>
+      sum + cycle.transactions.reduce((s, txn) => s + txn.amount, 0),
+    0,
+  );
 
   return (
     <>
@@ -160,18 +170,25 @@ export function BillingCyclesReportSection({
                 Kỳ sao kê thẻ
               </h2>
               <p className="mt-0.5 text-xs text-warm-500">
-                Các kỳ sao kê có ngày phát hành trong tháng báo cáo.
+                Phát hành trong tháng báo cáo — gồm chi quẹt thẻ và trả góp đến hạn.
               </p>
             </div>
           </div>
         </header>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-warm-100 bg-warm-50/60 px-4 py-2.5 text-sm">
-          <p className="text-warm-600">
-            <span className="font-semibold tabular-nums text-warm-900">{count}</span> kỳ sao kê
-          </p>
-          <p className="font-mono font-semibold tabular-nums text-warm-900">
-            {formatCurrency(total)}
+        <div className="border-b border-warm-100 bg-warm-50/60 px-4 py-2.5 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-warm-600">
+              <span className="font-semibold tabular-nums text-warm-900">{count}</span>{" "}
+              kỳ sao kê
+            </p>
+            <p className="font-mono font-semibold tabular-nums text-warm-900">
+              {formatCurrency(total)}
+            </p>
+          </div>
+          <p className="mt-1 text-[11px] text-warm-500">
+            Quẹt thẻ {formatCurrency(cardSpendTotal)} · Trả góp{" "}
+            {formatCurrency(installmentTotal)}
           </p>
         </div>
 

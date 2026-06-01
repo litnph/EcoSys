@@ -55,6 +55,8 @@ export interface TransactionFilters {
 
 /** Trạng thái UI: hỗ trợ chọn nhiều nguồn / nhiều loại — map xuống API + lọc client khi cần. */
 export interface TransactionFilterState {
+  /** `all` | `YYYY-MM` (kỳ hiển thị) | `custom` (khoảng ngày tùy chỉnh). */
+  billingPeriod: string;
   sourceIds: string[];
   types: TransactionType[];
   parentCategoryId?: string;
@@ -97,6 +99,10 @@ export interface Transaction {
   hasInstallmentPlan?: boolean;
   /** Giao dịch thanh toán một kỳ trả góp. */
   isInstallmentPayment?: boolean;
+  /** Giao dịch đã gắn vào một kỳ sao kê (fin_billing_cycle_items active). */
+  isOnBillingCycle?: boolean;
+  /** Tháng sao kê (YYYY-MM) của kỳ đang gắn; null nếu chưa vào sao kê. */
+  billingCycleStatementMonth?: string | null;
   tags?: TransactionTag[];
 }
 

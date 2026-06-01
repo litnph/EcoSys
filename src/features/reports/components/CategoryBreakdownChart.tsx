@@ -77,7 +77,7 @@ export function CategoryBreakdownChart({
   month,
 }: CategoryBreakdownChartProps) {
   const [expenseFilter, setExpenseFilter] =
-    useState<CategoryExpenseFilter>("all");
+    useState<CategoryExpenseFilter>("transactions");
 
   const data = useMemo(() => {
     if (!report) return undefined;
@@ -136,7 +136,7 @@ export function CategoryBreakdownChart({
               Chi tiêu theo danh mục
             </h3>
             <p className="mt-0.5 text-xs text-warm-500">
-              Click một cột để xem giao dịch đã lọc theo danh mục trong tháng.
+              Mặc định: giao dịch chi tiêu (trực tiếp + quẹt thẻ). Click cột để mở danh sách giao dịch.
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-1 rounded-lg border border-warm-200 bg-warm-50/80 p-1">

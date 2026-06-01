@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { FinSource } from "@/features/sources/types";
 import { useSources } from "@/features/sources/hooks";
 import { debtKeys } from "@/features/debt/api/debtKeys";
-import { dashboardKeys } from "@/features/dashboard/api/dashboardKeys";
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { sourceKeys } from "@/features/sources/api/sourceKeys";
 import { Button } from "@/shared/components/ui/Button";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
@@ -314,9 +314,8 @@ export function BulkTransactionForm({
                 queryClient.invalidateQueries({ queryKey: transactionKeys.all }),
                 queryClient.invalidateQueries({ queryKey: debtKeys.all }),
                 queryClient.invalidateQueries({ queryKey: sourceKeys.lists() }),
-                queryClient.invalidateQueries({ queryKey: dashboardKeys.summary() }),
-                queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
               ]);
+              invalidateDashboard(queryClient);
               addToast({
                 type: "success",
                 title: `Đã tạo ${String(created)} giao dịch`,

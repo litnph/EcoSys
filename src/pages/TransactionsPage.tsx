@@ -19,7 +19,7 @@ import {
 } from "@/features/transactions/utils/filterState";
 import { passesParentCategoryFilter } from "@/features/transactions/utils/categoryDisplay";
 import { sortTransactions } from "@/features/transactions/utils/txnSort";
-import { useDeleteTransaction, useTransactions } from "@/features/transactions/hooks";
+import { useDeleteTransaction, useTransactions, useTransactionHighlight } from "@/features/transactions/hooks";
 import type { Transaction } from "@/features/transactions/types";
 import { useSources } from "@/features/sources/hooks";
 import type { FinSource } from "@/features/sources/types";
@@ -28,20 +28,6 @@ import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { Button } from "@/shared/components/ui/Button";
-function calendarMonthIsoRange(year: number, month: number): {
-  dateFrom: string;
-  dateTo: string;
-} | null {
-  if (!Number.isFinite(year) || !Number.isFinite(month)) return null;
-  if (month < 1 || month > 12) return null;
-  const m = String(month).padStart(2, "0");
-  const dim = new Date(year, month, 0).getDate();
-  return {
-    dateFrom: `${year}-${m}-01`,
-    dateTo: `${year}-${m}-${String(dim).padStart(2, "0")}`,
-  };
-}
-
 function TransactionsPageInner() {
   const t = useTranslations("transaction");
   const [searchParams] = useSearchParams();
@@ -50,6 +36,8 @@ function TransactionsPageInner() {
 
   useEffect(() => {
     const sp = new URLSearchParams(qsKey);
+    if (sp.get("highlight")?.trim()) return;
+
     const categoryIdRaw = sp.get("categoryId");
     const yearStr = sp.get("year");
     const monthStr = sp.get("month");
@@ -75,10 +63,8 @@ function TransactionsPageInner() {
     if (hasYm) {
       const yr = Number(yearStr);
       const mo = Number(monthStr);
-      const range = calendarMonthIsoRange(yr, mo);
-      if (range) {
-        next.dateFrom = range.dateFrom;
-        next.dateTo = range.dateTo;
+      if (Number.isFinite(yr) && Number.isFinite(mo) && mo >= 1 && mo <= 12) {
+        next.billingPeriod = `${String(yr)}-${String(mo).padStart(2, "0")}`;
       }
     }
 
@@ -96,12 +82,23 @@ function TransactionsPageInner() {
     return map;
   }, [sources]);
 
-  const txQuery = useTransactions(filterState, 20);
+  const txQuery = useTransactions(filterState, sources, 20);
 
-  const items = useMemo(() => {
+  const [selected, setSelected] = useState<Transaction | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [deleteModalTx, setDeleteModalTx] = useState<Transaction | null>(null);
+
+  const openDetail = useCallback((tx: Transaction) => {
+    setSelected(tx);
+    setDrawerOpen(true);
+  }, []);
+
+  const filteredItems = useMemo(() => {
     const flat = txQuery.data?.pages.flatMap((p) => p.items) ?? [];
     const filtered = flat.filter((tx) => {
-      if (!passesClientTxnFilters(tx, filterState)) return false;
+      if (!passesClientTxnFilters(tx, filterState, sourceMap)) return false;
       if (
         filterState.parentCategoryId &&
         !passesParentCategoryFilter(
@@ -115,18 +112,21 @@ function TransactionsPageInner() {
       return true;
     });
     return sortTransactions(filtered, filterState.sortBy);
-  }, [txQuery.data, filterState, categoryMap]);
+  }, [txQuery.data, filterState, categoryMap, sourceMap]);
 
-  const [selected, setSelected] = useState<Transaction | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [bulkOpen, setBulkOpen] = useState(false);
-  const [deleteModalTx, setDeleteModalTx] = useState<Transaction | null>(null);
-
-  const openDetail = useCallback((tx: Transaction) => {
-    setSelected(tx);
-    setDrawerOpen(true);
-  }, []);
+  const {
+    highlightId,
+    highlightError,
+    mergedItems: items,
+  } = useTransactionHighlight({
+    items: filteredItems,
+    isLoading: txQuery.isLoading,
+    hasNextPage: txQuery.hasNextPage,
+    isFetchingNextPage: txQuery.isFetchingNextPage,
+    fetchNextPage: () => void txQuery.fetchNextPage(),
+    setFilterState,
+    onHighlightReady: openDetail,
+  });
 
   const closeDetail = useCallback(() => {
     setDrawerOpen(false);
@@ -140,7 +140,7 @@ function TransactionsPageInner() {
   const deleteMutation = useDeleteTransaction();
 
   return (
-    <div className="flex h-[calc(100dvh-56px-2rem)] w-full max-w-[1400px] flex-col overflow-hidden">
+    <div className="flex h-[calc(100dvh-56px-2rem)] w-full flex-col overflow-hidden">
       <div className="flex shrink-0 flex-row items-end justify-between gap-4">
         <PageHeader
           title={t("pageTitle")}
@@ -177,6 +177,12 @@ function TransactionsPageInner() {
             </div>
           </ErrorBoundary>
 
+          {highlightError ? (
+            <div className="mt-4 shrink-0 rounded-card border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
+              Không tìm thấy giao dịch được liên kết.
+            </div>
+          ) : null}
+
           {txQuery.isError ? (
             <div className="mt-4 shrink-0 rounded-card border border-danger/30 bg-danger/5 p-6 text-sm text-danger">
               {t("loadListError")}
@@ -187,6 +193,7 @@ function TransactionsPageInner() {
                 <TransactionList
                   items={items}
                   isLoading={txQuery.isLoading}
+                  highlightedTransactionId={highlightId}
                   groupBy={filterState.groupBy}
                   categoryMap={categoryMap}
                   sourceMap={sourceMap}
@@ -236,7 +243,7 @@ function TransactionsPageInner() {
 
 function TransactionsPageFallback() {
   return (
-    <div className="w-full max-w-[1400px] animate-pulse space-y-6 pb-8">
+    <div className="w-full animate-pulse space-y-6 pb-8">
       <SkeletonText className="h-12 w-full max-w-md" />
       <SkeletonText className="h-[120px] w-full rounded-card" />
       <SkeletonText className="h-[520px] w-full rounded-card" />

@@ -113,7 +113,7 @@ export function InstallmentsPage() {
     (activePlansQ.data?.some((p) => p.id === detailPlanId) ? "active" : undefined);
 
   return (
-    <div className="w-full max-w-[1400px] pb-8">
+    <div className="w-full pb-8">
       <div className="flex flex-row items-end justify-between gap-4">
         <PageHeader
           title="Trả góp"

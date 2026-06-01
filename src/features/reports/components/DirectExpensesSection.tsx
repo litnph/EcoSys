@@ -55,7 +55,7 @@ export function DirectExpensesSection({
     return (
       <SectionShell
         title="Chi trả trực tiếp"
-        subtitle="Giao dịch trả ngay từ tiền mặt / ngân hàng trong tháng."
+        subtitle="Tiền mặt / ngân hàng — không gồm thanh toán kỳ sao kê."
         className={className}
       >
         <div className="space-y-2 p-4">
@@ -74,7 +74,7 @@ export function DirectExpensesSection({
   return (
     <SectionShell
       title="Chi trả trực tiếp"
-      subtitle="Giao dịch trả ngay từ tiền mặt / ngân hàng có ngày giao dịch trong tháng."
+      subtitle="Tiền mặt / ngân hàng — không gồm thanh toán kỳ sao kê."
       className={className}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-warm-100 bg-warm-50/60 px-4 py-2.5 text-sm">

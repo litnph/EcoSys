@@ -1,3 +1,12 @@
+export { Dashboard } from "./Dashboard";
+export { CategorySpendingTrendChart } from "./CategorySpendingTrendChart";
+export { MonthlySavingsCard } from "./MonthlySavingsCard";
+export { KPICard, KPICardSkeleton } from "./KPICard";
+export { SpendingChart } from "./SpendingChart";
+export { CategoryChart } from "./CategoryChart";
+export { RecentTransactions } from "./RecentTransactions";
+export { CategoryBreakdown } from "./CategoryBreakdown";
+export { SavingsGoal } from "./SavingsGoal";
 export { MonthlySummaryCard } from "./MonthlySummaryCard";
 export { MonthlyTrendChart } from "./MonthlyTrendChart";
 export { NetWorthCard } from "./NetWorthCard";

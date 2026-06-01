@@ -9,6 +9,7 @@ export interface SourceRecalculatePreviewItem {
   computedBalance: number;
   drift: number;
   creditLimit: number | null;
+  installmentRemainingAmount: number;
   storedUtilizationPercent: number | null;
   computedUtilizationPercent: number | null;
 }

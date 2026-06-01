@@ -44,7 +44,7 @@ export function CreateMonthlyReportModal({
       isOpen={open}
       onClose={onClose}
       title="Tạo báo cáo tháng"
-      description="Báo cáo sẽ gồm chi trả trực tiếp và các kỳ sao kê phát hành trong tháng đã chọn."
+      description="Tổng hợp chi tiêu giao dịch, trả góp và kỳ sao kê phát hành trong tháng đã chọn."
       size="sm"
     >
       <div className="flex flex-col gap-4">

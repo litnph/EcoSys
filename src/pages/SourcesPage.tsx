@@ -52,7 +52,7 @@ export function SourcesPage() {
   }, []);
 
   return (
-    <div className="w-full max-w-[1400px]">
+    <div className="w-full">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <PageHeader
           title="Nguồn tài chính"

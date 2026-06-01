@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
 
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 
 import {
@@ -18,6 +19,7 @@ export function useGenerateCycle() {
     mutationFn: (payload: GenerateCyclePayload) => generateCycle(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: billingCycleKeys.all });
+      invalidateDashboard(queryClient);
       addToast({
         type: "success",
         title: "Đã tạo kỳ sao kê",

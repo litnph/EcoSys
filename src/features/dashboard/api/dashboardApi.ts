@@ -2,11 +2,22 @@ import type { ApiResponse } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
+import { getFlatCategories } from "@/features/categories/api/categoriesApi";
+import { getDebtSummary } from "@/features/debt/api/debtApi";
+import { getMonthlyReport } from "@/features/reports/api/reportsApi";
+import type { CategoryBreakdownItem } from "@/features/reports/types";
+import { getSavings } from "@/features/savings/api/savingsApi";
+import { getSources } from "@/features/sources/api/sourcesApi";
+
+import { buildCategorySpendingTrend } from "../utils/categorySpendingTrend";
+import { computeDashboardMetrics } from "../utils/computeDashboardMetrics";
 import { warmPaletteColor } from "../utils/warmPalette";
 import type {
   BillingCycleDue,
   BillingCycleStatus,
   CategoryBreakdown,
+  CategorySpendingTrendBundle,
+  DashboardMetrics,
   DashboardSummary,
   InstallmentPayDue,
   InstallmentPayLineStatus,
@@ -350,4 +361,58 @@ export async function getMonthlyTrend(
     income: row.totalIncome,
     expense: row.totalExpense,
   }));
+}
+
+export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+  const [sources, debt, savings] = await Promise.all([
+    getSources(),
+    getDebtSummary(),
+    getSavings(),
+  ]);
+  return computeDashboardMetrics(sources, debt, savings);
+}
+
+export async function getCategorySpendingTrendBundle(
+  months = 6,
+): Promise<CategorySpendingTrendBundle> {
+  const [periods, categories] = await Promise.all([
+    getMonthlyTrend(months),
+    getFlatCategories("expense"),
+  ]);
+
+  const reportResults = await Promise.all(
+    periods.map(async (p) => {
+      try {
+        const report = await getMonthlyReport(p.year, p.month);
+        return {
+          key: `${String(p.year)}-${String(p.month)}`,
+          breakdown: report.categoryBreakdown,
+        };
+      } catch {
+        return {
+          key: `${String(p.year)}-${String(p.month)}`,
+          breakdown: [] as CategoryBreakdownItem[],
+        };
+      }
+    }),
+  );
+
+  const reportsByMonth = new Map(
+    reportResults.map((r) => [r.key, r.breakdown]),
+  );
+
+  return {
+    parent: buildCategorySpendingTrend(
+      periods,
+      reportsByMonth,
+      categories,
+      "parent",
+    ),
+    child: buildCategorySpendingTrend(
+      periods,
+      reportsByMonth,
+      categories,
+      "child",
+    ),
+  };
 }

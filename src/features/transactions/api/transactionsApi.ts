@@ -51,6 +51,8 @@ interface RemoteListItem {
   createdAt: string;
   hasInstallmentPlan?: boolean;
   isInstallmentPayment?: boolean;
+  isOnBillingCycle?: boolean;
+  billingCycleStatementMonth?: string | null;
   tags?: Array<{ id: string; name: string; color: string }>;
 }
 
@@ -79,6 +81,8 @@ function mapListItem(row: RemoteListItem): Transaction {
     createdAt: row.createdAt,
     hasInstallmentPlan: row.hasInstallmentPlan ?? false,
     isInstallmentPayment: row.isInstallmentPayment ?? false,
+    isOnBillingCycle: row.billingCycleStatementMonth != null,
+    billingCycleStatementMonth: row.billingCycleStatementMonth ?? null,
     tags: (row.tags ?? []).map((tag) => ({
       id: tag.id,
       name: tag.name,

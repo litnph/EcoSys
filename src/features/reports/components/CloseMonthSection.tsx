@@ -45,7 +45,7 @@ export function CloseMonthSection({
 
   if (status === "closed") {
     return (
-      <section className="mt-10 flex flex-col gap-4 rounded-card border border-warm-200 bg-warm-25/60 p-5 shadow-inner">
+      <section className="flex flex-col gap-4 rounded-card border border-warm-200 bg-warm-25/60 p-5 shadow-inner">
         <div className="flex flex-wrap items-center gap-3">
           <Lock className="size-5 text-warm-600" aria-hidden />
           <h3 className="font-display text-base font-semibold text-warm-900">
@@ -64,7 +64,7 @@ export function CloseMonthSection({
 
   if (isFutureMonth) {
     return (
-      <section className="mt-10 flex flex-col gap-3 rounded-card border border-warm-200 bg-warm-25/60 p-5 shadow-inner">
+      <section className="flex flex-col gap-3 rounded-card border border-warm-200 bg-warm-25/60 p-5 shadow-inner">
         <h3 className="font-display text-base font-semibold text-warm-900">
           Chốt báo cáo tháng
         </h3>
@@ -80,7 +80,7 @@ export function CloseMonthSection({
 
   return (
     <>
-      <section className="mt-10 flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-5 shadow-sm">
+      <section className="flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="font-display text-base font-semibold text-warm-900">

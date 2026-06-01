@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToastStore } from "@/shared/stores/toastStore";
 
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
+import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { transactionKeys } from "@/features/transactions/api/transactionKeys";
 
 import { debtKeys } from "../api/debtKeys";
@@ -18,6 +19,7 @@ export function useDeleteDebtRecord() {
       void queryClient.invalidateQueries({ queryKey: debtKeys.all });
       void queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+      invalidateDashboard(queryClient);
       addToast({
         type: "success",
         title: "Đã xóa khoản nợ",

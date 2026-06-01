@@ -1,4 +1,7 @@
 export { MonthSelector } from "./MonthSelector";
+export { MonthlyReportDetailView } from "./MonthlyReportDetailView";
+export { ReportCategoryAllocation } from "./ReportCategoryAllocation";
+export { ReportRecentTransactions } from "./ReportRecentTransactions";
 export { ReportSummaryCards } from "./ReportSummaryCards";
 export { DirectExpensesSection } from "./DirectExpensesSection";
 export { BillingCyclesReportSection } from "./BillingCyclesReportSection";

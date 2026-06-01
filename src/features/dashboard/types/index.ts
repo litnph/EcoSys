@@ -98,3 +98,37 @@ export interface UpcomingDuesPayload {
   billingCycles: BillingCycleDue[];
   installmentPays: InstallmentPayDue[];
 }
+
+export interface DashboardMetrics {
+  cashBalance: number;
+  creditAvailable: number;
+  creditUsed: number;
+  debtBorrowedRemaining: number;
+  debtLentRemaining: number;
+  savingsTotal: number;
+}
+
+export type CategoryRollupLevel = "parent" | "child";
+
+export interface CategorySpendingTrendPoint {
+  label: string;
+  year: number;
+  month: number;
+}
+
+export interface CategorySpendingSeries {
+  key: string;
+  name: string;
+  color: string;
+  amounts: number[];
+}
+
+export interface CategorySpendingTrend {
+  months: CategorySpendingTrendPoint[];
+  series: CategorySpendingSeries[];
+}
+
+export interface CategorySpendingTrendBundle {
+  parent: CategorySpendingTrend;
+  child: CategorySpendingTrend;
+}
