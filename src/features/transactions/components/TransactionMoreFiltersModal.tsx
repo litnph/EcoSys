@@ -21,6 +21,7 @@ import { cn } from "@/shared/lib/utils";
 
 import type {
   TransactionFilterState,
+  TransactionGroupBy,
   TransactionSortBy,
   TransactionType,
 } from "../types";
@@ -287,15 +288,13 @@ export function TransactionMoreFiltersModal({
             </FilterSection>
 
             <FilterSection icon={LayoutList} title="Hiển thị">
-              <PillGroup
+              <PillGroup<TransactionGroupBy>
                 value={draft.groupBy}
                 options={[
-                  { id: "none", label: "Danh sách phẳng" },
-                  { id: "day", label: "Nhóm theo ngày" },
-                ].map(({ id, label }) => ({ value: id, label }))}
-                onChange={(id) =>
-                  setDraft({ ...draft, groupBy: id })
-                }
+                  { value: "none", label: "Danh sách phẳng" },
+                  { value: "day", label: "Nhóm theo ngày" },
+                ]}
+                onChange={(groupBy) => setDraft({ ...draft, groupBy })}
               />
             </FilterSection>
           </div>

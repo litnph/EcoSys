@@ -256,10 +256,6 @@ export function BulkTransactionForm({
     amountRefs.current.delete(id);
   }
 
-  function focusDate(rowId: string) {
-    dateRefs.current.get(rowId)?.focus();
-  }
-
   function focusAmount(rowId: string) {
     amountRefs.current.get(rowId)?.focus();
   }

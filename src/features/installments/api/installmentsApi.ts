@@ -10,8 +10,6 @@ import type {
   ConversionFeeStatus,
   CreateInstallmentPlanPayload,
   InstallmentDashboard,
-  InstallmentDashboardSource,
-  InstallmentUpcomingPay,
   InstallmentUpcomingPayBucket,
 } from "../types";
 
