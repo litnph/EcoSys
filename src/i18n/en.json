@@ -253,7 +253,8 @@
   },
   "debt": {
     "pageTitle": "Debt",
-    "pageDescription": "Borrowed and lent balances, payments, and history.",
+    "pageDescription": "Record existing debt or track new borrow/lend via transactions.",
+    "recordExisting": "Record existing debt",
     "missingModule": "Set {envKey} in .env.local to track debt.",
     "tabBorrowed": "I owe",
     "tabLent": "They owe me",

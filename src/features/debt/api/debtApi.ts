@@ -33,7 +33,8 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 }
 
 interface RemoteDebtRecordRow {
-  id: string;  direction: DebtDirection;
+  id: string;
+  direction: DebtDirection;
   personName?: string | null;
   personContact?: string | null;
   originalAmount: number;
@@ -51,7 +52,8 @@ interface RemoteDebtListBody {
 
 function mapDebtListRow(row: RemoteDebtRecordRow): DebtRecordListItem {
   return {
-    id: row.id,    direction: row.direction,
+    id: row.id,
+    direction: row.direction,
     personName: row.personName ?? null,
     personContact: row.personContact ?? null,
     originalAmount: row.originalAmount,
@@ -102,7 +104,8 @@ interface RemoteDebtTxn {
 }
 
 interface RemoteDebtRecordDetail {
-  id: string;  direction: DebtDirection;
+  id: string;
+  direction: DebtDirection;
   personName: string;
   personContact?: string | null;
   originalTxnId?: string | null;
@@ -139,7 +142,8 @@ export async function getDebtRecordDetail(id: string): Promise<DebtRecord> {
     apiClient.get(`/finance/debt-records/${id}`));
   const r = envelope.record;
   return {
-    id: r.id,    direction: r.direction,
+    id: r.id,
+    direction: r.direction,
     personName: r.personName?.trim() ? r.personName : null,
     personContact: r.personContact ?? null,
     originalTxnId: r.originalTxnId ?? null,
@@ -164,4 +168,47 @@ export async function deleteDebtRecord(id: string): Promise<string> {
   const envelope = await unwrap<RemoteDeleteDebtBody>(
     apiClient.delete(`/finance/debt-records/${id}`));
   return envelope.debtRecordId;
+}
+
+export interface CreateDebtRecordPayload {
+  direction: DebtDirection;
+  personName: string;
+  personContact?: string | null;
+  amount: number;
+  currency?: string | null;
+  dueDate?: string | null;
+  note?: string | null;
+}
+
+export async function createDebtRecord(
+  payload: CreateDebtRecordPayload,
+): Promise<DebtRecord> {
+  const envelope = await unwrap<RemoteDebtDetailBody>(
+    apiClient.post("/finance/debt-records", {
+      direction: payload.direction,
+      personName: payload.personName.trim(),
+      personContact: payload.personContact?.trim() || null,
+      amount: payload.amount,
+      currency: payload.currency?.trim() || null,
+      dueDate: payload.dueDate?.trim() || null,
+      note: payload.note?.trim() || null,
+    }));
+  const r = envelope.record;
+  return {
+    id: r.id,
+    direction: r.direction,
+    personName: r.personName?.trim() ? r.personName : null,
+    personContact: r.personContact ?? null,
+    originalTxnId: r.originalTxnId ?? null,
+    originalAmount: r.originalAmount,
+    remainingAmount: r.remainingAmount,
+    currency: r.currency,
+    dueDate: r.dueDate ?? null,
+    status: r.status,
+    note: r.note ?? null,
+    version: r.version,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+    transactions: (r.transactions ?? []).map(mapDebtTxn),
+  };
 }

@@ -253,7 +253,8 @@
   },
   "debt": {
     "pageTitle": "Nợ",
-    "pageDescription": "Số dư vay/cho vay, thanh toán và lịch sử.",
+    "pageDescription": "Ghi nhận nợ hiện có hoặc theo dõi mượn/cho vay mới qua giao dịch.",
+    "recordExisting": "Ghi nhận nợ hiện có",
     "missingModule": "Thiết lập biến {envKey} trong .env.local để theo dõi nợ.",
     "tabBorrowed": "Tôi nợ",
     "tabLent": "Người khác nợ tôi",

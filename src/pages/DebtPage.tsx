@@ -1,5 +1,5 @@
 import * as Tabs from "@radix-ui/react-tabs";
-import { Wallet } from "lucide-react";
+import { Plus, Wallet } from "lucide-react";
 import * as React from "react";
 import { motion } from "framer-motion";
 
@@ -7,6 +7,7 @@ import {
   DebtPaymentModal,
   DebtRecordCard,
   DebtSummaryBar,
+  RecordExistingDebtModal,
 } from "@/features/debt/components";
 import type { DebtDirection, DebtRecordListItem, DebtStatus } from "@/features/debt/types";
 import {
@@ -19,6 +20,7 @@ import type { FinSource } from "@/features/sources/types";
 import { useSources } from "@/features/sources/hooks";
 
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
+import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { cn } from "@/shared/lib/utils";
@@ -43,6 +45,7 @@ export function DebtPage() {
   const [statusFilter, setStatusFilter] = React.useState<DebtStatus>("active");
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [payRecord, setPayRecord] = React.useState<DebtRecordListItem | null>(null);
+  const [recordExistingOpen, setRecordExistingOpen] = React.useState(false);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   const summaryQ = useDebtSummary( {
@@ -113,7 +116,16 @@ export function DebtPage() {
     <div className="w-full pb-8">
       <PageHeader
         title="Nợ & cho vay"
-        description="Theo dõi khoản bạn đang nợ và khoản bạn cho mượn. Tạo khoản mới từ giao dịch trong form giao dịch."
+        description="Ghi nhận nợ hiện có (không động ví). Mượn/cho vay mới qua giao dịch khi tiền thực sự chuyển."
+        actions={
+          <Button
+            type="button"
+            leftIcon={<Plus className="size-4" aria-hidden />}
+            onClick={() => setRecordExistingOpen(true)}
+          >
+            Ghi nhận nợ hiện có
+          </Button>
+        }
       />
 
       {(
@@ -202,7 +214,15 @@ export function DebtPage() {
                 <EmptyState
                   icon={<Wallet aria-hidden className="size-14" />}
                   title="Không có khoản nợ nào"
-                  description="Tốt lắm!"
+                  description={
+                    directionTab === "borrowed"
+                      ? "Bấm「Ghi nhận nợ hiện có」nếu bạn đang nợ từ trước."
+                      : "Bấm「Ghi nhận nợ hiện có」nếu có người nợ bạn từ trước."
+                  }
+                  action={{
+                    label: "Ghi nhận nợ hiện có",
+                    onClick: () => setRecordExistingOpen(true),
+                  }}
                 />
               </div>
             ) : (
@@ -232,8 +252,14 @@ export function DebtPage() {
         </>
       )}
 
+      <RecordExistingDebtModal
+        direction={directionTab}
+        currency={summaryCurrency}
+        isOpen={recordExistingOpen}
+        onClose={() => setRecordExistingOpen(false)}
+      />
+
       <DebtPaymentModal
-        
         record={payRecord}
         paymentSources={paySources}
         isOpen={payRecord !== null}

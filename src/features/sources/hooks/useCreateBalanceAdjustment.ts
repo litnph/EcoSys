@@ -19,7 +19,9 @@ export function useCreateBalanceAdjustment(sourceId: string) {
       createBalanceAdjustment(sourceId, payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: sourceKeys.all });
+      void qc.invalidateQueries({ queryKey: sourceKeys.balanceLedger(sourceId) });
       void qc.invalidateQueries({ queryKey: transactionKeys.lists() });
+      void qc.invalidateQueries({ queryKey: transactionKeys.all });
       invalidateDashboard(qc);
       addToast({ type: "success", title: "Đã ghi điều chỉnh số dư" });
     },

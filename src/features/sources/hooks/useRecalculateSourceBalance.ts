@@ -16,6 +16,7 @@ export function useRecalculateSourceBalance(sourceId: string) {
     mutationFn: () => recalculateSourceBalance(sourceId),
     onSuccess: (res) => {
       void qc.invalidateQueries({ queryKey: sourceKeys.all });
+      void qc.invalidateQueries({ queryKey: sourceKeys.balanceLedger(sourceId) });
       invalidateDashboard(qc);
       addToast({
         type: "success",

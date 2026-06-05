@@ -13,10 +13,13 @@ export {
   getDebtRecordDetail,
   getDebtSummary,
   deleteDebtRecord,
+  createDebtRecord,
 } from "./api/debtApi";
+export type { CreateDebtRecordPayload } from "./api/debtApi";
 export {
   useDebtRecords,
   useDebtSummary,
   useDebtRecordDetail,
   useDeleteDebtRecord,
+  useCreateDebtRecord,
 } from "./hooks";

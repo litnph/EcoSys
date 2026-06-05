@@ -233,6 +233,11 @@ export function ConditionalFields({
 
       {txnType === "debt_borrow" || txnType === "loan_give" ? (
         <div className="flex flex-col gap-4">
+          <p className="rounded-button border border-warm-200 bg-warm-50/80 px-3 py-2 text-xs text-warm-700">
+            {txnType === "debt_borrow"
+              ? "Dùng khi vừa nhận tiền vay — số dư ví tăng và có trong báo cáo. Nợ từ trước: trang Nợ →「Ghi nhận nợ hiện có」."
+              : "Dùng khi vừa cho mượn tiền — số dư ví giảm. Khoản cho vay cũ: trang Nợ →「Ghi nhận nợ hiện có」."}
+          </p>
           <Controller
             name="personName"
             control={control}

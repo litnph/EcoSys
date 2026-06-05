@@ -143,8 +143,14 @@ export function SourceBalanceLedgerPage({ sourceId }: SourceBalanceLedgerPagePro
       <BalanceAdjustmentModal
         sourceId={sourceId}
         currency={currency}
+        storedBalance={ledger?.storedBalance}
+        computedBalance={ledger?.computedBalance}
+        drift={ledger?.drift}
         isOpen={adjustOpen}
         onClose={() => setAdjustOpen(false)}
+        onApplied={() => {
+          void ledgerQ.refetch();
+        }}
       />
 
       {ledger ? (
