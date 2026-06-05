@@ -1,6 +1,8 @@
 import { AlertTriangle, Lock } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { ROUTES } from "@/config/routes";
+import { Link } from "@/i18n/navigation";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 
@@ -113,6 +115,17 @@ export function CloseMonthSection({
               </p>
               <p className="mt-2 text-xs text-warm-700 md:text-sm">
                 Thẻ: <span className="font-semibold">{uniqueNames.join(", ")}</span>
+              </p>
+              <p className="mt-2 text-xs text-warm-600">
+                Vào{" "}
+                <Link
+                  href={ROUTES.dashboard.billing}
+                  className="font-medium text-accent hover:underline"
+                >
+                  Thẻ &amp; sao kê
+                </Link>
+                , chọn từng kỳ có kết thúc trong tháng {month}/{year}, bấm{" "}
+                <strong>Đóng kỳ</strong> (và thanh toán nếu cần), rồi quay lại chốt báo cáo.
               </p>
             </div>
           </div>
