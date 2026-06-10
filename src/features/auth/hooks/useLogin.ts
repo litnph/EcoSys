@@ -9,9 +9,11 @@ import {
   sanitizeReturnUrl,
 } from "@/shared/lib/returnUrl";
 
+import { getMe } from "../api/userApi";
 import { login } from "../api/authApi";
 import { useAuthStore } from "../stores/authStore";
 import type { LoginRequest } from "../types";
+import { applyAccountLocale } from "@/shared/lib/localePreference";
 
 function getApiErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
@@ -34,11 +36,18 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: (data: LoginRequest) => login(data),
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       const { accessToken, refreshToken, user } = response.data;
       setAuth(user, accessToken, refreshToken);
       const returnUrl = sanitizeReturnUrl(searchParams.get("returnUrl"));
-      router.replace(resolvePostAuthPath(returnUrl));
+      let accountLocale = applyAccountLocale("vi");
+      try {
+        const me = await getMe();
+        accountLocale = applyAccountLocale(me.languageCode);
+      } catch {
+        /* keep default locale */
+      }
+      router.replace(resolvePostAuthPath(returnUrl), { locale: accountLocale });
       addToast({
         type: "success",
         title: "Đăng nhập thành công",

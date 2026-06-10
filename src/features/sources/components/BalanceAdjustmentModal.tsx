@@ -63,23 +63,6 @@ export function BalanceAdjustmentModal({
     setTargetBalance(storedBalance);
   }, [isOpen, storedBalance]);
 
-  const submitDelta = async (signed: number) => {
-    if (!note.trim()) {
-      setError("Nhập lý do điều chỉnh");
-      return;
-    }
-    if (signed === 0) {
-      setError("Số tiền phải khác 0");
-      return;
-    }
-    setError(undefined);
-    await adjustM.mutateAsync({
-      amount: toApiWholeAmount(signed),
-      txnDate,
-      note: note.trim(),
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!note.trim()) {
@@ -91,7 +74,16 @@ export function BalanceAdjustmentModal({
       if (mode === "delta") {
         const signed =
           direction === "down" ? -Math.abs(amount) : Math.abs(amount);
-        await submitDelta(signed);
+        if (signed === 0) {
+          setError("Số tiền phải khác 0");
+          return;
+        }
+        setError(undefined);
+        await adjustM.mutateAsync({
+          amount: toApiWholeAmount(signed),
+          txnDate,
+          note: note.trim(),
+        });
       } else {
         setError(undefined);
         if (hasDrift) {
@@ -100,13 +92,15 @@ export function BalanceAdjustmentModal({
         const ledger = await getSourceBalanceLedger(sourceId);
         const delta = toApiWholeAmount(targetBalance) - ledger.computedBalance;
         const eps = currency === "VND" ? 1 : 0.01;
-        if (Math.abs(delta) > eps) {
-          await adjustM.mutateAsync({
-            amount: delta,
-            txnDate,
-            note: note.trim(),
-          });
+        if (Math.abs(delta) <= eps) {
+          setError("Số dư mục tiêu trùng với số dư hiện tại");
+          return;
         }
+        await adjustM.mutateAsync({
+          amount: delta,
+          txnDate,
+          note: note.trim(),
+        });
       }
       onApplied?.();
       onClose();

@@ -105,6 +105,7 @@ export function CurrencyInput({
     if (el.value !== cleaned) {
       el.value = cleaned;
     }
+    onChange(parseInput(cleaned, currency));
   };
 
   return (

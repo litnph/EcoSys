@@ -3,6 +3,10 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { useToastStore } from "@/shared/stores/toastStore";
+import {
+  normalizeAppLocale,
+  setPreferredLocale,
+} from "@/shared/lib/localePreference";
 
 import {
   changePassword,
@@ -45,10 +49,8 @@ export function usePatchPreferences() {
     onSuccess: async (_next, vars) => {
       await qc.invalidateQueries({ queryKey: [...settingsKeys.root, "preferences"] });
       await qc.invalidateQueries({ queryKey: settingsKeys.profile() });
-      const lang = vars.languageCode;
-      if (lang !== "vi" && lang !== "en") {
-        return;
-      }
+      const lang = normalizeAppLocale(vars.languageCode);
+      setPreferredLocale(lang);
       const seg = typeof window !== "undefined"
         ? window.location.pathname.split("/").filter(Boolean)[0]
         : "";

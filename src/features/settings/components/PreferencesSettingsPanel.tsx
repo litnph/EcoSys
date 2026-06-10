@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useTranslations } from "@/i18n/hooks";
 import { useLocale } from "@/i18n/navigation";
+import { setPreferredLocale } from "@/shared/lib/localePreference";
 
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTheme } from "@/shared/providers/theme-provider";
@@ -166,6 +167,7 @@ export function PreferencesSettingsPanel() {
               value={local.languageCode}
               onChange={(e) => {
                 const code = e.target.value as "vi" | "en";
+                setPreferredLocale(code);
                 bump({ languageCode: code });
                 if (code !== locale) {
                   router.replace(pathname, { locale: code, preserveSearch: true });
