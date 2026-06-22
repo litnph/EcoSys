@@ -1,4 +1,4 @@
-import { Layers, Plus } from "lucide-react";
+import { ImageUp, Layers, Plus } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslations } from "@/i18n/hooks";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
@@ -10,6 +10,7 @@ import {
   TransactionDetailDrawer,
   TransactionFormModal,
   BulkTransactionFormModal,
+  ImageImportModal,
   TransactionFilters,
   TransactionList,
 } from "@/features/transactions/components";
@@ -88,6 +89,7 @@ function TransactionsPageInner() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [imageImportOpen, setImageImportOpen] = useState(false);
   const [deleteModalTx, setDeleteModalTx] = useState<Transaction | null>(null);
 
   const openDetail = useCallback((tx: Transaction) => {
@@ -148,6 +150,15 @@ function TransactionsPageInner() {
           className="mb-0"
         />
         <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row md:w-auto md:flex-wrap">
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full sm:flex-1 md:w-auto"
+            leftIcon={<ImageUp className="size-4" aria-hidden />}
+            onClick={() => setImageImportOpen(true)}
+          >
+            Nhập bằng ảnh
+          </Button>
           <Button
             type="button"
             variant="secondary"
@@ -229,6 +240,11 @@ function TransactionsPageInner() {
       <BulkTransactionFormModal
         isOpen={bulkOpen}
         onClose={() => setBulkOpen(false)}
+      />
+
+      <ImageImportModal
+        isOpen={imageImportOpen}
+        onClose={() => setImageImportOpen(false)}
       />
 
       <DeleteTransactionModal

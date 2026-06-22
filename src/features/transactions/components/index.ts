@@ -10,3 +10,5 @@ export {
   TransactionFormModal,
   BulkTransactionFormModal,
 } from "./TransactionForm";
+
+export { ImageImportModal } from "../imageImport";

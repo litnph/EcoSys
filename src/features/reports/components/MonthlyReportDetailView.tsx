@@ -18,6 +18,7 @@ import { BillingCyclesReportSection } from "./BillingCyclesReportSection";
 import { CloseMonthSection } from "./CloseMonthSection";
 import { DirectExpensesSection } from "./DirectExpensesSection";
 import { ReportCategoryAllocation } from "./ReportCategoryAllocation";
+import { ReportCategorySpendingTrendChart } from "./ReportCategorySpendingTrendChart";
 import { ReportRecentTransactions } from "./ReportRecentTransactions";
 
 function ReportSectionHeading({
@@ -98,6 +99,16 @@ export function MonthlyReportDetailView({
             isLoading={isLoading}
             filter={expenseFilter}
             onFilterChange={setExpenseFilter}
+          />
+        </ErrorBoundary>
+      </section>
+
+      <section aria-label="Xu hướng chi theo danh mục">
+        <ErrorBoundary fallbackTitle="Không tải được xu hướng chi theo danh mục">
+          <ReportCategorySpendingTrendChart
+            report={report}
+            isLoading={isLoading}
+            expenseFilter={expenseFilter}
           />
         </ErrorBoundary>
       </section>
