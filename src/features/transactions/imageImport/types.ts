@@ -1,5 +1,13 @@
+export interface ImageImportImage {
+  id: string;
+  file: File;
+  previewUrl: string;
+}
+
 export interface ImageImportDraft {
   id: string;
+  /** Ảnh nguồn mà dòng giao dịch được quét từ. */
+  imageId: string;
   txnDate: string;
   description: string;
   amount: number;
@@ -13,4 +21,8 @@ export interface ImageImportDraft {
 
 export function newDraftId(): string {
   return `draft-${String(Date.now())}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export function newImageId(): string {
+  return `img-${String(Date.now())}-${Math.random().toString(36).slice(2, 7)}`;
 }

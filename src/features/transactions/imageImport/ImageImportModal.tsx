@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { ImagePlus, Loader2, Plus, ScanLine, Trash2 } from "lucide-react";
+import { ChevronDown, ImagePlus, Loader2, Plus, ScanLine, Trash2, X } from "lucide-react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -22,8 +22,8 @@ import { transactionKeys } from "../api/transactionKeys";
 import { resolveExpenseApiType } from "../components/TransactionForm/resolveExpenseApiType";
 import { parseOcrTransactionText } from "./parseOcrTransactionText";
 import { runImageOcr } from "./runImageOcr";
-import type { ImageImportDraft } from "./types";
-import { newDraftId } from "./types";
+import type { ImageImportDraft, ImageImportImage } from "./types";
+import { newDraftId, newImageId } from "./types";
 
 export interface ImageImportModalProps {
   isOpen: boolean;
@@ -31,6 +31,12 @@ export interface ImageImportModalProps {
 }
 
 type Step = "upload" | "review";
+
+type ScanProgress = {
+  imageIndex: number;
+  totalImages: number;
+  ocrProgress: number;
+};
 
 function formatAmountDisplay(amount: number, currency: string): string {
   if (amount === 0) return "";
@@ -50,6 +56,20 @@ function parseAmountInput(raw: string, currency: string): number {
   const normalized = trimmed.replace(/\./g, "").replace(",", ".");
   const n = parseFloat(normalized);
   return Number.isFinite(n) ? n : 0;
+}
+
+function createEmptyDraft(imageId: string, txnDate?: string): ImageImportDraft {
+  return {
+    id: newDraftId(),
+    imageId,
+    txnDate: txnDate ?? format(new Date(), "yyyy-MM-dd"),
+    description: "",
+    amount: 0,
+    note: "",
+    isRefund: false,
+    categoryId: "",
+    selected: true,
+  };
 }
 
 function SourcePicker({
@@ -109,28 +129,6 @@ function SourcePicker({
   );
 }
 
-function resetModalState(): {
-  step: Step;
-  sourceId: string;
-  previewUrl: string | null;
-  drafts: ImageImportDraft[];
-  categoryId: string;
-  ocrProgress: number;
-  scanError: string;
-  submitError: string;
-} {
-  return {
-    step: "upload",
-    sourceId: "",
-    previewUrl: null,
-    drafts: [],
-    categoryId: "",
-    ocrProgress: 0,
-    scanError: "",
-    submitError: "",
-  };
-}
-
 export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
   const { data: sources = [] } = useSources();
   const queryClient = useQueryClient();
@@ -138,60 +136,88 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
 
   const [step, setStep] = useState<Step>("upload");
   const [sourceId, setSourceId] = useState("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [images, setImages] = useState<ImageImportImage[]>([]);
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<ImageImportDraft[]>([]);
   const [categoryId, setCategoryId] = useState("");
   const [scanning, setScanning] = useState(false);
-  const [ocrProgress, setOcrProgress] = useState(0);
+  const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
   const [scanError, setScanError] = useState("");
+  const [scanWarnings, setScanWarnings] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const previewUrlRef = useRef<string | null>(null);
+  const imagesRef = useRef(images);
+  imagesRef.current = images;
+  const groupRefs = useRef<Record<string, HTMLElement | null>>({});
+  const transactionsScrollRef = useRef<HTMLDivElement>(null);
 
   const currency =
     sources.find((s) => s.id === sourceId)?.currency ?? "VND";
 
-  const revokePreview = useCallback(() => {
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
-      previewUrlRef.current = null;
+  const revokeAllPreviews = useCallback((items: ImageImportImage[]) => {
+    for (const img of items) {
+      URL.revokeObjectURL(img.previewUrl);
     }
   }, []);
 
   useEffect(() => {
     if (!isOpen) {
-      revokePreview();
-      const initial = resetModalState();
-      setStep(initial.step);
-      setSourceId(initial.sourceId);
-      setPreviewUrl(initial.previewUrl);
-      setImageFile(null);
-      setDrafts(initial.drafts);
-      setCategoryId(initial.categoryId);
+      setImages((prev) => {
+        revokeAllPreviews(prev);
+        return [];
+      });
+      setStep("upload");
+      setSourceId("");
+      setSelectedImageId(null);
+      setDrafts([]);
+      setCategoryId("");
       setScanning(false);
-      setOcrProgress(initial.ocrProgress);
-      setScanError(initial.scanError);
+      setScanProgress(null);
+      setScanError("");
+      setScanWarnings([]);
       setSubmitting(false);
-      setSubmitError(initial.submitError);
+      setSubmitError("");
+      setCollapsedGroups(new Set());
     }
-  }, [isOpen, revokePreview]);
+  }, [isOpen, revokeAllPreviews]);
 
-  useEffect(() => () => revokePreview(), [revokePreview]);
+  useEffect(() => {
+    return () => {
+      revokeAllPreviews(imagesRef.current);
+    };
+  }, [revokeAllPreviews]);
 
-  function handlePickFile(file: File | null) {
-    revokePreview();
-    setImageFile(file);
+  function handleAddFiles(fileList: FileList | File[] | null) {
+    if (!fileList || fileList.length === 0) return;
+
+    const newImages: ImageImportImage[] = Array.from(fileList).map((file) => ({
+      id: newImageId(),
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+
+    setImages((prev) => [...prev, ...newImages]);
     setScanError("");
-    if (file) {
-      const url = URL.createObjectURL(file);
-      previewUrlRef.current = url;
-      setPreviewUrl(url);
-    } else {
-      setPreviewUrl(null);
-    }
+  }
+
+  function removeImage(imageId: string) {
+    setImages((prev) => {
+      const target = prev.find((img) => img.id === imageId);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((img) => img.id !== imageId);
+    });
+    setScanError("");
+  }
+
+  function clearAllImages() {
+    setImages((prev) => {
+      revokeAllPreviews(prev);
+      return [];
+    });
+    setScanError("");
   }
 
   async function handleScan() {
@@ -199,38 +225,61 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       setScanError("Chọn nguồn tiền trước khi quét ảnh.");
       return;
     }
-    if (!imageFile) {
-      setScanError("Chọn hoặc tải ảnh lên.");
+    if (images.length === 0) {
+      setScanError("Chọn hoặc tải ít nhất một ảnh lên.");
       return;
     }
 
     setScanning(true);
     setScanError("");
-    setOcrProgress(0);
+    setScanWarnings([]);
+    setScanProgress({
+      imageIndex: 1,
+      totalImages: images.length,
+      ocrProgress: 0,
+    });
+
+    const allDrafts: ImageImportDraft[] = [];
+    const warnings: string[] = [];
 
     try {
-      const text = await runImageOcr(imageFile, setOcrProgress);
-      const parsed = parseOcrTransactionText(text);
-      if (parsed.length === 0) {
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        setScanProgress({
+          imageIndex: i + 1,
+          totalImages: images.length,
+          ocrProgress: 0,
+        });
+
+        const text = await runImageOcr(img.file, (progress) => {
+          setScanProgress({
+            imageIndex: i + 1,
+            totalImages: images.length,
+            ocrProgress: progress,
+          });
+        });
+
+        const parsed = parseOcrTransactionText(text, img.id);
+        if (parsed.length === 0) {
+          warnings.push(
+            `Ảnh ${String(i + 1)}: không nhận diện được giao dịch — thêm dòng trống để nhập thủ công.`,
+          );
+          allDrafts.push(createEmptyDraft(img.id));
+        } else {
+          allDrafts.push(...parsed);
+        }
+      }
+
+      if (allDrafts.length === 0) {
         setScanError(
           "Không nhận diện được giao dịch. Thử ảnh rõ hơn hoặc chỉnh sửa thủ công ở bước sau.",
         );
-        setDrafts([
-          {
-            id: newDraftId(),
-            txnDate: format(new Date(), "yyyy-MM-dd"),
-            description: "",
-            amount: 0,
-            note: "",
-            isRefund: false,
-            categoryId: "",
-            selected: true,
-          },
-        ]);
-        setStep("review");
-        return;
+        allDrafts.push(createEmptyDraft(images[0].id));
       }
-      setDrafts(parsed);
+
+      setDrafts(allDrafts);
+      setScanWarnings(warnings);
+      setSelectedImageId(images[0]?.id ?? null);
       setStep("review");
     } catch (e) {
       setScanError(
@@ -238,7 +287,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       );
     } finally {
       setScanning(false);
-      setOcrProgress(0);
+      setScanProgress(null);
     }
   }
 
@@ -255,19 +304,20 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
   }
 
   function addDraftRow() {
-    const last = drafts[drafts.length - 1];
+    const targetImageId =
+      selectedImageId ?? images[0]?.id ?? drafts[drafts.length - 1]?.imageId;
+    if (!targetImageId) return;
+
+    const lastInGroup = [...drafts]
+      .reverse()
+      .find((d) => d.imageId === targetImageId);
+
     setDrafts((prev) => [
       ...prev,
-      {
-        id: newDraftId(),
-        txnDate: last?.txnDate ?? format(new Date(), "yyyy-MM-dd"),
-        description: "",
-        amount: 0,
-        note: "",
-        isRefund: false,
-        categoryId: last?.categoryId ?? "",
-        selected: true,
-      },
+      createEmptyDraft(
+        targetImageId,
+        lastInGroup?.txnDate ?? format(new Date(), "yyyy-MM-dd"),
+      ),
     ]);
   }
 
@@ -278,6 +328,45 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
         d.selected && !d.isRefund ? { ...d, categoryId } : d,
       ),
     );
+  }
+
+  function toggleGroupCollapsed(imageId: string) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(imageId)) next.delete(imageId);
+      else next.add(imageId);
+      return next;
+    });
+  }
+
+  function selectImageAndScroll(imageId: string) {
+    setSelectedImageId(imageId);
+    setCollapsedGroups((prev) => {
+      if (!prev.has(imageId)) return prev;
+      const next = new Set(prev);
+      next.delete(imageId);
+      return next;
+    });
+
+    requestAnimationFrame(() => {
+      const groupEl = groupRefs.current[imageId];
+      if (!groupEl) return;
+
+      const container = transactionsScrollRef.current;
+      const containerScrollable =
+        container != null && container.scrollHeight > container.clientHeight + 1;
+
+      if (containerScrollable && container) {
+        const containerTop = container.getBoundingClientRect().top;
+        const groupTop = groupEl.getBoundingClientRect().top;
+        container.scrollTo({
+          top: container.scrollTop + (groupTop - containerTop) - 8,
+          behavior: "smooth",
+        });
+      } else {
+        groupEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
   }
 
   async function handleConfirm() {
@@ -361,6 +450,14 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
   const selectedCount = drafts.filter((d) => d.selected && !d.isRefund).length;
   const expenseCount = drafts.filter((d) => !d.isRefund).length;
   const refundCount = drafts.length - expenseCount;
+  const selectedImage =
+    images.find((img) => img.id === selectedImageId) ?? images[0] ?? null;
+
+  const overallScanProgress = scanProgress
+    ? ((scanProgress.imageIndex - 1 + scanProgress.ocrProgress) /
+        scanProgress.totalImages) *
+      100
+    : 0;
 
   return (
     <Modal
@@ -369,10 +466,20 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       title="Nhập bằng ảnh"
       description={
         step === "upload"
-          ? "Chọn nguồn tiền và tải ảnh sao kê / lịch sử giao dịch."
-          : "Kiểm tra và chỉnh sửa danh sách giao dịch trước khi lưu."
+          ? "Chọn nguồn tiền và tải một hoặc nhiều ảnh sao kê / lịch sử giao dịch."
+          : "Kiểm tra giao dịch và đối chiếu với ảnh trước khi lưu."
       }
       size="full"
+      contentClassName={
+        step === "review"
+          ? "h-[98dvh] max-h-[98dvh] md:h-[96vh] md:max-h-[96vh]"
+          : undefined
+      }
+      bodyClassName={
+        step === "review"
+          ? "flex min-h-0 flex-col overflow-y-auto py-3 md:overflow-hidden"
+          : undefined
+      }
     >
       {step === "upload" ? (
         <div className="flex flex-col gap-5">
@@ -384,80 +491,133 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
           />
 
           <div>
-            <span className="mb-2 block text-sm font-medium text-warm-700">
-              Ảnh giao dịch
-            </span>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-sm font-medium text-warm-700">
+                Ảnh giao dịch
+                {images.length > 0 ? ` (${String(images.length)})` : ""}
+              </span>
+              {images.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={scanning}
+                  onClick={clearAllImages}
+                >
+                  Xóa tất cả
+                </Button>
+              ) : null}
+            </div>
             <div
               className={cn(
-                "flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-card border-2 border-dashed p-6",
-                previewUrl
+                "overflow-hidden rounded-card border-2 border-dashed transition-colors",
+                images.length > 0
                   ? "border-warm-200 bg-warm-50/50"
                   : "border-warm-200 bg-warm-25/80",
               )}
             >
-              {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt="Xem trước ảnh"
-                  className="max-h-[320px] w-full max-w-md rounded-lg object-contain shadow-sm"
-                />
+              {images.length > 0 ? (
+                <div className="p-4">
+                  <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory">
+                    {images.map((img, index) => (
+                      <div
+                        key={img.id}
+                        className="group relative w-28 shrink-0 snap-start sm:w-32"
+                      >
+                        <div className="overflow-hidden rounded-lg border border-warm-200 bg-surface shadow-sm">
+                          <img
+                            src={img.previewUrl}
+                            alt={`Ảnh ${String(index + 1)}`}
+                            className="aspect-[9/16] w-full object-cover object-top"
+                          />
+                        </div>
+                        <div className="mt-1.5 flex items-center justify-between gap-1 px-0.5">
+                          <span className="text-xs font-medium text-warm-600">
+                            Ảnh {String(index + 1)}
+                          </span>
+                          <button
+                            type="button"
+                            disabled={scanning}
+                            className="rounded p-0.5 text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
+                            aria-label={`Xóa ảnh ${String(index + 1)}`}
+                            onClick={() => removeImage(img.id)}
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-warm-100 pt-3">
+                    <p className="text-xs text-warm-500">
+                      Vuốt ngang để xem thêm ảnh
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={scanning}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Thêm ảnh
+                    </Button>
+                  </div>
+                </div>
               ) : (
-                <>
-                  <ImagePlus className="size-10 text-warm-300" aria-hidden />
-                  <p className="text-center text-sm text-warm-500">
-                    PNG, JPG hoặc ảnh chụp màn hình
-                  </p>
-                </>
+                <button
+                  type="button"
+                  disabled={scanning}
+                  className="flex w-full flex-col items-center gap-3 px-6 py-10 text-center disabled:opacity-60"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="flex size-14 items-center justify-center rounded-full bg-warm-100">
+                    <ImagePlus className="size-7 text-warm-400" aria-hidden />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-warm-700">
+                      Chọn hoặc kéo thả ảnh vào đây
+                    </p>
+                    <p className="mt-1 text-xs text-warm-500">
+                      PNG, JPG, ảnh chụp màn hình — có thể chọn nhiều ảnh
+                    </p>
+                  </div>
+                </button>
               )}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
                 onChange={(e) => {
-                  const file = e.target.files?.[0] ?? null;
-                  handlePickFile(file);
+                  handleAddFiles(e.target.files);
                   e.target.value = "";
                 }}
               />
-              <div className="flex flex-wrap justify-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={scanning}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {previewUrl ? "Đổi ảnh" : "Chọn ảnh"}
-                </Button>
-                {previewUrl ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={scanning}
-                    onClick={() => handlePickFile(null)}
-                  >
-                    Xóa ảnh
-                  </Button>
-                ) : null}
-              </div>
             </div>
           </div>
 
-          {scanning ? (
+          {scanning && scanProgress ? (
             <div
-              className="rounded-lg border border-accent/25 bg-accent/5 px-4 py-3 text-sm text-warm-700"
+              className="rounded-xl border border-accent/25 bg-accent/5 px-4 py-4 text-sm text-warm-700"
               role="status"
             >
-              <div className="flex items-center gap-2">
-                <Loader2 className="size-4 shrink-0 animate-spin text-accent" />
-                Đang nhận diện chữ… {Math.round(ocrProgress * 100)}%
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="size-4 shrink-0 animate-spin text-accent" />
+                  <span>
+                    Đang quét ảnh {scanProgress.imageIndex}/
+                    {scanProgress.totalImages}
+                  </span>
+                </div>
+                <span className="font-medium text-accent">
+                  {Math.round(overallScanProgress)}%
+                </span>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-warm-200">
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-warm-200">
                 <div
-                  className="h-full rounded-full bg-accent transition-all"
-                  style={{ width: `${String(Math.round(ocrProgress * 100))}%` }}
+                  className="h-full rounded-full bg-accent transition-all duration-300"
+                  style={{ width: `${String(Math.round(overallScanProgress))}%` }}
                 />
               </div>
             </div>
@@ -477,59 +637,75 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
               type="button"
               leftIcon={<ScanLine className="size-4" aria-hidden />}
               isLoading={scanning}
-              disabled={!imageFile || !sourceId}
+              disabled={images.length === 0 || !sourceId}
               onClick={() => void handleScan()}
             >
-              Quét ảnh
+              {images.length > 1
+                ? `Quét ${String(images.length)} ảnh`
+                : "Quét ảnh"}
             </Button>
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-end gap-4 rounded-lg border border-warm-200 bg-warm-25/50 p-4">
-            <div className="min-w-[200px] flex-1">
-              <span className="mb-1 block text-xs font-medium text-warm-500">
-                Nguồn tiền
-              </span>
-              <p className="text-sm font-medium text-warm-900">
-                {sources.find((s) => s.id === sourceId)?.name ?? "—"}
-              </p>
-            </div>
-            <div className="min-w-[240px] flex-1">
-              <span className="mb-2 block text-sm font-medium text-warm-700">
-                Gán danh mục hàng loạt
-              </span>
-              <div className="flex flex-wrap items-end gap-2">
-                <div className="min-w-[200px] flex-1">
-                  <CategorySelector
-                    kind="expense"
-                    value={categoryId || undefined}
-                    onChange={(id) => setCategoryId(id ?? "")}
-                    disabled={submitting}
-                    placeholder="Chọn danh mục"
-                  />
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
+          <div className="shrink-0 rounded-xl border border-warm-200 bg-warm-25/50 p-3 sm:p-4">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+              <div>
+                <span className="mb-1 block text-xs font-medium text-warm-500">
+                  Nguồn tiền
+                </span>
+                <p className="text-sm font-medium text-warm-900">
+                  {sources.find((s) => s.id === sourceId)?.name ?? "—"}
+                </p>
+              </div>
+              <div>
+                <span className="mb-1.5 block text-xs font-medium text-warm-500">
+                  Gán danh mục hàng loạt
+                </span>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="min-w-0 flex-1">
+                    <CategorySelector
+                      kind="expense"
+                      value={categoryId || undefined}
+                      onChange={(id) => setCategoryId(id ?? "")}
+                      disabled={submitting}
+                      placeholder="Chọn danh mục"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="shrink-0"
+                    disabled={submitting || !categoryId.trim()}
+                    onClick={applyCategoryToSelectedExpenses}
+                  >
+                    Áp dụng
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  disabled={submitting || !categoryId.trim()}
-                  onClick={applyCategoryToSelectedExpenses}
-                >
-                  Áp dụng cho dòng đã chọn
-                </Button>
               </div>
             </div>
           </div>
 
-          {refundCount > 0 ? (
-            <p className="rounded-lg border border-success/25 bg-success/5 px-3 py-2 text-xs text-warm-600">
-              {refundCount} giao dịch hoàn trả (+) — hủy thanh toán trước đó. Không
-              nhập riêng; cặp cùng số tiền được bỏ chọn tự động.
-            </p>
-          ) : null}
+          {(scanWarnings.length > 0 || refundCount > 0) && (
+            <div className="shrink-0 space-y-2">
+              {scanWarnings.length > 0 ? (
+                <div className="rounded-lg border border-amber-200/80 bg-amber-50 px-3 py-2 text-xs text-warm-600">
+                  {scanWarnings.map((warning) => (
+                    <p key={warning}>{warning}</p>
+                  ))}
+                </div>
+              ) : null}
+              {refundCount > 0 ? (
+                <p className="rounded-lg border border-success/25 bg-success/5 px-3 py-2 text-xs text-warm-600">
+                  {refundCount} giao dịch hoàn trả (+) — không nhập riêng; cặp
+                  cùng số tiền được bỏ chọn tự động.
+                </p>
+              ) : null}
+            </div>
+          )}
 
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-warm-600">
               {selectedCount} / {expenseCount} chi tiêu được chọn
               {refundCount > 0 ? ` · ${String(refundCount)} hoàn trả` : ""}
@@ -546,125 +722,197 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
             </Button>
           </div>
 
-          <div className="max-h-[min(50vh,420px)] overflow-auto rounded-lg border border-warm-200">
-            <table className="w-full min-w-[760px] text-sm">
-              <thead className="sticky top-0 z-10 bg-warm-50 text-left text-[11px] font-medium uppercase tracking-wide text-warm-500">
-                <tr className="border-b border-warm-200">
-                  <th className="w-10 px-2 py-2">
-                    <span className="sr-only">Chọn</span>
-                  </th>
-                  <th className="px-2 py-2">Ngày</th>
-                  <th className="px-2 py-2">Mô tả</th>
-                  <th className="px-2 py-2 text-right">Số tiền</th>
-                  <th className="min-w-[11rem] px-2 py-2">Danh mục</th>
-                  <th className="w-10 px-1 py-2" aria-label="Xóa" />
-                </tr>
-              </thead>
-              <tbody>
-                {drafts.map((row) => (
-                  <tr
-                    key={row.id}
+          <div className="flex min-h-0 flex-1 flex-col gap-3 md:grid md:grid-cols-[minmax(0,1fr)_minmax(380px,54%)] md:gap-4 md:overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(420px,58%)] xl:grid-cols-[minmax(0,1fr)_620px] 2xl:grid-cols-[minmax(0,1fr)_680px]">
+            <aside className="sticky top-0 z-30 shrink-0 border-b border-warm-100 bg-surface pb-3 md:static md:order-2 md:flex md:min-h-0 md:flex-col md:gap-2 md:border-b-0 md:pb-0">
+              <div className="flex items-center justify-between gap-2 px-0.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-warm-500">
+                  Ảnh đối chiếu
+                </span>
+                {selectedImage ? (
+                  <span className="text-xs text-warm-400">
+                    Ảnh{" "}
+                    {String(
+                      images.findIndex((img) => img.id === selectedImage.id) + 1,
+                    )}
+                    /{String(images.length)}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex h-[min(68vh,720px)] min-h-[20rem] items-center justify-center overflow-hidden rounded-xl border border-warm-200 bg-warm-100/80 p-2 md:h-auto md:min-h-[32rem] md:flex-1">
+                {selectedImage ? (
+                  <img
+                    src={selectedImage.previewUrl}
+                    alt="Ảnh đang xem"
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : (
+                  <p className="text-sm text-warm-400">Chọn ảnh để đối chiếu</p>
+                )}
+              </div>
+              <div className="mt-1.5 flex shrink-0 gap-1.5 overflow-x-auto pb-0.5 md:mt-1">
+                {images.map((img, index) => {
+                  const isSelected = selectedImageId === img.id;
+                  const txnCount = drafts.filter((d) => d.imageId === img.id).length;
+                  return (
+                    <button
+                      key={img.id}
+                      type="button"
+                      className={cn(
+                        "relative shrink-0 overflow-hidden rounded-md border-2 transition-all",
+                        isSelected
+                          ? "border-accent shadow-md ring-2 ring-accent/25"
+                          : "border-warm-200 hover:border-warm-300",
+                      )}
+                      aria-label={`Xem ảnh ${String(index + 1)} và cuộn tới giao dịch`}
+                      aria-pressed={isSelected}
+                      onClick={() => selectImageAndScroll(img.id)}
+                    >
+                      <img
+                        src={img.previewUrl}
+                        alt={`Ảnh ${String(index + 1)}`}
+                        className="h-14 w-10 object-cover object-top sm:h-16 sm:w-11"
+                      />
+                      <span
+                        className={cn(
+                          "absolute inset-x-0 bottom-0 py-px text-center text-[9px] font-semibold leading-tight text-white",
+                          isSelected ? "bg-accent/90" : "bg-black/60",
+                        )}
+                      >
+                        {String(index + 1)} · {String(txnCount)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </aside>
+
+            <div
+              ref={transactionsScrollRef}
+              className="order-2 min-h-0 md:order-1 md:overflow-auto md:rounded-xl md:border md:border-warm-200"
+            >
+              {images.map((img, imageIndex) => {
+                const groupDrafts = drafts.filter((d) => d.imageId === img.id);
+                if (groupDrafts.length === 0) return null;
+
+                const isActiveGroup = selectedImageId === img.id;
+                const isCollapsed = collapsedGroups.has(img.id);
+
+                return (
+                  <section
+                    key={img.id}
+                    ref={(el) => {
+                      groupRefs.current[img.id] = el;
+                    }}
                     className={cn(
-                      "border-t border-warm-100 first:border-t-0",
-                      row.isRefund && "bg-success/5",
+                      "scroll-mt-[calc(min(68vh,720px)+4.5rem)] border-b border-warm-200 last:border-b-0 md:scroll-mt-0",
+                      isActiveGroup && "bg-accent/[0.02]",
                     )}
                   >
-                    <td className="px-2 py-1.5 align-top">
-                      <input
-                        type="checkbox"
-                        checked={row.selected}
-                        disabled={submitting}
-                        title={
-                          row.isRefund
-                            ? "Hoàn trả — chỉ để tham khảo, không nhập vào sổ"
-                            : undefined
-                        }
-                        className="size-4 rounded border-warm-300 text-accent"
-                        onChange={(e) =>
-                          updateDraft(row.id, { selected: e.target.checked })}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 align-top">
-                      <input
-                        type="date"
-                        value={row.txnDate}
-                        disabled={submitting || !row.selected}
-                        className="h-9 w-full min-w-[8.5rem] rounded-md border border-warm-200 bg-warm-50 px-2 text-sm"
-                        onChange={(e) =>
-                          updateDraft(row.id, { txnDate: e.target.value })}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 align-top">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {row.isRefund ? (
-                          <span className="shrink-0 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-success">
-                            Hoàn trả
-                          </span>
-                        ) : null}
-                        <input
-                          type="text"
-                          value={row.description}
-                          disabled={submitting || !row.selected}
-                          placeholder="Tên giao dịch"
-                          className="h-9 min-w-0 flex-1 rounded-md border border-warm-200 bg-warm-50 px-2 text-sm"
-                          onChange={(e) =>
-                            updateDraft(row.id, { description: e.target.value })}
-                        />
-                      </div>
-                      {row.note ? (
-                        <p className="mt-1 line-clamp-2 text-[11px] text-warm-400">
-                          {row.note}
-                        </p>
-                      ) : null}
-                    </td>
-                    <td className="px-2 py-1.5 align-top">
-                      <DraftAmountInput
-                        value={row.amount}
-                        currency={currency}
-                        isRefund={row.isRefund}
-                        disabled={submitting || !row.selected}
-                        onChange={(amount) => updateDraft(row.id, { amount })}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 align-top">
-                      {row.isRefund ? (
-                        <span className="block py-2 text-xs text-warm-400">—</span>
-                      ) : (
-                        <CategorySelector
-                          kind="expense"
-                          value={row.categoryId || undefined}
-                          onChange={(id) =>
-                            updateDraft(row.id, { categoryId: id ?? "" })}
-                          disabled={submitting || !row.selected}
-                          placeholder="Danh mục"
-                          className="[&_button]:h-9 [&_button]:text-xs"
-                        />
+                    <div
+                      className={cn(
+                        "flex items-center gap-1 border-b px-2 py-2 md:sticky md:top-0 md:z-20",
+                        isActiveGroup
+                          ? "border-accent/20 bg-accent/10"
+                          : "border-warm-100 bg-warm-50",
                       )}
-                    </td>
-                    <td className="px-1 py-1.5 align-top">
+                    >
                       <button
                         type="button"
-                        disabled={submitting || drafts.length <= 1}
-                        className="rounded p-1 text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
-                        aria-label="Xóa dòng"
-                        onClick={() => removeDraft(row.id)}
+                        className="rounded-md p-1.5 text-warm-500 hover:bg-warm-100 hover:text-warm-800"
+                        aria-expanded={!isCollapsed}
+                        aria-label={
+                          isCollapsed
+                            ? `Mở rộng giao dịch ảnh ${String(imageIndex + 1)}`
+                            : `Thu gọn giao dịch ảnh ${String(imageIndex + 1)}`
+                        }
+                        onClick={() => toggleGroupCollapsed(img.id)}
                       >
-                        <Trash2 className="size-4" />
+                        <ChevronDown
+                          className={cn(
+                            "size-4 transition-transform duration-200",
+                            isCollapsed && "-rotate-90",
+                          )}
+                          aria-hidden
+                        />
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <button
+                        type="button"
+                        className={cn(
+                          "flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-warm-100/80",
+                          isActiveGroup ? "text-accent" : "text-warm-700",
+                        )}
+                        onClick={() => selectImageAndScroll(img.id)}
+                      >
+                        <span className="truncate text-sm font-semibold">
+                          Ảnh {String(imageIndex + 1)}
+                        </span>
+                        <span className="shrink-0 rounded-full bg-surface/90 px-2 py-0.5 text-xs text-warm-500">
+                          {groupDrafts.length} giao dịch
+                        </span>
+                      </button>
+                    </div>
+
+                    {!isCollapsed ? (
+                      <>
+                        <div className="divide-y divide-warm-100 md:hidden">
+                          {groupDrafts.map((row) => (
+                            <DraftCardRow
+                              key={row.id}
+                              row={row}
+                              currency={currency}
+                              submitting={submitting}
+                              canRemove={drafts.length > 1}
+                              onUpdate={(patch) => updateDraft(row.id, patch)}
+                              onRemove={() => removeDraft(row.id)}
+                            />
+                          ))}
+                        </div>
+                        <div className="hidden overflow-x-auto md:block">
+                          <table className="w-full min-w-[580px] text-sm">
+                            <thead className="bg-warm-25 text-left text-[11px] font-medium uppercase tracking-wide text-warm-500">
+                              <tr className="border-b border-warm-100">
+                                <th className="w-9 px-2 py-2">
+                                  <span className="sr-only">Chọn</span>
+                                </th>
+                                <th className="w-[7.5rem] px-2 py-2">Ngày</th>
+                                <th className="min-w-[8rem] px-2 py-2">Mô tả</th>
+                                <th className="w-[6.5rem] px-2 py-2 text-right">
+                                  Số tiền
+                                </th>
+                                <th className="min-w-[9rem] px-2 py-2">Danh mục</th>
+                                <th className="w-9 px-1 py-2" aria-label="Xóa" />
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {groupDrafts.map((row) => (
+                                <DraftTableRow
+                                  key={row.id}
+                                  row={row}
+                                  currency={currency}
+                                  submitting={submitting}
+                                  canRemove={drafts.length > 1}
+                                  onUpdate={(patch) => updateDraft(row.id, patch)}
+                                  onRemove={() => removeDraft(row.id)}
+                                />
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    ) : null}
+                  </section>
+                );
+              })}
+            </div>
           </div>
 
           {submitError ? (
-            <p className="text-sm text-danger" role="alert">
+            <p className="shrink-0 text-sm text-danger" role="alert">
               {submitError}
             </p>
           ) : null}
 
-          <div className="flex flex-wrap justify-between gap-2 border-t border-warm-100 pt-4">
+          <div className="sticky bottom-0 z-30 -mx-6 flex shrink-0 flex-wrap justify-between gap-2 border-t border-warm-100 bg-surface px-6 py-3 md:static md:mx-0 md:px-0">
             <Button
               type="button"
               variant="ghost"
@@ -693,6 +941,223 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
         </div>
       )}
     </Modal>
+  );
+}
+
+function DraftCardRow({
+  row,
+  currency,
+  submitting,
+  canRemove,
+  onUpdate,
+  onRemove,
+}: {
+  row: ImageImportDraft;
+  currency: string;
+  submitting: boolean;
+  canRemove: boolean;
+  onUpdate: (patch: Partial<ImageImportDraft>) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "space-y-3 p-3",
+        row.isRefund && "bg-success/5",
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={row.selected}
+            disabled={submitting}
+            className="size-4 rounded border-warm-300 text-accent"
+            onChange={(e) => onUpdate({ selected: e.target.checked })}
+          />
+          <span className="text-xs font-medium text-warm-500">Chọn</span>
+        </label>
+        <button
+          type="button"
+          disabled={submitting || !canRemove}
+          className="rounded p-1 text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
+          aria-label="Xóa dòng"
+          onClick={onRemove}
+        >
+          <Trash2 className="size-4" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="col-span-2 sm:col-span-1">
+          <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-warm-500">
+            Ngày
+          </span>
+          <input
+            type="date"
+            value={row.txnDate}
+            disabled={submitting || !row.selected}
+            className="h-10 w-full rounded-md border border-warm-200 bg-warm-50 px-2 text-sm"
+            onChange={(e) => onUpdate({ txnDate: e.target.value })}
+          />
+        </div>
+        <div className="col-span-2 sm:col-span-1">
+          <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-warm-500">
+            Số tiền
+          </span>
+          <DraftAmountInput
+            value={row.amount}
+            currency={currency}
+            isRefund={row.isRefund}
+            disabled={submitting || !row.selected}
+            onChange={(amount) => onUpdate({ amount })}
+          />
+        </div>
+      </div>
+
+      <div>
+        <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-warm-500">
+          Mô tả
+        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {row.isRefund ? (
+            <span className="shrink-0 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-success">
+              Hoàn trả
+            </span>
+          ) : null}
+          <input
+            type="text"
+            value={row.description}
+            disabled={submitting || !row.selected}
+            placeholder="Tên giao dịch"
+            className="h-10 min-w-0 flex-1 rounded-md border border-warm-200 bg-warm-50 px-2 text-sm"
+            onChange={(e) => onUpdate({ description: e.target.value })}
+          />
+        </div>
+        {row.note ? (
+          <p className="mt-1 text-[11px] text-warm-400">{row.note}</p>
+        ) : null}
+      </div>
+
+      {!row.isRefund ? (
+        <div>
+          <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-warm-500">
+            Danh mục
+          </span>
+          <CategorySelector
+            kind="expense"
+            value={row.categoryId || undefined}
+            onChange={(id) => onUpdate({ categoryId: id ?? "" })}
+            disabled={submitting || !row.selected}
+            placeholder="Danh mục"
+            className="[&_button]:h-10 [&_button]:w-full [&_button]:text-sm"
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DraftTableRow({
+  row,
+  currency,
+  submitting,
+  canRemove,
+  onUpdate,
+  onRemove,
+}: {
+  row: ImageImportDraft;
+  currency: string;
+  submitting: boolean;
+  canRemove: boolean;
+  onUpdate: (patch: Partial<ImageImportDraft>) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <tr
+      className={cn(
+        "border-t border-warm-100 first:border-t-0",
+        row.isRefund && "bg-success/5",
+      )}
+    >
+      <td className="px-2 py-1.5 align-top">
+        <input
+          type="checkbox"
+          checked={row.selected}
+          disabled={submitting}
+          title={
+            row.isRefund
+              ? "Hoàn trả — chỉ để tham khảo, không nhập vào sổ"
+              : undefined
+          }
+          className="size-4 rounded border-warm-300 text-accent"
+          onChange={(e) => onUpdate({ selected: e.target.checked })}
+        />
+      </td>
+      <td className="px-2 py-1.5 align-top">
+        <input
+          type="date"
+          value={row.txnDate}
+          disabled={submitting || !row.selected}
+          className="h-9 w-full min-w-[7rem] rounded-md border border-warm-200 bg-warm-50 px-2 text-sm"
+          onChange={(e) => onUpdate({ txnDate: e.target.value })}
+        />
+      </td>
+      <td className="px-2 py-1.5 align-top">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {row.isRefund ? (
+            <span className="shrink-0 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-success">
+              Hoàn trả
+            </span>
+          ) : null}
+          <input
+            type="text"
+            value={row.description}
+            disabled={submitting || !row.selected}
+            placeholder="Tên giao dịch"
+            className="h-9 min-w-0 flex-1 rounded-md border border-warm-200 bg-warm-50 px-2 text-sm"
+            onChange={(e) => onUpdate({ description: e.target.value })}
+          />
+        </div>
+        {row.note ? (
+          <p className="mt-1 line-clamp-2 text-[11px] text-warm-400">{row.note}</p>
+        ) : null}
+      </td>
+      <td className="px-2 py-1.5 align-top">
+        <DraftAmountInput
+          value={row.amount}
+          currency={currency}
+          isRefund={row.isRefund}
+          disabled={submitting || !row.selected}
+          onChange={(amount) => onUpdate({ amount })}
+        />
+      </td>
+      <td className="px-2 py-1.5 align-top">
+        {row.isRefund ? (
+          <span className="block py-2 text-xs text-warm-400">—</span>
+        ) : (
+          <CategorySelector
+            kind="expense"
+            value={row.categoryId || undefined}
+            onChange={(id) => onUpdate({ categoryId: id ?? "" })}
+            disabled={submitting || !row.selected}
+            placeholder="Danh mục"
+            className="[&_button]:h-9 [&_button]:text-xs"
+          />
+        )}
+      </td>
+      <td className="px-1 py-1.5 align-top">
+        <button
+          type="button"
+          disabled={submitting || !canRemove}
+          className="rounded p-1 text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
+          aria-label="Xóa dòng"
+          onClick={onRemove}
+        >
+          <Trash2 className="size-4" />
+        </button>
+      </td>
+    </tr>
   );
 }
 
@@ -726,7 +1191,7 @@ function DraftAmountInput({
       inputMode={currency === "VND" ? "numeric" : "decimal"}
       disabled={disabled}
       className={cn(
-        "h-9 w-full min-w-[7rem] rounded-md border bg-warm-50 px-2 text-right font-mono text-sm",
+        "h-9 w-full min-w-[5.5rem] rounded-md border bg-warm-50 px-2 text-right font-mono text-sm",
         isRefund
           ? "border-success/30 text-success"
           : "border-warm-200 text-warm-900",

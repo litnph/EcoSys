@@ -47,6 +47,10 @@ export interface ModalProps {
   title: string;
   description?: string;
   size?: ModalSize;
+  /** Extra classes on the modal shell (e.g. taller max-height). */
+  contentClassName?: string;
+  /** Extra classes on the scrollable body wrapper. */
+  bodyClassName?: string;
   children: React.ReactNode;
 }
 
@@ -64,6 +68,8 @@ export function Modal({
   title,
   description,
   size = "md",
+  contentClassName,
+  bodyClassName,
   children,
 }: ModalProps) {
   const [presence, setPresence] = React.useState(isOpen);
@@ -106,7 +112,8 @@ export function Modal({
                       "pointer-events-auto flex w-full flex-col",
                       sizeClass[size],
                       "rounded-card border border-warm-200 bg-surface shadow-lg",
-                      "max-h-[min(90vh,700px)]")}
+                      "max-h-[min(90vh,700px)]",
+                      contentClassName)}
                     initial={{ opacity: 0, scale: 0.96 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.96 }}
@@ -141,7 +148,12 @@ export function Modal({
                         </button>
                       </Dialog.Close>
                     </div>
-                    <div className="relative min-h-0 flex-1 overflow-y-auto px-6 py-4">
+                    <div
+                      className={cn(
+                        "relative min-h-0 flex-1 overflow-y-auto px-6 py-4",
+                        bodyClassName,
+                      )}
+                    >
                       {children}
                     </div>
                   </motion.div>
