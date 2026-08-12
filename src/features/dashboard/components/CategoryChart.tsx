@@ -14,14 +14,16 @@ type CategoryChartProps = {
   /** Omit outer card + title (e.g. report page with custom header). */
   embedded?: boolean;
   emptyMessage?: string;
+  currency?: string;
 };
 
 type CategoryTooltipProps = {
   active?: boolean;
   payload?: ReadonlyArray<{ payload: SliceRow }>;
+  currency: string;
 };
 
-function CategoryTooltip({ active, payload }: CategoryTooltipProps) {
+function CategoryTooltip({ active, payload, currency }: CategoryTooltipProps) {
   const row = payload?.[0]?.payload;
   if (!active || !row) return null;
 
@@ -29,7 +31,7 @@ function CategoryTooltip({ active, payload }: CategoryTooltipProps) {
     <div className="rounded-lg border border-warm-200 bg-surface px-3 py-2 shadow-md">
       <p className="text-sm font-medium text-warm-900">{row.categoryName}</p>
       <p className="font-mono text-sm text-accent">
-        {formatCurrency(row.amount)}{" "}
+        {formatCurrency(row.amount, currency)}{" "}
         <span className="text-warm-500">
           ({formatPercentage(row.percentage)})
         </span>
@@ -42,10 +44,12 @@ function CategoryChartBody({
   chartData,
   empty,
   emptyMessage,
+  currency,
 }: {
   chartData: SliceRow[];
   empty: boolean;
   emptyMessage: string;
+  currency: string;
 }) {
   const total = chartData.reduce((sum, d) => sum + d.value, 0);
 
@@ -78,7 +82,7 @@ function CategoryChartBody({
                 <Cell key={entry.categoryId} fill={entry.color} />
               ))}
             </Pie>
-            <Tooltip content={<CategoryTooltip />} />
+            <Tooltip content={<CategoryTooltip currency={currency} />} />
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
@@ -86,7 +90,7 @@ function CategoryChartBody({
             Tổng chi
           </p>
           <p className="font-display text-sm font-semibold tabular-nums text-warm-900">
-            {formatCurrency(total)}
+            {formatCurrency(total, currency)}
           </p>
         </div>
       </div>
@@ -106,7 +110,7 @@ function CategoryChartBody({
               {slice.categoryName}
             </span>
             <span className="shrink-0 font-mono text-xs tabular-nums text-warm-500">
-              {formatCurrency(slice.amount)}
+              {formatCurrency(slice.amount, currency)}
             </span>
             <span className="w-12 shrink-0 text-right font-mono text-xs font-semibold tabular-nums text-warm-900">
               {formatPercentage(slice.percentage)}
@@ -122,6 +126,7 @@ export function CategoryChart({
   data,
   isLoading,
   embedded = false,
+  currency = "VND",
   emptyMessage = "Không có dữ liệu chi tiêu",
 }: CategoryChartProps) {
   const shellClass = cn(
@@ -173,6 +178,7 @@ export function CategoryChart({
         chartData={chartData}
         empty={empty}
         emptyMessage={emptyMessage}
+        currency={currency}
       />
     </article>
   );

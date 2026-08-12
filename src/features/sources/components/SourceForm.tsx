@@ -233,6 +233,7 @@ export function SourceForm({
               values.minInstallmentAmt > 0
                 ? values.minInstallmentAmt
                 : null,
+            expectedVersion: initial.version,
           },
         });
       }

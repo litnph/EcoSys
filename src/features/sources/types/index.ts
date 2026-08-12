@@ -20,6 +20,7 @@ export interface FinSource {
   sortOrder: number;
   /** Dư nợ trả góp còn lại (active plans) — chỉ có ý nghĩa với thẻ tín dụng. */
   installmentRemainingAmount?: number;
+  version: number;
 }
 
 export interface CreateSourceRequest {  name: string;
@@ -47,4 +48,5 @@ export interface UpdateSourceRequest {
   paymentDueDay?: number | null;
   minInstallmentAmt?: number | null;
   sortOrder?: number | null;
+  expectedVersion?: number | null;
 }

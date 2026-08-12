@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { Modal } from "@/shared/components/ui/Modal";
 import { useToastStore } from "@/shared/stores/toastStore";
 
@@ -200,15 +201,19 @@ function MembersBody({
     );
   }
   return (
-    <div className="mt-6 overflow-x-auto rounded-card border border-warm-200 bg-surface">
+    <DataTableScrollRegion
+      label="Danh sách thành viên"
+      className="mt-6 rounded-card border border-warm-200 bg-surface"
+    >
       <table className="min-w-full text-left text-sm">
+        <caption className="sr-only">Danh sách thành viên</caption>
         <thead className="border-b border-warm-200 bg-warm-50 text-warm-600">
           <tr>
-            <th className="px-4 py-3 font-medium">Họ tên</th>
-            <th className="px-4 py-3 font-medium">Email</th>
-            <th className="px-4 py-3 font-medium">Vai trò</th>
-            <th className="px-4 py-3 font-medium">Trạng thái</th>
-            <th className="px-4 py-3 font-medium text-right">Thao tác</th>
+            <th scope="col" className="px-4 py-3 font-medium">Họ tên</th>
+            <th scope="col" className="px-4 py-3 font-medium">Email</th>
+            <th scope="col" className="px-4 py-3 font-medium">Vai trò</th>
+            <th scope="col" className="px-4 py-3 font-medium">Trạng thái</th>
+            <th scope="col" className="px-4 py-3 font-medium text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -237,7 +242,7 @@ function MembersBody({
           ))}
         </tbody>
       </table>
-    </div>
+    </DataTableScrollRegion>
   );
 }
 
@@ -256,6 +261,7 @@ function MembersRowActions({
         type="button"
         variant="ghost"
         size="sm"
+        className="min-h-11 min-w-11 sm:min-h-9 sm:min-w-9"
         aria-label="Sửa"
         onClick={() => openEdit(member)}
       >
@@ -265,6 +271,7 @@ function MembersRowActions({
         type="button"
         variant="ghost"
         size="sm"
+        className="min-h-11 min-w-11 sm:min-h-9 sm:min-w-9"
         aria-label="Xóa"
         onClick={() => setDeleteTarget(member)}
       >

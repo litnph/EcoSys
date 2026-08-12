@@ -87,7 +87,16 @@ export function DashboardLayout({
   }, [sidebarWidth]);
 
   return (
-    <div className="min-h-screen bg-warm-50">
+    <div className="min-h-screen min-h-[100dvh] bg-warm-50">
+      <a
+        href="#dashboard-main"
+        className={cn(
+          "sr-only fixed left-4 top-4 z-[250] rounded-button bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-lg",
+          "focus:not-sr-only focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2",
+        )}
+      >
+        Bỏ qua điều hướng
+      </a>
       {offline ? (
         <div
           role="status"
@@ -118,9 +127,11 @@ export function DashboardLayout({
       </ErrorBoundary>
 
       <main
+        id="dashboard-main"
+        tabIndex={-1}
         style={{ paddingTop: mainPaddingTopPx }}
         className={cn(
-          "min-h-screen bg-warm-50 px-4 transition-[margin] duration-200 ease-out md:px-6",
+          "min-h-screen min-h-[100dvh] bg-warm-50 px-4 transition-[margin] duration-200 ease-out md:px-6",
           sidebarCollapsed ? "md:ml-16" : "md:ml-[240px]")}
       >
         <ErrorBoundary fallbackTitle="Không tải được nội dung trang">

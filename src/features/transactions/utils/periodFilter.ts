@@ -81,8 +81,9 @@ export function passesCreditCardMonthFilter(
 /** Khoảng ngày gửi API — từ đầu tháng N−1 đến cuối tháng N (client lọc chi tiết thẻ). */
 export function apiDateRangeForBillingPeriod(
   periodKey: string,
-  _sources: FinSource[] | undefined,
+  sources: FinSource[] | undefined,
 ): { dateFrom: string; dateTo: string } {
+  void sources;
   const current = calendarMonthRangeFromKey(periodKey);
   const previous = calendarMonthRangeFromKey(previousMonthKey(periodKey));
   return {

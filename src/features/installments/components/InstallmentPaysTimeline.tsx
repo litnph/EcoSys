@@ -63,9 +63,7 @@ export function InstallmentPaysTimeline({
         {sorted.map((pay) => {
           const remaining = Math.max(0, pay.amount - pay.paidAmount);
           const canPay =
-            (pay.status === "due" || pay.status === "overdue") &&
-            remaining > 0 &&
-            typeof onPay === "function";
+            pay.canPayDirectly && remaining > 0 && typeof onPay === "function";
 
           return (
             <motion.li key={pay.id} {...listStaggerItemMotion} className="relative">
@@ -93,7 +91,11 @@ export function InstallmentPaysTimeline({
                       Kỳ {String(pay.installmentNumber)}
                     </p>
                     <p className="text-xs text-warm-500">
-                      Hạn:{" "}
+                      Lên sao kê{" "}
+                      <span className="font-medium text-warm-800 tabular-nums">
+                        {formatDate(pay.statementDate)}
+                      </span>
+                      {" · "}Hạn thanh toán{" "}
                       <span className="font-medium text-warm-800 tabular-nums">
                         {formatDate(pay.dueDate)}
                       </span>

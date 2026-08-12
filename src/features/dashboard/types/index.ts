@@ -61,6 +61,7 @@ export interface MonthlyTrendPoint {
   month: number;
   income: number;
   expense: number;
+  currency: string;
 }
 
 export type BillingCycleStatus =
@@ -88,6 +89,7 @@ export interface InstallmentPayDue {
   planId: string;
   planDescription: string;
   installmentNumber: number;
+  statementDate: string;
   dueDate: string;
   amount: number;
   remainingAmount: number;
@@ -99,13 +101,18 @@ export interface UpcomingDuesPayload {
   installmentPays: InstallmentPayDue[];
 }
 
-export interface DashboardMetrics {
+export interface DashboardCurrencyMetrics {
+  currency: string;
   cashBalance: number;
   creditAvailable: number;
   creditUsed: number;
   debtBorrowedRemaining: number;
   debtLentRemaining: number;
   savingsTotal: number;
+}
+
+export interface DashboardMetrics {
+  currencyGroups: DashboardCurrencyMetrics[];
 }
 
 export type CategoryRollupLevel = "parent" | "child";
@@ -129,6 +136,7 @@ export interface CategorySpendingTrend {
 }
 
 export interface CategorySpendingTrendBundle {
+  currency: string;
   parent: CategorySpendingTrend;
   child: CategorySpendingTrend;
 }

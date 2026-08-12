@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import type { Transaction } from "@/features/transactions/types";
 
 import { Button } from "@/shared/components/ui/Button";
+import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 import { Modal } from "@/shared/components/ui/Modal";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { formatDate } from "@/shared/lib/formatters";
@@ -88,6 +89,7 @@ export function AddCycleTransactionModal({
         />
         <input
           type="search"
+          aria-label="Tìm giao dịch có thể thêm"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Tìm theo mô tả, danh mục, ghi chú…"
@@ -101,7 +103,11 @@ export function AddCycleTransactionModal({
           <SkeletonText className="h-[72px] w-full rounded-lg" />
         </div>
       ) : candidatesQ.isError ? (
-        <p className="text-sm text-danger">Không tải được danh sách giao dịch.</p>
+        <AsyncStateError
+          title="Không tải được danh sách giao dịch"
+          description="Vui lòng thử lại để tiếp tục chọn giao dịch cho kỳ sao kê."
+          onRetry={() => void candidatesQ.refetch()}
+        />
       ) : filtered.length === 0 ? (
         <div className="rounded-lg border border-dashed border-warm-200 px-4 py-8 text-center">
           <p className="text-sm text-warm-600">

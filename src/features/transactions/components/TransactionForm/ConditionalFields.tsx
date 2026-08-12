@@ -126,9 +126,12 @@ export function ConditionalFields({
 
       {txnType === "transfer" ? (
         <div>
-          <label className="mb-1 block text-sm font-medium text-warm-700">
+          <span
+            id="txn-destination-label"
+            className="mb-1 block text-sm font-medium text-warm-700"
+          >
             Nguồn nhận
-          </label>
+          </span>
           <Controller
             name="toSourceId"
             control={control}
@@ -141,6 +144,11 @@ export function ConditionalFields({
                 disabled={disabled || !destCandidates.length}
               >
                 <SelectPrimitive.Trigger
+                  aria-labelledby="txn-destination-label"
+                  aria-invalid={toSourceErr ? true : undefined}
+                  aria-describedby={
+                    toSourceErr ? "txn-destination-error" : undefined
+                  }
                   className={cn(
                     "flex h-11 w-full items-center justify-between gap-2 rounded-button border bg-warm-50 px-3 text-left text-sm text-warm-900",
                     toSourceErr ? "border-danger" : "border-warm-200",
@@ -195,7 +203,13 @@ export function ConditionalFields({
             )}
           />
           {toSourceErr ? (
-            <p className="mt-1 text-sm text-danger">{toSourceErr}</p>
+            <p
+              id="txn-destination-error"
+              className="mt-1 text-sm text-danger"
+              role="alert"
+            >
+              {toSourceErr}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -286,11 +300,15 @@ export function ConditionalFields({
                     "h-11 w-full rounded-button border px-3 text-sm font-mono disabled:opacity-60",
                     dueErr ? "border-danger" : "border-warm-200 bg-warm-50",
                     "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30")}
+                  aria-invalid={dueErr ? true : undefined}
+                  aria-describedby={dueErr ? "due-date-error" : undefined}
                 />
               )}
             />
             {dueErr ? (
-              <p className="mt-1 text-sm text-danger">{dueErr}</p>
+              <p id="due-date-error" className="mt-1 text-sm text-danger" role="alert">
+                {dueErr}
+              </p>
             ) : null}
           </div>
         </div>
@@ -329,9 +347,12 @@ function DebtRecordBlock({
 
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-warm-700">
+      <span
+        id="debt-record-label"
+        className="mb-1 block text-sm font-medium text-warm-700"
+      >
         {label}
-      </label>
+      </span>
       <Controller
         name="debtRecordId"
         control={control}
@@ -346,6 +367,9 @@ function DebtRecordBlock({
             }
           >
             <SelectPrimitive.Trigger
+              aria-labelledby="debt-record-label"
+              aria-invalid={debtErr ? true : undefined}
+              aria-describedby={debtErr ? "debt-record-error" : undefined}
               className={cn(
                 "flex h-11 w-full items-center justify-between rounded-button border bg-warm-50 px-3 text-left text-sm text-warm-900",
                 debtErr ? "border-danger" : "border-warm-200",
@@ -407,7 +431,9 @@ function DebtRecordBlock({
         )}
       />
       {debtErr ? (
-        <p className="mt-1 text-sm text-danger">{debtErr}</p>
+        <p id="debt-record-error" className="mt-1 text-sm text-danger" role="alert">
+          {debtErr}
+        </p>
       ) : null}
     </div>
   );

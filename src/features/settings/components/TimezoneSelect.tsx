@@ -11,9 +11,15 @@ export type TimezoneSelectProps = {
   value: string;
   onChange: (tz: string) => void;
   disabled?: boolean;
+  label?: string;
 };
 
-export function TimezoneSelect({ value, onChange, disabled }: TimezoneSelectProps) {
+export function TimezoneSelect({
+  value,
+  onChange,
+  disabled,
+  label = "Múi giờ",
+}: TimezoneSelectProps) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
 
@@ -31,6 +37,7 @@ export function TimezoneSelect({ value, onChange, disabled }: TimezoneSelectProp
       <Popover.Trigger asChild>
         <button
           type="button"
+          aria-label={label}
           disabled={disabled}
           className={cn(
             "flex h-10 w-full items-center justify-between rounded-input border border-warm-200 bg-surface px-3 text-left text-sm text-warm-900",
@@ -53,6 +60,7 @@ export function TimezoneSelect({ value, onChange, disabled }: TimezoneSelectProp
           <div className="border-b border-warm-200 p-2">
             <input
               type="search"
+              aria-label={`Tìm ${label.toLocaleLowerCase("vi")}`}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Tìm múi giờ…"

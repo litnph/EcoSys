@@ -7,4 +7,5 @@ export interface Investment {
   currency: string;
   note: string | null;
   profitLoss: number;
+  profitLossFormulaVersion: string;
 }

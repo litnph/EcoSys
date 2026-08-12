@@ -97,7 +97,7 @@ export function ReportRecentTransactions({
                   </p>
                 </div>
                 <p className="shrink-0 font-mono text-sm font-semibold tabular-nums text-warm-900">
-                  −{formatCurrency(txn.amount)}
+                  −{formatCurrency(txn.amount, report?.metadata?.currency ?? "VND")}
                 </p>
               </li>
             );

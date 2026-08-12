@@ -18,6 +18,7 @@ export interface PayInstallmentModalProps {
   pay: InstallmentPay | null;
   paymentSources: FinSource[];
   currency: string;
+  expectedVersion: number | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -27,6 +28,7 @@ export function PayInstallmentModal({
   pay,
   paymentSources,
   currency,
+  expectedVersion,
   isOpen,
   onClose,
 }: PayInstallmentModalProps) {
@@ -47,13 +49,14 @@ export function PayInstallmentModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!planId || !pay) return;
+    if (!planId || !pay || expectedVersion === null) return;
     if (!paymentSourceId) return;
     try {
       await recordM.mutateAsync({
         planId,
         installmentNumber: pay.installmentNumber,
         paymentSourceId,
+        expectedVersion,
       });
       onClose();
     } catch {
@@ -68,7 +71,7 @@ export function PayInstallmentModal({
       title="Thanh toán một kỳ"
       description={
         pay
-          ? `Kỳ ${String(pay.installmentNumber)} · Hạn ${pay.dueDate}`
+          ? `Kỳ ${String(pay.installmentNumber)} · Hạn thanh toán ${pay.dueDate}`
           : undefined
       }
       size="md"

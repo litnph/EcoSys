@@ -11,6 +11,7 @@ import type { MonthlyPeriodListItem } from "@/features/reports/types";
 
 import { useBillingCycles } from "@/features/billing-cycles/hooks/useBillingCycles";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
+import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 
 export function ReportsPage() {
   const [selected, setSelected] = useState<MonthlyPeriodListItem | null>(null);
@@ -52,11 +53,20 @@ export function ReportsPage() {
       />
 
       {!selected ? (
-        <MonthlyReportListPanel
-          items={periodsQ.data}
-          isLoading={periodsQ.isLoading}
-          onOpen={handleOpenReport}
-        />
+        periodsQ.isError ? (
+          <AsyncStateError
+            title="Không tải được danh sách báo cáo"
+            description="Vui lòng thử lại để xem các kỳ báo cáo đã tạo."
+            onRetry={() => void periodsQ.refetch()}
+            className="mt-8"
+          />
+        ) : (
+          <MonthlyReportListPanel
+            items={periodsQ.data}
+            isLoading={periodsQ.isLoading}
+            onOpen={handleOpenReport}
+          />
+        )
       ) : (
         <div className="mt-8 flex flex-col gap-6">
           <MonthlyReportDetailToolbar
@@ -69,26 +79,39 @@ export function ReportsPage() {
           />
 
           {reportQ.isError ? (
-            <div className="rounded-lg border border-danger/35 bg-danger/5 px-4 py-3 text-sm text-danger">
-              Không tải được báo cáo. Thử cập nhật lại hoặc quay về danh sách.
-            </div>
+            <AsyncStateError
+              title="Không tải được báo cáo"
+              description="Thử tải lại hoặc quay về danh sách báo cáo."
+              onRetry={() => void reportQ.refetch()}
+            />
           ) : null}
 
-          <MonthlyReportDetailView
-            report={report}
-            isLoading={isLoadingDetail}
-            year={selected.year}
-            month={selected.month}
-            billingCycles={cyclesQ.data}
-            isCyclesLoading={cyclesQ.isLoading}
-            onClosed={() => {
-              void periodsQ.refetch();
-              void reportQ.refetch();
-              setSelected((prev) =>
-                prev ? { ...prev, status: "closed" } : null,
-              );
-            }}
-          />
+          {!reportQ.isError ? (
+            <>
+              {cyclesQ.isError ? (
+                <AsyncStateError
+                  title="Không tải được kỳ sao kê liên quan"
+                  description="Chức năng chốt báo cáo được giữ ở trạng thái khóa cho đến khi dữ liệu này tải thành công."
+                  onRetry={() => void cyclesQ.refetch()}
+                />
+              ) : null}
+              <MonthlyReportDetailView
+                report={report}
+                isLoading={isLoadingDetail}
+                year={selected.year}
+                month={selected.month}
+                billingCycles={cyclesQ.data}
+                isCyclesLoading={cyclesQ.isLoading || cyclesQ.isError}
+                onClosed={() => {
+                  void periodsQ.refetch();
+                  void reportQ.refetch();
+                  setSelected((prev) =>
+                    prev ? { ...prev, status: "closed" } : null,
+                  );
+                }}
+              />
+            </>
+          ) : null}
         </div>
       )}
     </div>

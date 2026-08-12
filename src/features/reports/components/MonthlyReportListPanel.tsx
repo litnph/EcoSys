@@ -108,13 +108,13 @@ export function MonthlyReportListPanel({
                     <div>
                       <p className="text-warm-500">Thu</p>
                       <p className="font-mono font-semibold tabular-nums text-success">
-                        {formatCurrency(item.totalIncome)}
+                        {formatCurrency(item.totalIncome, item.currency ?? "VND")}
                       </p>
                     </div>
                     <div>
                       <p className="text-warm-500">Tổng chi</p>
                       <p className="font-mono font-semibold tabular-nums text-danger">
-                        {formatCurrency(item.totalExpense)}
+                        {formatCurrency(item.totalExpense, item.currency ?? "VND")}
                       </p>
                     </div>
                     <div>
@@ -125,7 +125,7 @@ export function MonthlyReportListPanel({
                           item.net >= 0 ? "text-accent" : "text-danger",
                         )}
                       >
-                        {formatCurrency(item.net)}
+                        {formatCurrency(item.net, item.currency ?? "VND")}
                       </p>
                     </div>
                   </div>
@@ -160,6 +160,9 @@ export function MonthlyReportListPanel({
             reportCreatedAt: new Date().toISOString(),
             lastRefreshedAt: new Date().toISOString(),
             closedAt: null,
+            currency: null,
+            consolidatedTotalsAvailable: true,
+            currencyGroups: [],
           });
         }}
       />

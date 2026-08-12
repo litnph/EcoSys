@@ -14,9 +14,9 @@ export interface PaginationMeta {
 
 export interface ApiResponse<T> {
   success: boolean;
-  data: T;
-  error?: ApiError;
-  meta?: PaginationMeta;
+  data: T | null;
+  error?: ApiError | null;
+  meta?: PaginationMeta | null;
 }
 
 export interface PaginatedResponse<T> extends ApiResponse<T[]> {

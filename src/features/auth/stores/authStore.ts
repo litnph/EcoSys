@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import { REFRESH_TOKEN_KEY, TOKEN_KEY } from "@/config/constants";
-import { clearAuthCookies, setAuthCookies } from "@/shared/lib/auth-cookies";
+import { clearAuthCookies } from "@/shared/lib/auth-cookies";
 
 import type { UserDto } from "../types";
 
@@ -60,7 +60,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   isAuthenticated: Boolean(storedAccess),
   setAuth: (user, accessToken, refreshToken) => {
     persistTokens(accessToken, refreshToken);
-    setAuthCookies(accessToken, refreshToken);
+    clearAuthCookies();
     set({
       user,
       accessToken,
@@ -69,7 +69,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
   setTokens: (accessToken, refreshToken) => {
     persistTokens(accessToken, refreshToken);
-    setAuthCookies(accessToken, refreshToken);
+    clearAuthCookies();
     set((s) => ({
       accessToken,
       isAuthenticated: true,

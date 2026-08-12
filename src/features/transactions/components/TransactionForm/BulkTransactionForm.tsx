@@ -11,6 +11,7 @@ import { debtKeys } from "@/features/debt/api/debtKeys";
 import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { sourceKeys } from "@/features/sources/api/sourceKeys";
 import { Button } from "@/shared/components/ui/Button";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 import { formatNumber } from "@/shared/lib/formatters";
 import {
@@ -20,7 +21,10 @@ import {
 import { cn } from "@/shared/lib/utils";
 import { useToastStore } from "@/shared/stores/toastStore";
 
-import { createTransaction } from "../../api/transactionsApi";
+import {
+  commitTransactionImport,
+  previewTransactionImport,
+} from "../../api/transactionsApi";
 import { transactionKeys } from "../../api/transactionKeys";
 import { syncTransactionTags } from "../../utils/syncTransactionTags";
 import { BaseFields } from "./BaseFields";
@@ -42,7 +46,7 @@ export interface BulkTransactionRow {
 }
 
 function newRowId(): string {
-  return `row-${String(Date.now())}-${Math.random().toString(36).slice(2, 7)}`;
+  return crypto.randomUUID();
 }
 
 function defaultBulkRow(txnDate?: string): BulkTransactionRow {
@@ -292,18 +296,26 @@ export function BulkTransactionForm({
             }
 
             setBusy(true);
-            let created = 0;
             const tagIds = vals.tagIds ?? [];
             try {
-              for (const row of rows) {
-                const body = mapFormValuesToCreateBody(
+              const items = rows.map((row) => ({
+                ...mapFormValuesToCreateBody(
                   { ...vals, amount: row.amount, txnDate: row.txnDate },
-                  sources);
-                const txn = await createTransaction(body);
-                if (tagIds.length > 0) {
-                  await syncTransactionTags(txn.id, [], tagIds);
-                }
-                created++;
+                  sources),
+                clientRequestId: row.id,
+              }));
+              const preview = await previewTransactionImport(items);
+              if (!preview.isValid) {
+                const failed = preview.rows.find((row) => !row.success);
+                throw new Error(failed?.message ?? "Dữ liệu nhập không hợp lệ.");
+              }
+              const result = await commitTransactionImport(items);
+              if (tagIds.length > 0) {
+                await Promise.all(
+                  result.rows
+                    .filter((row) => row.success && row.transactionId)
+                    .map((row) => syncTransactionTags(row.transactionId!, [], tagIds)),
+                );
               }
               await Promise.all([
                 queryClient.invalidateQueries({ queryKey: transactionKeys.lists() }),
@@ -314,17 +326,13 @@ export function BulkTransactionForm({
               invalidateDashboard(queryClient);
               addToast({
                 type: "success",
-                title: `Đã tạo ${String(created)} giao dịch`,
+                title: `Đã tạo ${String(result.createdCount)} giao dịch`,
               });
               reset(defaultsForTxnForm(vals.type, { amount: 1, txnDate: format(new Date(), "yyyy-MM-dd") }));
               setRows([defaultBulkRow(), defaultBulkRow()]);
               onSucceeded?.();
             } catch (err) {
-              const base = getFinanceApiErrorMessage(err);
-              setSubmitError(
-                created > 0
-                  ? `${base} (${String(created)} giao dịch đã tạo trước khi lỗi.)`
-                  : base);
+              setSubmitError(getFinanceApiErrorMessage(err));
             } finally {
               setBusy(false);
             }
@@ -374,14 +382,20 @@ export function BulkTransactionForm({
             </Button>
           </div>
 
-          <div className="overflow-x-auto rounded-md border border-warm-100 bg-surface">
+          <DataTableScrollRegion
+            label="Các giao dịch tạo hàng loạt"
+            className="rounded-md border border-warm-100 bg-surface"
+          >
             <table className="w-full min-w-[320px] text-sm">
+              <caption className="sr-only">Các giao dịch tạo hàng loạt</caption>
               <thead>
                 <tr className="border-b border-warm-100 text-left text-[11px] font-medium uppercase tracking-wide text-warm-500">
-                  <th className="w-8 px-2 py-1.5">#</th>
-                  <th className="px-2 py-1.5">Ngày</th>
-                  <th className="px-2 py-1.5 text-right">Số tiền</th>
-                  <th className="w-9 px-1 py-1.5" aria-label="Xóa" />
+                  <th scope="col" className="w-8 px-2 py-1.5">#</th>
+                  <th scope="col" className="px-2 py-1.5">Ngày</th>
+                  <th scope="col" className="px-2 py-1.5 text-right">Số tiền</th>
+                  <th scope="col" className="w-9 px-1 py-1.5">
+                    <span className="sr-only">Xóa</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -429,8 +443,7 @@ export function BulkTransactionForm({
                     <td className="px-1 py-1 text-center">
                       <button
                         type="button"
-                        tabIndex={-1}
-                        className="rounded p-1 text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
+                        className="inline-flex size-11 items-center justify-center rounded text-warm-400 hover:bg-warm-100 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger disabled:opacity-40 sm:size-8"
                         aria-label={`Xóa dòng ${String(idx + 1)}`}
                         disabled={busy || rows.length <= 1}
                         onClick={() => removeRow(row.id)}
@@ -442,7 +455,7 @@ export function BulkTransactionForm({
                 ))}
               </tbody>
             </table>
-          </div>
+          </DataTableScrollRegion>
         </section>
 
         {validationHint.length > 0 ? (

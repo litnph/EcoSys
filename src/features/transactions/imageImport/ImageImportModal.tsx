@@ -12,12 +12,16 @@ import { useSources } from "@/features/sources/hooks";
 import type { FinSource } from "@/features/sources/types";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 import { Button } from "@/shared/components/ui/Button";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { Modal } from "@/shared/components/ui/Modal";
 import { formatNumber } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
 import { useToastStore } from "@/shared/stores/toastStore";
 
-import { createTransaction } from "../api/transactionsApi";
+import {
+  commitTransactionImport,
+  previewTransactionImport,
+} from "../api/transactionsApi";
 import { transactionKeys } from "../api/transactionKeys";
 import { resolveExpenseApiType } from "../components/TransactionForm/resolveExpenseApiType";
 import { parseOcrTransactionText } from "./parseOcrTransactionText";
@@ -405,12 +409,10 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
 
     setSubmitting(true);
     setSubmitError("");
-    let created = 0;
-
     try {
       const txnType = resolveExpenseApiType(sourceId, sources);
-      for (const row of selected) {
-        await createTransaction({
+      const items = selected.map((row) => ({
+          clientRequestId: row.id,
           type: txnType,
           amount: row.amount,
           sourceId,
@@ -418,9 +420,13 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
           txnDate: row.txnDate,
           description: row.description.trim(),
           note: row.note.trim() || null,
-        });
-        created++;
+      }));
+      const preview = await previewTransactionImport(items);
+      if (!preview.isValid) {
+        const failed = preview.rows.find((row) => !row.success);
+        throw new Error(failed?.message ?? "Dữ liệu nhập không hợp lệ.");
       }
+      const result = await commitTransactionImport(items);
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: transactionKeys.lists() }),
@@ -432,16 +438,11 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
 
       addToast({
         type: "success",
-        title: `Đã nhập ${String(created)} giao dịch từ ảnh`,
+        title: `Đã nhập ${String(result.createdCount)} giao dịch từ ảnh`,
       });
       onClose();
     } catch (err) {
-      const base = getFinanceApiErrorMessage(err);
-      setSubmitError(
-        created > 0
-          ? `${base} (${String(created)} giao dịch đã tạo trước khi lỗi.)`
-          : base,
-      );
+      setSubmitError(getFinanceApiErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -867,20 +868,28 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                             />
                           ))}
                         </div>
-                        <div className="hidden overflow-x-auto md:block">
+                        <DataTableScrollRegion
+                          label={`Giao dịch nhận diện từ ảnh ${String(imageIndex + 1)}`}
+                          className="hidden md:block"
+                        >
                           <table className="w-full min-w-[580px] text-sm">
+                            <caption className="sr-only">
+                              Giao dịch nhận diện từ ảnh {String(imageIndex + 1)}
+                            </caption>
                             <thead className="bg-warm-25 text-left text-[11px] font-medium uppercase tracking-wide text-warm-500">
                               <tr className="border-b border-warm-100">
-                                <th className="w-9 px-2 py-2">
+                                <th scope="col" className="w-9 px-2 py-2">
                                   <span className="sr-only">Chọn</span>
                                 </th>
-                                <th className="w-[7.5rem] px-2 py-2">Ngày</th>
-                                <th className="min-w-[8rem] px-2 py-2">Mô tả</th>
-                                <th className="w-[6.5rem] px-2 py-2 text-right">
+                                <th scope="col" className="w-[7.5rem] px-2 py-2">Ngày</th>
+                                <th scope="col" className="min-w-[8rem] px-2 py-2">Mô tả</th>
+                                <th scope="col" className="w-[6.5rem] px-2 py-2 text-right">
                                   Số tiền
                                 </th>
-                                <th className="min-w-[9rem] px-2 py-2">Danh mục</th>
-                                <th className="w-9 px-1 py-2" aria-label="Xóa" />
+                                <th scope="col" className="min-w-[9rem] px-2 py-2">Danh mục</th>
+                                <th scope="col" className="w-9 px-1 py-2">
+                                  <span className="sr-only">Xóa</span>
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
@@ -897,7 +906,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                               ))}
                             </tbody>
                           </table>
-                        </div>
+                        </DataTableScrollRegion>
                       </>
                     ) : null}
                   </section>

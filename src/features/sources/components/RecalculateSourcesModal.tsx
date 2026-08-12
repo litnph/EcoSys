@@ -38,6 +38,7 @@ function previewAsSource(row: SourceRecalculatePreviewItem, balance: number) {
     color: null,
     sortOrder: 0,
     installmentRemainingAmount: row.installmentRemainingAmount,
+    version: 0,
   };
 }
 

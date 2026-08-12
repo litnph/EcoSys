@@ -61,9 +61,12 @@ export function BaseFields({
       ) : null}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-warm-700">
+        <span
+          id="txn-source-label"
+          className="mb-1 block text-sm font-medium text-warm-700"
+        >
           Nguồn tiền
-        </label>
+        </span>
         <Controller
           name="sourceId"
           control={control}
@@ -74,6 +77,9 @@ export function BaseFields({
               disabled={disabled || !sources?.length}
             >
               <SelectPrimitive.Trigger
+                aria-labelledby="txn-source-label"
+                aria-invalid={sourceErr ? true : undefined}
+                aria-describedby={sourceErr ? "txn-source-error" : undefined}
                 className={cn(
                   "flex h-11 w-full items-center justify-between gap-2 rounded-button border px-3 text-left text-sm",
                   sourceErr ? "border-danger" : "border-warm-200",
@@ -147,7 +153,9 @@ export function BaseFields({
           )}
         />
         {sourceErr ? (
-          <p className="mt-1 text-sm text-danger">{sourceErr}</p>
+          <p id="txn-source-error" className="mt-1 text-sm text-danger" role="alert">
+            {sourceErr}
+          </p>
         ) : null}
       </div>
 
@@ -200,11 +208,14 @@ export function BaseFields({
                 dateErr ? "border-danger" : "border-warm-200",
                 "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60")}
               aria-invalid={dateErr ? true : undefined}
+              aria-describedby={dateErr ? "txn-date-error" : undefined}
             />
           )}
         />
         {dateErr ? (
-          <p className="mt-1 text-sm text-danger">{dateErr}</p>
+          <p id="txn-date-error" className="mt-1 text-sm text-danger" role="alert">
+            {dateErr}
+          </p>
         ) : null}
       </div>
       ) : null}
@@ -238,11 +249,15 @@ export function BaseFields({
                 errors.description?.message ? "border-danger" : "border-warm-200",
                 "bg-warm-50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60",
               )}
+              aria-invalid={errors.description?.message ? true : undefined}
+              aria-describedby={
+                errors.description?.message ? "txn-description-error" : undefined
+              }
             />
           )}
         />
         {errors.description?.message ? (
-          <p className="mt-1 text-sm text-danger">
+          <p id="txn-description-error" className="mt-1 text-sm text-danger" role="alert">
             {String(errors.description.message)}
           </p>
         ) : null}
@@ -290,11 +305,15 @@ export function BaseFields({
                 "w-full resize-y rounded-button border px-3 py-2 text-sm text-warm-900 placeholder:text-warm-400",
                 errors.note?.message ? "border-danger" : "border-warm-200",
                 "bg-warm-50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60")}
+              aria-invalid={errors.note?.message ? true : undefined}
+              aria-describedby={errors.note?.message ? "txn-note-error" : undefined}
             />
           )}
         />
         {errors.note?.message ? (
-          <p className="mt-1 text-sm text-danger">{String(errors.note.message)}</p>
+          <p id="txn-note-error" className="mt-1 text-sm text-danger" role="alert">
+            {String(errors.note.message)}
+          </p>
         ) : null}
       </div>
     </div>

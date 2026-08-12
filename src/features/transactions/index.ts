@@ -13,6 +13,8 @@ export { TRANSACTION_TYPES } from "./types";
 export { transactionKeys } from "./api/transactionKeys";
 export {
   createTransaction,
+  previewTransactionImport,
+  commitTransactionImport,
   getTransactions,
   getTransactionById,
   getTransactionHistory,

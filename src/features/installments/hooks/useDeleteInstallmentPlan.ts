@@ -12,6 +12,7 @@ import { deleteInstallmentPlan } from "../api/installmentsApi";
 export type DeleteInstallmentPlanVariables = {
   id: string;
   originalTxnId?: string;
+  expectedVersion: number;
 };
 
 export function useDeleteInstallmentPlan() {
@@ -19,8 +20,8 @@ export function useDeleteInstallmentPlan() {
   const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
-    mutationFn: ({ id }: DeleteInstallmentPlanVariables) =>
-      deleteInstallmentPlan(id),
+    mutationFn: ({ id, expectedVersion }: DeleteInstallmentPlanVariables) =>
+      deleteInstallmentPlan(id, expectedVersion),
     onSuccess: (_data, variables) => {
       void qc.invalidateQueries({ queryKey: installmentKeys.all });
       void qc.invalidateQueries({ queryKey: sourceKeys.all });

@@ -1,5 +1,6 @@
 import type { ApiResponse } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
+import { toApiWholeAmount } from "@/shared/lib/currencyUnits";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
 import type {
@@ -86,7 +87,7 @@ export async function createBalanceAdjustment(
 ): Promise<{ transactionId: string; newBalance: number }> {
   return unwrap(
     apiClient.post(`/finance/sources/${sourceId}/balance-adjustments`, {
-      amount: payload.amount,
+      amount: toApiWholeAmount(payload.amount),
       txnDate: payload.txnDate,
       note: payload.note,
     }));

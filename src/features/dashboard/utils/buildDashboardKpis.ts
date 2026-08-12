@@ -16,6 +16,7 @@ export type KpiMetric = {
   positiveChangeIsGood: boolean;
   icon: LucideIcon;
   iconClassName: string;
+  currency?: string;
 };
 
 function periodChangePercent(

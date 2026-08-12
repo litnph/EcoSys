@@ -13,6 +13,7 @@ import type { TransactionsPage } from "../types";
 export type DeleteTransactionVariables = {
   id: string;
   reason?: string;
+  expectedVersion?: number;
 };
 
 type InfiniteTxnCache = InfiniteData<TransactionsPage>;
@@ -22,8 +23,8 @@ export function useDeleteTransaction() {
   const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
-    mutationFn: ({ id, reason }: DeleteTransactionVariables) =>
-      deleteTransaction(id, reason),
+    mutationFn: ({ id, reason, expectedVersion }: DeleteTransactionVariables) =>
+      deleteTransaction(id, reason, expectedVersion),
     onMutate: async (variables) => {
       await qc.cancelQueries({ queryKey: transactionKeys.all });
 

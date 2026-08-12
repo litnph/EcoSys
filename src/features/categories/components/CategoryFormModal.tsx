@@ -93,7 +93,7 @@ export function CategoryFormModal({
   const lockedParent = !initial && defaultParentId != null;
 
   const parentOptions = useMemo(() => {
-    let options = flatCategories.filter((row) => row.depth === 0);
+    const options = flatCategories.filter((row) => row.depth === 0);
     if (!initial) return options;
 
     const excluded = getDescendantIds(flatCategories, initial.id);

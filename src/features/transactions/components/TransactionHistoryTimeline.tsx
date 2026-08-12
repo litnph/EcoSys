@@ -4,6 +4,7 @@ import * as React from "react";
 import { formatRelativeTime } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
 import { Skeleton } from "@/shared/components/ui/Skeleton";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 
 import type { FinTransactionHistory, HistoryChangeType } from "../types";
 import { computeHistoryRowFieldDiff } from "../utils/historyFieldDiff";
@@ -150,14 +151,20 @@ export function TransactionHistoryTimeline({
             ) : null}
 
             {expandable && isOpen ? (
-              <div className="mt-3 overflow-x-auto rounded-lg border border-warm-100 bg-warm-25">
+              <DataTableScrollRegion
+                label="Chi tiết thay đổi giao dịch"
+                className="mt-3 rounded-lg border border-warm-100 bg-warm-25"
+              >
                 <table className="w-full min-w-[280px] border-collapse text-xs">
+                  <caption className="sr-only">
+                    Chi tiết thay đổi giao dịch
+                  </caption>
                   <thead>
                     <tr className="border-b border-warm-100 bg-warm-50">
-                      <th className="px-3 py-2 text-left font-semibold text-warm-700">
+                      <th scope="col" className="px-3 py-2 text-left font-semibold text-warm-700">
                         Trường
                       </th>
-                      <th className="px-3 py-2 text-left font-semibold text-warm-700">
+                      <th scope="col" className="px-3 py-2 text-left font-semibold text-warm-700">
                         Giá trị (cũ → mới)
                       </th>
                     </tr>
@@ -184,7 +191,7 @@ export function TransactionHistoryTimeline({
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </DataTableScrollRegion>
             ) : null}
           </li>
         );

@@ -1,6 +1,9 @@
 import type { ApiResponse, PaginationMeta } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
-import { toApiWholeAmount } from "@/shared/lib/currencyUnits";
+import {
+  toApiWholeAmount,
+  toApiWholeAmountOrNull,
+} from "@/shared/lib/currencyUnits";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
 import type {
@@ -9,6 +12,7 @@ import type {
   TransactionAttachment,
   TransactionDetail,
   TransactionFilters,
+  TransactionPurpose,
   TransactionType,
   TransactionsPage,
   TxnStatus,
@@ -38,6 +42,7 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 interface RemoteListItem {
   id: string;
   type: string;
+  purpose?: string;
   status: string;
   amount: number;
   currency: string;
@@ -56,6 +61,20 @@ interface RemoteListItem {
   tags?: Array<{ id: string; name: string; color: string }>;
 }
 
+function normalizePurpose(raw?: string | null): TransactionPurpose {
+  switch (raw) {
+    case "statementPayment":
+    case "installmentPayment":
+    case "conversionFee":
+    case "savingDeposit":
+    case "savingWithdrawal":
+    case "refund":
+      return raw;
+    default:
+      return "general";
+  }
+}
+
 interface RemoteListEnvelope {
   items: RemoteListItem[];
   page: number;
@@ -68,6 +87,7 @@ function mapListItem(row: RemoteListItem): Transaction {
   return {
     id: row.id,
     type: normalizeTxnType(row.type),
+    purpose: normalizePurpose(row.purpose),
     status: normalizeTxnStatus(row.status),
     amount: row.amount,
     currency: row.currency,
@@ -94,6 +114,7 @@ function mapListItem(row: RemoteListItem): Transaction {
 interface RemoteDetailDto {
   id: string;
   type: string;
+  purpose?: string;
   status: string;
   amount: number;
   currency: string;
@@ -104,6 +125,8 @@ interface RemoteDetailDto {
   note?: string | null;
   monthlyPeriodId?: string | null;
   refTxnId?: string | null;
+  savingId?: string | null;
+  billingCycleId?: string | null;
   createdAt: string;
   updatedAt: string;
   version: number;
@@ -133,6 +156,7 @@ function mapDetailDto(t: RemoteDetailDto): TransactionDetail {
   return {
     id: t.id,
     type: normalizeTxnType(t.type),
+    purpose: normalizePurpose(t.purpose),
     status: normalizeTxnStatus(t.status),
     amount: t.amount,
     currency: t.currency,
@@ -144,6 +168,8 @@ function mapDetailDto(t: RemoteDetailDto): TransactionDetail {
     note: t.note,
     description: t.description,
     refTxnId: t.refTxnId ?? null,
+    savingId: t.savingId ?? null,
+    billingCycleId: t.billingCycleId ?? null,
     monthlyPeriodId: t.monthlyPeriodId ?? null,
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
@@ -369,6 +395,8 @@ export interface CreateTransactionBody {
   debtRecordId?: string | null;
   dueDate?: string | null;
   splits?: CreateSplitItemBody[] | null;
+  clientRequestId?: string | null;
+  expectedAggregateVersion?: number | null;
 }
 
 interface CreateTransactionEnvelope {
@@ -379,6 +407,7 @@ function serializeCreateTransactionBody(
   body: CreateTransactionBody): CreateTransactionBody {
   return {
     ...body,
+    clientRequestId: body.clientRequestId ?? crypto.randomUUID(),
     amount: toApiWholeAmount(body.amount),
     splits: body.splits?.map((row) => ({
       ...row,
@@ -394,6 +423,45 @@ export async function createTransaction(
   return mapDetailDto(envelope.transaction);
 }
 
+export interface TransactionImportRowResult {
+  index: number;
+  success: boolean;
+  transactionId: string | null;
+  errorCode: string | null;
+  message: string | null;
+}
+
+export interface TransactionImportPreview {
+  isValid: boolean;
+  validatedCount: number;
+  rows: TransactionImportRowResult[];
+}
+
+export interface TransactionImportCommit {
+  allowPartial: boolean;
+  createdCount: number;
+  failedCount: number;
+  rows: TransactionImportRowResult[];
+}
+
+export async function previewTransactionImport(
+  items: CreateTransactionBody[]): Promise<TransactionImportPreview> {
+  return unwrap<TransactionImportPreview>(
+    apiClient.post("/finance/transactions/import/preview", {
+      items: items.map(serializeCreateTransactionBody),
+    }));
+}
+
+export async function commitTransactionImport(
+  items: CreateTransactionBody[],
+  allowPartial = false): Promise<TransactionImportCommit> {
+  return unwrap<TransactionImportCommit>(
+    apiClient.post("/finance/transactions/import/commit", {
+      items: items.map(serializeCreateTransactionBody),
+      allowPartial,
+    }));
+}
+
 export type UpdateTransactionPayload = {
   categoryId?: string | null;
   txnDate: string;
@@ -401,6 +469,7 @@ export type UpdateTransactionPayload = {
   note?: string | null;
   monthlyPeriodId?: string | null;
   amount?: number | null;
+  expectedVersion?: number | null;
 };
 
 export async function updateTransaction(
@@ -414,7 +483,8 @@ export async function updateTransaction(
       description: payload.description,
       note: payload.note ?? null,
       monthlyPeriodId: payload.monthlyPeriodId ?? null,
-      amount: payload.amount ?? null,
+      amount: toApiWholeAmountOrNull(payload.amount),
+      expectedVersion: payload.expectedVersion ?? null,
     });
   assertData(body);
   return mapDetailDto(body.data.transaction);
@@ -422,14 +492,18 @@ export async function updateTransaction(
 
 export async function deleteTransaction(
   id: string,
-  reason?: string): Promise<string> {
+  reason?: string,
+  expectedVersion?: number): Promise<string> {
   interface DelBody {
     transactionId?: string;
   }
   const { data: body } = await apiClient.delete<ApiEnvelope<DelBody>>(
     `/finance/transactions/${id}`,
     {
-      data: reason ? { reason } : undefined,
+      data: {
+        reason: reason ?? null,
+        expectedVersion: expectedVersion ?? null,
+      },
     });
   assertData(body);
   const tid = body.data.transactionId ?? id;

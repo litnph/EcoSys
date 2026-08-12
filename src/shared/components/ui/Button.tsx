@@ -90,6 +90,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       rightIcon,
       disabled,
       children,
+      "aria-busy": ariaBusy,
       ...props
     },
     ref) {
@@ -102,7 +103,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         whileHover={
           variant === "primary" && !isDisabled ? { scale: 1.01 } : undefined
         }
-        whileTap={{ scale: 0.97 }}
+        whileTap={!isDisabled ? { scale: 0.97 } : undefined}
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
         className={cn(
           "inline-flex items-center justify-center rounded-button font-medium transition-all duration-150",
@@ -114,11 +115,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           isDisabled && "pointer-events-none",
           className)}
         disabled={isDisabled}
+        aria-busy={ariaBusy ?? (isLoading || undefined)}
         {...props}
       >
         {isLoading ? (
           <Loader2
-            className={cn("shrink-0 animate-spin", spinnerSize(size))}
+            className={cn(
+              "shrink-0 animate-spin motion-reduce:animate-none",
+              spinnerSize(size),
+            )}
             aria-hidden
           />
         ) : (

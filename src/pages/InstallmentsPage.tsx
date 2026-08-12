@@ -206,12 +206,18 @@ export function InstallmentsPage() {
 
       <CancelInstallmentPlanModal
         planId={cancelPlanId}
+        expectedVersion={
+          listQ.data?.find((p) => p.id === cancelPlanId)?.version ??
+          activePlansQ.data?.find((p) => p.id === cancelPlanId)?.version ??
+          null
+        }
         isOpen={cancelPlanId !== null}
         onClose={() => setCancelPlanId(null)}
       />
 
       <DeleteInstallmentPlanModal
         planId={deletePlanId}
+        expectedVersion={deleteListItem?.version ?? null}
         planTitle={
           deleteListItem?.originalTxnCategoryName?.trim() ||
           deleteListItem?.originalTxnDescription?.trim() ||
@@ -223,6 +229,11 @@ export function InstallmentsPage() {
 
       <PayInstallmentModal
         planId={payCtx?.planId ?? null}
+        expectedVersion={
+          listQ.data?.find((p) => p.id === payCtx?.planId)?.version ??
+          activePlansQ.data?.find((p) => p.id === payCtx?.planId)?.version ??
+          null
+        }
         pay={payCtx?.pay ?? null}
         paymentSources={paymentSourceOptions(sources)}
         currency={(() => {

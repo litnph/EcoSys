@@ -1,8 +1,38 @@
 import type { ApiResponse } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
+import { toApiWholeAmount } from "@/shared/lib/currencyUnits";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
 import type { Saving, SavingDetail } from "../types";
+
+export interface CreateSavingRequest {
+  sourceId: string;
+  name: string;
+  targetAmount?: number | null;
+  interestRate: number;
+  startDate: string;
+  maturityDate?: string | null;
+  type: "flexible" | "fixedTerm";
+  status: "active" | "matured" | "withdrawn";
+  note?: string | null;
+}
+
+export type UpdateSavingRequest = CreateSavingRequest;
+
+interface RemoteSavingDto {
+  id: string;
+  sourceId: string;
+  sourceName: string;
+  name: string;
+  targetAmount: number | null;
+  currentAmount: number;
+  interestRate: number;
+  startDate: string;
+  maturityDate: string | null;
+  type: string;
+  status: string;
+  note: string | null;
+}
 
 type ApiEnvelope<T> = ApiResponse<T>;
 
@@ -22,7 +52,7 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
   return body.data;
 }
 
-function mapSaving(row: Record<string, unknown>): Saving {
+function mapSaving(row: RemoteSavingDto): Saving {
   return {
     id: String(row.id),    sourceId: String(row.sourceId),
     sourceName: String(row.sourceName ?? ""),
@@ -39,28 +69,36 @@ function mapSaving(row: Record<string, unknown>): Saving {
 }
 
 export async function getSavings(): Promise<Saving[]> {
-  const envelope = await unwrap<{ items: Record<string, unknown>[] }>(
+  const envelope = await unwrap<{ items: RemoteSavingDto[] }>(
     apiClient.get("/finance/savings"));
   return envelope.items.map(mapSaving);
 }
 
 export async function getSavingById(id: string): Promise<SavingDetail> {
-  const envelope = await unwrap<{ saving: Record<string, unknown> }>(
+  const envelope = await unwrap<{ saving: RemoteSavingDto }>(
     apiClient.get(`/finance/savings/${id}`));
   return mapSaving(envelope.saving) as SavingDetail;
 }
 
-export async function createSaving(body: Record<string, unknown>): Promise<Saving> {
-  const envelope = await unwrap<{ saving: Record<string, unknown> }>(
-    apiClient.post("/finance/savings", body));
+export async function createSaving(body: CreateSavingRequest): Promise<Saving> {
+  const envelope = await unwrap<{ saving: RemoteSavingDto }>(
+    apiClient.post("/finance/savings", {
+      ...body,
+      targetAmount:
+        body.targetAmount == null ? null : toApiWholeAmount(body.targetAmount),
+    }));
   return mapSaving(envelope.saving);
 }
 
 export async function updateSaving(
   id: string,
-  body: Record<string, unknown>): Promise<Saving> {
-  const envelope = await unwrap<{ saving: Record<string, unknown> }>(
-    apiClient.put(`/finance/savings/${id}`, body));
+  body: UpdateSavingRequest): Promise<Saving> {
+  const envelope = await unwrap<{ saving: RemoteSavingDto }>(
+    apiClient.put(`/finance/savings/${id}`, {
+      ...body,
+      targetAmount:
+        body.targetAmount == null ? null : toApiWholeAmount(body.targetAmount),
+    }));
   return mapSaving(envelope.saving);
 }
 
@@ -71,11 +109,17 @@ export async function deleteSaving(id: string): Promise<void> {
 export async function depositToSaving(
   id: string,
   body: { amount: number; txnDate: string; note?: string | null }): Promise<void> {
-  await unwrap<unknown>(apiClient.post(`/finance/savings/${id}/deposit`, body));
+  await unwrap<unknown>(apiClient.post(`/finance/savings/${id}/deposit`, {
+    ...body,
+    amount: toApiWholeAmount(body.amount),
+  }));
 }
 
 export async function withdrawFromSaving(
   id: string,
   body: { amount: number; txnDate: string; note?: string | null }): Promise<void> {
-  await unwrap<unknown>(apiClient.post(`/finance/savings/${id}/withdraw`, body));
+  await unwrap<unknown>(apiClient.post(`/finance/savings/${id}/withdraw`, {
+    ...body,
+    amount: toApiWholeAmount(body.amount),
+  }));
 }

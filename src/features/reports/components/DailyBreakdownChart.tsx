@@ -11,6 +11,7 @@ import {
 } from "recharts";
 
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { formatCurrency } from "@/shared/lib/formatters";
 import { cardSlideUpMotion } from "@/shared/lib/animations";
 
@@ -99,9 +100,15 @@ export function DailyBreakdownChart({
           Không có thu chi trong các ngày này
         </p>
       ) : (
-        <div className="h-[300px] w-full">
+        <>
+        <div
+          className="h-[300px] w-full"
+          role="img"
+          aria-label="Biểu đồ thu và chi trực tiếp theo ngày, đơn vị VND"
+        >
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
+              accessibilityLayer
               data={rows}
               margin={{ top: 8, bottom: 0, left: -8, right: 8 }}
             >
@@ -147,6 +154,40 @@ export function DailyBreakdownChart({
             </ComposedChart>
           </ResponsiveContainer>
         </div>
+        <details className="mt-3 text-sm text-warm-600">
+          <summary className="cursor-pointer font-medium text-warm-700">
+            Xem dữ liệu biểu đồ
+          </summary>
+          <DataTableScrollRegion
+            label="Dữ liệu dòng tiền theo ngày"
+            className="mt-2 rounded-input border border-warm-200"
+          >
+            <table className="min-w-full text-left text-sm">
+              <caption className="sr-only">Dữ liệu dòng tiền theo ngày</caption>
+              <thead className="bg-warm-50 text-warm-600">
+                <tr>
+                  <th scope="col" className="px-3 py-2 font-medium">Ngày</th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">Thu</th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">Chi trực tiếp</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-warm-100">
+                {rows.map((row) => (
+                  <tr key={row.day}>
+                    <td className="px-3 py-2 tabular-nums">{row.day}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums">
+                      {formatCurrency(row.income)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums">
+                      {formatCurrency(row.expense)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </DataTableScrollRegion>
+        </details>
+        </>
       )}
     </motion.article>
   );

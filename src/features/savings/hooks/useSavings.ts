@@ -6,11 +6,13 @@ import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 import { savingsKeys } from "../api/savingsKeys";
 import {
   createSaving,
+  type CreateSavingRequest,
   deleteSaving,
   depositToSaving,
   getSavingById,
   getSavings,
   updateSaving,
+  type UpdateSavingRequest,
   withdrawFromSaving,
 } from "../api/savingsApi";
 
@@ -40,7 +42,7 @@ export function useCreateSaving() {
   const invalidate = useInvalidateSavings();
   const addToast = useToastStore((s) => s.addToast);
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => createSaving(body),
+    mutationFn: (body: CreateSavingRequest) => createSaving(body),
     onSuccess: () => {
       invalidate();
       addToast({ type: "success", title: "Đã tạo sổ tiết kiệm" });
@@ -58,7 +60,7 @@ export function useUpdateSaving() {
   const invalidate = useInvalidateSavings();
   const addToast = useToastStore((s) => s.addToast);
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
+    mutationFn: ({ id, body }: { id: string; body: UpdateSavingRequest }) =>
       updateSaving(id, body),
     onSuccess: () => {
       invalidate();

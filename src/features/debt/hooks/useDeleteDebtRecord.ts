@@ -14,7 +14,8 @@ export function useDeleteDebtRecord() {
   const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
-    mutationFn: (id: string) => deleteDebtRecord(id),
+    mutationFn: ({ id, expectedVersion }: { id: string; expectedVersion: number }) =>
+      deleteDebtRecord(id, expectedVersion),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: debtKeys.all });
       void queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });

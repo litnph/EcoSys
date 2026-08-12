@@ -8,12 +8,14 @@ import { useCancelInstallmentPlan } from "../hooks/useCancelInstallmentPlan";
 
 export interface CancelInstallmentPlanModalProps {
   planId: string | null;
+  expectedVersion: number | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export function CancelInstallmentPlanModal({
   planId,
+  expectedVersion,
   isOpen,
   onClose,
 }: CancelInstallmentPlanModalProps) {
@@ -26,11 +28,12 @@ export function CancelInstallmentPlanModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!planId) return;
+    if (!planId || expectedVersion === null) return;
     try {
       await cancelM.mutateAsync({
         id: planId,
         reason: reason.trim() || undefined,
+        expectedVersion,
       });
       onClose();
     } catch {

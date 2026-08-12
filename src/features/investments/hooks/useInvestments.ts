@@ -6,9 +6,11 @@ import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 import { investmentKeys } from "../api/investmentKeys";
 import {
   createInvestment,
+  type CreateInvestmentRequest,
   deleteInvestment,
   getInvestments,
   updateInvestment,
+  type UpdateInvestmentRequest,
 } from "../api/investmentsApi";
 
 export function useInvestments() {
@@ -24,7 +26,7 @@ export function useCreateInvestment() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => createInvestment(body),
+    mutationFn: (body: CreateInvestmentRequest) => createInvestment(body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: investmentKeys.all });
       addToast({ type: "success", title: "Đã tạo khoản đầu tư" });
@@ -42,7 +44,7 @@ export function useUpdateInvestment() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
+    mutationFn: ({ id, body }: { id: string; body: UpdateInvestmentRequest }) =>
       updateInvestment(id, body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: investmentKeys.all });

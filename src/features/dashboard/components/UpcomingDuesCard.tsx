@@ -158,7 +158,8 @@ export function UpcomingDuesCard({
                   {formatCurrency(p.remainingAmount)}
                 </p>
                 <p className="text-xs text-warm-400">
-                  Hạn: {formatDate(p.dueDate)}
+                  Lên sao kê {formatDate(p.statementDate)} · Hạn{" "}
+                  {formatDate(p.dueDate)}
                 </p>
               </motion.li>
             );

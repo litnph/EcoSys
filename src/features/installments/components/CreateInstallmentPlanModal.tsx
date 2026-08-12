@@ -5,6 +5,7 @@ import { getTransactions } from "@/features/transactions/api/transactionsApi";
 import type { FinSource } from "@/features/sources/types";
 import type { Transaction } from "@/features/transactions/types";
 import { Button } from "@/shared/components/ui/Button";
+import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 import { Input } from "@/shared/components/ui/Input";
 import { Modal } from "@/shared/components/ui/Modal";
 import { cn } from "@/shared/lib/utils";
@@ -16,7 +17,11 @@ import {
 } from "../api/installmentsApi";
 import { installmentKeys } from "../api/installmentKeys";
 import { useCreateInstallmentPlan } from "../hooks/useCreateInstallmentPlan";
-import { countBackfillPaidInstallments } from "../utils/installmentPaySchedule";
+import {
+  countPastDueInstallments,
+  dueDateForInstallment,
+  statementDateForInstallment,
+} from "../utils/installmentPaySchedule";
 import { splitInstallmentSchedule } from "../utils/installmentScheduleSplit";
 
 const selectClassName = cn(
@@ -94,6 +99,9 @@ export function CreateInstallmentPlanModal({
   });
 
   const selectedTxn = eligibleQ.data?.find((t) => t.id === txnId);
+  const selectedCard = (sources ?? []).find(
+    (source) => source.id === selectedTxn?.sourceId && source.type === "creditCard",
+  );
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -111,7 +119,13 @@ export function CreateInstallmentPlanModal({
   const currency = selectedTxn?.currency ?? "VND";
 
   const preview = React.useMemo(() => {
-    if (!selectedTxn) return null;
+    if (
+      !selectedTxn ||
+      selectedCard?.statementDay == null ||
+      selectedCard.paymentDueDay == null
+    ) {
+      return null;
+    }
     const total = selectedTxn.amount;
     const { monthlyShare, lastShare } = splitInstallmentSchedule(total, totalMonths);
     const fee =
@@ -119,12 +133,40 @@ export function CreateInstallmentPlanModal({
         ? Math.round(total * (conversionFeeRate / 100))
         : 0;
     const grand = total + fee;
-    const backfillPaid = countBackfillPaidInstallments(
+    const firstStatementDate = statementDateForInstallment(
       selectedTxn.txnDate,
+      selectedCard.statementDay,
+      1,
+    );
+    const firstDueDate = dueDateForInstallment(
+      selectedTxn.txnDate,
+      selectedCard.statementDay,
+      selectedCard.paymentDueDay,
+      1,
+    );
+    const lastDueDate = dueDateForInstallment(
+      selectedTxn.txnDate,
+      selectedCard.statementDay,
+      selectedCard.paymentDueDay,
       totalMonths,
     );
-    return { monthlyShare, lastShare, fee, grand, backfillPaid };
-  }, [selectedTxn, totalMonths, zeroInterest, conversionFeeRate]);
+    const overdueCount = countPastDueInstallments(
+      selectedTxn.txnDate,
+      selectedCard.statementDay,
+      selectedCard.paymentDueDay,
+      totalMonths,
+    );
+    return {
+      monthlyShare,
+      lastShare,
+      fee,
+      grand,
+      firstStatementDate,
+      firstDueDate,
+      lastDueDate,
+      overdueCount,
+    };
+  }, [selectedTxn, selectedCard, totalMonths, zeroInterest, conversionFeeRate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +174,7 @@ export function CreateInstallmentPlanModal({
     const body = {
       originalTxnId: txnId,
       totalMonths,
-      interestRate: zeroInterest ? 0 : interestRate,
+      interestRate: 0,
       conversionFeeRate:
         zeroInterest && conversionFeeRate > 0 ? conversionFeeRate : null,
     };
@@ -182,6 +224,14 @@ export function CreateInstallmentPlanModal({
               </option>
             ))}
           </select>
+          {eligibleQ.isError ? (
+            <AsyncStateError
+              title="Không tải được giao dịch đủ điều kiện"
+              description="Vui lòng thử tải lại trước khi tạo kế hoạch trả góp."
+              onRetry={() => void eligibleQ.refetch()}
+              className="mt-2"
+            />
+          ) : null}
           {eligibleQ.data && eligibleQ.data.length === 0 && !eligibleQ.isLoading ? (
             <p className="mt-2 text-sm text-warm-500">
               Không có giao dịch deferred khả dụng (thẻ tín dụng, đủ hạn mức chuyển đổi, chưa có kế hoạch active).
@@ -191,7 +241,7 @@ export function CreateInstallmentPlanModal({
 
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <label className="text-sm font-medium text-warm-700">
+            <label htmlFor="installment-months" className="text-sm font-medium text-warm-700">
               Thời hạn · {String(totalMonths)} tháng
             </label>
             <span className="font-mono text-xs tabular-nums text-warm-500">
@@ -199,6 +249,7 @@ export function CreateInstallmentPlanModal({
             </span>
           </div>
           <input
+            id="installment-months"
             type="range"
             min={3}
             max={60}
@@ -218,9 +269,11 @@ export function CreateInstallmentPlanModal({
           </div>
           <button
             type="button"
+            disabled
             role="switch"
+            aria-label="0% lãi suất"
             aria-checked={zeroInterest}
-            onClick={() => setZeroInterest(!zeroInterest)}
+            onClick={() => setZeroInterest(true)}
             className={cn(
               "relative h-8 w-14 shrink-0 rounded-full transition-colors",
               zeroInterest ? "bg-accent" : "bg-warm-300")}
@@ -257,21 +310,19 @@ export function CreateInstallmentPlanModal({
           <div className="rounded-card border border-warm-200 bg-warm-25/80 p-4 text-sm">
             <p className="mb-2 font-medium text-warm-800">Xem trước</p>
             <p className="mb-3 text-xs text-warm-600">
-              Lịch kỳ tính từ ngày giao dịch{" "}
+              Kỳ đầu lên sao kê {formatDate(preview.firstStatementDate)}, hạn trả{" "}
               <span className="font-medium text-warm-800">
-                {formatDate(selectedTxn.txnDate)}
+                {formatDate(preview.firstDueDate)}
               </span>
-              .
-              {preview.backfillPaid > 0 ? (
+              . Hạn kỳ cuối {formatDate(preview.lastDueDate)}.
+              {preview.overdueCount > 0 ? (
                 <>
                   {" "}
                   <span className="font-medium text-warm-800">
-                    {String(preview.backfillPaid)}
+                    {String(preview.overdueCount)}
                   </span>{" "}
-                  kỳ trước hôm nay sẽ ghi <span className="font-medium">đã trả</span>
-                  {preview.backfillPaid >= totalMonths
-                    ? " (kế hoạch hoàn tất)."
-                    : "."}
+                  kỳ đã qua sẽ được ghi <span className="font-medium">quá hạn</span>,
+                  không tự động coi là đã trả.
                 </>
               ) : null}
             </p>

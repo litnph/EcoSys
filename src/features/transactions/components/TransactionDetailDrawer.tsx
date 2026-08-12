@@ -432,6 +432,7 @@ export function TransactionDetailDrawer({
         isOpen={deleteOpen}
         onClose={() => setDeleteOpen(false)}
         transactionId={transactionId}
+        expectedVersion={detail?.version ?? listPreview?.version}
         
         mutation={del}
         onDeleted={() => {

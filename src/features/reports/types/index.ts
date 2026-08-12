@@ -10,6 +10,17 @@ export interface MonthlyPeriodListItem {
   reportCreatedAt: string;
   lastRefreshedAt: string | null;
   closedAt: string | null;
+  currency: string | null;
+  consolidatedTotalsAvailable: boolean;
+  currencyGroups: MonthlyCurrencySummary[];
+}
+
+export interface MonthlyCurrencySummary {
+  currency: string;
+  totalIncome: number;
+  totalExpense: number;
+  net: number;
+  savingsRatePercent: number | null;
 }
 
 /** Đối chiếu tháng trước (giá trị null khi không tính được). */
@@ -87,6 +98,7 @@ export interface MonthlyReportBillingCycleInstallmentDue {
 
 export interface MonthlyReportBillingCycleItem {
   id: string;
+  currency: string;
   sourceId: string;
   sourceName: string;
   name: string;
@@ -107,6 +119,28 @@ export interface MonthlyReportBillingCyclesSection {
   cycles: MonthlyReportBillingCycleItem[];
 }
 
+export interface MonthlyReportMetadata {
+  formulaVersion: string;
+  metricBasis: string;
+  currency: string | null;
+  timeZone: string;
+  consolidatedTotalsAvailable: boolean;
+}
+
+export interface MonthlyReportCurrencyGroup {
+  currency: string;
+  totalIncome: number;
+  totalExpense: number;
+  net: number;
+  savingsRate: number | null;
+  categoryBreakdown: CategoryBreakdownItem[];
+  sourceBreakdown: SourceBreakdownItem[];
+  dailyBreakdown: DailyPoint[];
+  comparisonWithPrevious: Comparison;
+  directExpenses: MonthlyReportDirectExpenseSection;
+  billingCycles: MonthlyReportBillingCyclesSection;
+}
+
 export interface MonthlyReport {
   year: number;
   month: number;
@@ -121,5 +155,7 @@ export interface MonthlyReport {
   comparisonWithPrevious: Comparison;
   directExpenses: MonthlyReportDirectExpenseSection;
   billingCycles: MonthlyReportBillingCyclesSection;
+  metadata: MonthlyReportMetadata | null;
+  currencyGroups: MonthlyReportCurrencyGroup[];
   lastRefreshedAt?: string | null;
 }

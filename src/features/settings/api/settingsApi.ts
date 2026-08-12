@@ -7,9 +7,13 @@ import type { UserPreferencesDto, UserProfileBundleDto } from "../types";
 
 function assertSuccess<T>(res: ApiResponse<T>): asserts res is ApiResponse<T> & {
   success: true;
+  data: T;
 } {
   if (!res.success) {
     throw new Error(getFailureMessageFromApiBody(res));
+  }
+  if (res.data === null || res.data === undefined) {
+    throw new Error("Phản hồi API không hợp lệ");
   }
 }
 

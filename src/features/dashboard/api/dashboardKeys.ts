@@ -15,9 +15,9 @@ export const dashboardKeys = {
       year,
       month,
     ] as const,
-  monthlyTrend: (months: number) =>
-    [...dashboardKeys.all, "monthlyTrend", months] as const,
+  monthlyTrend: (months: number, currency: string) =>
+    [...dashboardKeys.all, "monthlyTrend", months, currency] as const,
   metrics: () => [...dashboardKeys.all, "metrics"] as const,
-  categorySpendingTrend: (months: number) =>
-    [...dashboardKeys.all, "categorySpendingTrend", months] as const,
+  categorySpendingTrend: (months: number, currency: string) =>
+    [...dashboardKeys.all, "categorySpendingTrend", months, currency] as const,
 } as const;

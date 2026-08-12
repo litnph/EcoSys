@@ -12,8 +12,11 @@ export function useCancelInstallmentPlan() {
   const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
-      cancelInstallmentPlan(id, reason),
+    mutationFn: ({ id, reason, expectedVersion }: {
+      id: string;
+      reason?: string;
+      expectedVersion: number;
+    }) => cancelInstallmentPlan(id, reason, expectedVersion),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: installmentKeys.all });
       invalidateDashboard(qc);

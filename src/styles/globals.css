@@ -12,15 +12,6 @@
   html {
     transition: background-color 200ms ease, color 200ms ease;
   }
-
-  html *,
-  html *::before,
-  html *::after {
-    transition-property: background-color, border-color, color, fill, stroke,
-      box-shadow;
-    transition-duration: 200ms;
-    transition-timing-function: ease;
-  }
 }
 
 :root {
@@ -147,5 +138,21 @@
   .font-amount {
     font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+    transition: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

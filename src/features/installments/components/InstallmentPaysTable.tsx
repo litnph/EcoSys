@@ -1,5 +1,6 @@
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { cn } from "@/shared/lib/utils";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 
@@ -47,24 +48,29 @@ export function InstallmentPaysTable({
   const sorted = [...pays].sort((a, b) => a.installmentNumber - b.installmentNumber);
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-warm-200">
-      <table className="w-full min-w-[480px] border-collapse text-sm">
+    <DataTableScrollRegion
+      label="Lịch thanh toán trả góp"
+      className="rounded-lg border border-warm-200"
+    >
+      <table className="w-full min-w-[640px] border-collapse text-sm">
+        <caption className="sr-only">Lịch thanh toán trả góp</caption>
         <thead>
           <tr className="border-b border-warm-200 bg-warm-50/80 text-left text-xs font-semibold uppercase tracking-wide text-warm-500">
-            <th className="px-3 py-2">Kỳ</th>
-            <th className="px-3 py-2">Hạn</th>
-            <th className="px-3 py-2 text-right">Số tiền</th>
-            <th className="px-3 py-2">Trạng thái</th>
-            <th className="px-3 py-2 w-24" />
+            <th scope="col" className="px-3 py-2">Kỳ</th>
+            <th scope="col" className="px-3 py-2">Lên sao kê</th>
+            <th scope="col" className="px-3 py-2">Hạn thanh toán</th>
+            <th scope="col" className="px-3 py-2 text-right">Số tiền</th>
+            <th scope="col" className="px-3 py-2">Trạng thái</th>
+            <th scope="col" className="w-24 px-3 py-2">
+              <span className="sr-only">Thao tác</span>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-warm-100">
           {sorted.map((pay) => {
             const remaining = Math.max(0, pay.amount - pay.paidAmount);
             const canPay =
-              (pay.status === "due" || pay.status === "overdue") &&
-              remaining > 0 &&
-              typeof onPay === "function";
+              pay.canPayDirectly && remaining > 0 && typeof onPay === "function";
 
             return (
               <tr
@@ -76,6 +82,9 @@ export function InstallmentPaysTable({
               >
                 <td className="px-3 py-2 font-medium tabular-nums text-warm-900">
                   {String(pay.installmentNumber)}
+                </td>
+                <td className="px-3 py-2 tabular-nums text-warm-700">
+                  {formatDate(pay.statementDate)}
                 </td>
                 <td className="px-3 py-2 tabular-nums text-warm-700">
                   {formatDate(pay.dueDate)}
@@ -107,6 +116,6 @@ export function InstallmentPaysTable({
           })}
         </tbody>
       </table>
-    </div>
+    </DataTableScrollRegion>
   );
 }

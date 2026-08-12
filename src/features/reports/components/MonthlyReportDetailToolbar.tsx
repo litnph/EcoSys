@@ -82,7 +82,7 @@ export function MonthlyReportDetailToolbar({
           type="button"
           variant="ghost"
           size="sm"
-          className="size-8 shrink-0 px-0 text-warm-500 hover:text-danger"
+          className="size-11 shrink-0 px-0 text-warm-500 hover:text-danger sm:size-8"
           aria-label="Xóa báo cáo tháng"
           onClick={() => setDeleteOpen(true)}
         >

@@ -38,6 +38,8 @@ export function PayCycleModal({
   const remaining = cycle
     ? Math.max(0, cycle.totalAmount - cycle.paidAmount)
     : 0;
+  const sourceError =
+    error === "Chọn nguồn thanh toán" ? error : undefined;
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -99,6 +101,10 @@ export function PayCycleModal({
           </label>
           <select
             id="billing-pay-source"
+            aria-invalid={sourceError ? true : undefined}
+            aria-describedby={
+              sourceError ? "billing-pay-source-error" : undefined
+            }
             className={selectClassName}
             value={paymentSourceId}
             onChange={(ev) => setPaymentSourceId(ev.target.value)}
@@ -115,6 +121,15 @@ export function PayCycleModal({
                 </option>
               ))}
           </select>
+          {sourceError ? (
+            <p
+              id="billing-pay-source-error"
+              className="mt-1 text-sm text-danger"
+              role="alert"
+            >
+              {sourceError}
+            </p>
+          ) : null}
         </div>
 
         <CurrencyInput
@@ -129,7 +144,7 @@ export function PayCycleModal({
             setAmount(next);
           }}
           disabled={payM.isPending}
-          error={error}
+          error={sourceError ? undefined : error}
         />
 
         <div className="flex justify-end gap-2 pt-1">

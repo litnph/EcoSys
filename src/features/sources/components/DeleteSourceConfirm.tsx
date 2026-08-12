@@ -31,7 +31,10 @@ export function DeleteSourceConfirm({
   const handleDelete = async () => {
     if (!source) return;
     try {
-      await deleteM.mutateAsync({ id: source.id });
+      await deleteM.mutateAsync({
+        id: source.id,
+        expectedVersion: source.version,
+      });
       onClose();
     } catch {
       /* toast handled in hook */

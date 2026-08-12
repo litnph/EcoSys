@@ -22,6 +22,7 @@ import { usePatchPreferences, usePreferencesQuery } from "../hooks/useSettingsQu
 import { TimezoneSelect } from "./TimezoneSelect";
 
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
+import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 
 const fieldsetClass =
   "rounded-card border border-warm-200 bg-warm-25/80 p-4 md:p-5";
@@ -149,9 +150,11 @@ export function PreferencesSettingsPanel() {
   return (
     <div className="space-y-6">
       {prefsQuery.isError ? (
-        <p className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warm-800">
-          {t("loadError")}
-        </p>
+        <AsyncStateError
+          title={t("loadError")}
+          description="Các giá trị cục bộ vẫn được giữ nguyên."
+          onRetry={() => void prefsQuery.refetch()}
+        />
       ) : null}
 
       <section className="rounded-card border border-warm-200 bg-surface p-4 shadow-sm md:p-6">
@@ -162,8 +165,11 @@ export function PreferencesSettingsPanel() {
 
         <div className="mt-8 space-y-6">
           <div className={fieldsetClass}>
-            <div className="text-sm font-medium text-warm-900">{t("language")}</div>
+            <label htmlFor="preference-language" className="text-sm font-medium text-warm-900">
+              {t("language")}
+            </label>
             <select
+              id="preference-language"
               value={local.languageCode}
               onChange={(e) => {
                 const code = e.target.value as "vi" | "en";
@@ -187,12 +193,13 @@ export function PreferencesSettingsPanel() {
                 value={local.timezone}
                 onChange={(tz) => bump({ timezone: tz })}
                 disabled={patch.isPending}
+                label={t("timezone")}
               />
             </div>
           </div>
 
-          <div className={fieldsetClass}>
-            <div className="text-sm font-medium text-warm-900">{t("dateFormat")}</div>
+          <fieldset className={fieldsetClass}>
+            <legend className="text-sm font-medium text-warm-900">{t("dateFormat")}</legend>
             <div className="mt-3">
               <RadioRow
                 name="dateFmt"
@@ -204,10 +211,10 @@ export function PreferencesSettingsPanel() {
                 ]}
               />
             </div>
-          </div>
+          </fieldset>
 
-          <div className={fieldsetClass}>
-            <div className="text-sm font-medium text-warm-900">{t("timeFormat")}</div>
+          <fieldset className={fieldsetClass}>
+            <legend className="text-sm font-medium text-warm-900">{t("timeFormat")}</legend>
             <div className="mt-3">
               <RadioRow
                 name="timeFmt"
@@ -219,10 +226,10 @@ export function PreferencesSettingsPanel() {
                 ]}
               />
             </div>
-          </div>
+          </fieldset>
 
-          <div className={fieldsetClass}>
-            <div className="text-sm font-medium text-warm-900">{t("theme")}</div>
+          <fieldset className={fieldsetClass}>
+            <legend className="text-sm font-medium text-warm-900">{t("theme")}</legend>
             <div className="mt-3">
               <RadioRow
                 name="theme"
@@ -235,10 +242,10 @@ export function PreferencesSettingsPanel() {
                 ]}
               />
             </div>
-          </div>
+          </fieldset>
 
-          <div className={fieldsetClass}>
-            <div className="text-sm font-medium text-warm-900">{t("weekStart")}</div>
+          <fieldset className={fieldsetClass}>
+            <legend className="text-sm font-medium text-warm-900">{t("weekStart")}</legend>
             <div className="mt-3">
               <RadioRow
                 name="weekStart"
@@ -250,7 +257,7 @@ export function PreferencesSettingsPanel() {
                 ]}
               />
             </div>
-          </div>
+          </fieldset>
         </div>
       </section>
     </div>

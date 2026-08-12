@@ -14,6 +14,7 @@ import {
 import { warmPaletteColor } from "@/features/dashboard/utils/warmPalette";
 import { Button } from "@/shared/components/ui/Button";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { formatCurrency, formatPercentage } from "@/shared/lib/formatters";
 import { cardSlideUpMotion } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
@@ -164,9 +165,15 @@ export function CategoryBreakdownChart({
               : "Không có dữ liệu chi trong tháng"}
         </p>
       ) : (
-        <div className={cn("h-[320px] w-full pb-10")}>
+        <>
+        <div
+          className={cn("h-[320px] w-full pb-10")}
+          role="img"
+          aria-label="Biểu đồ chi tiêu theo danh mục, đơn vị VND"
+        >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
+              accessibilityLayer
               layout="vertical"
               data={rows}
               margin={{ top: 4, bottom: 4, left: 8, right: 16 }}
@@ -212,6 +219,58 @@ export function CategoryBreakdownChart({
             </BarChart>
           </ResponsiveContainer>
         </div>
+        <details className="mt-3 text-sm text-warm-600">
+          <summary className="cursor-pointer font-medium text-warm-700">
+            Xem dữ liệu biểu đồ
+          </summary>
+          <DataTableScrollRegion
+            label="Dữ liệu chi tiêu theo danh mục"
+            className="mt-2 rounded-input border border-warm-200"
+          >
+            <table className="min-w-full text-left text-sm">
+              <caption className="sr-only">Dữ liệu chi tiêu theo danh mục</caption>
+              <thead className="bg-warm-50 text-warm-600">
+                <tr>
+                  <th scope="col" className="px-3 py-2 font-medium">Danh mục</th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">Số tiền</th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">Tỷ trọng</th>
+                  {onCategorySelect ? (
+                    <th scope="col" className="px-3 py-2 text-right font-medium">
+                      <span className="sr-only">Thao tác</span>
+                    </th>
+                  ) : null}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-warm-100">
+                {rows.map((row) => (
+                  <tr key={row.categoryId ?? row.categoryName}>
+                    <td className="px-3 py-2 font-medium text-warm-800">{row.categoryName}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums">
+                      {formatCurrency(row.amount)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums">
+                      {formatPercentage(row.percentageOfTotalExpense)}
+                    </td>
+                    {onCategorySelect ? (
+                      <td className="px-3 py-2 text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={!row.categoryId}
+                          onClick={() => handleBarClick({ payload: row })}
+                        >
+                          Xem giao dịch
+                        </Button>
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </DataTableScrollRegion>
+        </details>
+        </>
       )}
     </motion.article>
   );

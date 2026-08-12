@@ -20,9 +20,9 @@ export interface ImageImportDraft {
 }
 
 export function newDraftId(): string {
-  return `draft-${String(Date.now())}-${Math.random().toString(36).slice(2, 7)}`;
+  return crypto.randomUUID();
 }
 
 export function newImageId(): string {
-  return `img-${String(Date.now())}-${Math.random().toString(36).slice(2, 7)}`;
+  return crypto.randomUUID();
 }

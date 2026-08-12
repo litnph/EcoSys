@@ -14,7 +14,15 @@ export {
   type ButtonVariant,
 } from "./Button";
 export { AnimatedAmount } from "./AnimatedAmount";
+export {
+  AsyncStateError,
+  type AsyncStateErrorProps,
+} from "./AsyncStateError";
 export { CurrencyInput, type CurrencyInputProps } from "./CurrencyInput";
+export {
+  DataTableScrollRegion,
+  type DataTableScrollRegionProps,
+} from "./DataTableScrollRegion";
 export { FormSuccessCheck } from "./FormSuccessCheck";
 export {
   Drawer,

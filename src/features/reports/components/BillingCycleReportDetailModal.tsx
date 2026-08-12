@@ -1,4 +1,5 @@
 import { Modal } from "@/shared/components/ui/Modal";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
 
@@ -46,7 +47,13 @@ function cyclePeriodLabel(cycle: MonthlyReportBillingCycleItem): string {
   return `${formatDate(cycle.periodStart)} — ${formatDate(cycle.periodEnd)}`;
 }
 
-function DeferredTxnTable({ txns }: { txns: MonthlyReportBillingCycleTxnItem[] }) {
+function DeferredTxnTable({
+  txns,
+  currency,
+}: {
+  txns: MonthlyReportBillingCycleTxnItem[];
+  currency: string;
+}) {
   if (txns.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-warm-200 bg-warm-25/50 px-4 py-6 text-center text-sm text-warm-500">
@@ -56,14 +63,18 @@ function DeferredTxnTable({ txns }: { txns: MonthlyReportBillingCycleTxnItem[] }
   }
 
   return (
-    <div className="max-h-[min(280px,40vh)] overflow-auto rounded-lg border border-warm-200">
+    <DataTableScrollRegion
+      label="Giao dịch trả sau trong kỳ"
+      className="max-h-[min(280px,40vh)] overflow-auto rounded-lg border border-warm-200"
+    >
       <table className="min-w-full text-sm">
+        <caption className="sr-only">Giao dịch trả sau trong kỳ</caption>
         <thead className="sticky top-0 z-[1] bg-warm-50/95 backdrop-blur-sm">
           <tr className="border-b border-warm-100 text-left text-[10px] font-semibold uppercase tracking-wide text-warm-500">
-            <th className="px-4 py-2">Ngày</th>
-            <th className="px-4 py-2">Mô tả</th>
-            <th className="px-4 py-2">Danh mục</th>
-            <th className="px-4 py-2 text-right">Số tiền</th>
+            <th scope="col" className="px-4 py-2">Ngày</th>
+            <th scope="col" className="px-4 py-2">Mô tả</th>
+            <th scope="col" className="px-4 py-2">Danh mục</th>
+            <th scope="col" className="px-4 py-2 text-right">Số tiền</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-warm-100">
@@ -79,20 +90,22 @@ function DeferredTxnTable({ txns }: { txns: MonthlyReportBillingCycleTxnItem[] }
                 {txn.categoryName ?? "—"}
               </td>
               <td className="whitespace-nowrap px-4 py-2 text-right font-mono font-semibold tabular-nums text-warm-900">
-                {formatCurrency(txn.amount)}
+                {formatCurrency(txn.amount, currency)}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+    </DataTableScrollRegion>
   );
 }
 
 function InstallmentDueTable({
   dues,
+  currency,
 }: {
   dues: MonthlyReportBillingCycleInstallmentDue[];
+  currency: string;
 }) {
   if (dues.length === 0) {
     return (
@@ -103,15 +116,19 @@ function InstallmentDueTable({
   }
 
   return (
-    <div className="max-h-[min(280px,40vh)] overflow-auto rounded-lg border border-warm-200">
+    <DataTableScrollRegion
+      label="Các kỳ trả góp đến hạn"
+      className="max-h-[min(280px,40vh)] overflow-auto rounded-lg border border-warm-200"
+    >
       <table className="min-w-full text-sm">
+        <caption className="sr-only">Các kỳ trả góp đến hạn</caption>
         <thead className="sticky top-0 z-[1] bg-warm-50/95 backdrop-blur-sm">
           <tr className="border-b border-warm-100 text-left text-[10px] font-semibold uppercase tracking-wide text-warm-500">
-            <th className="px-4 py-2">Kỳ</th>
-            <th className="px-4 py-2">Mô tả</th>
-            <th className="px-4 py-2">Hạn</th>
-            <th className="px-4 py-2">Trạng thái</th>
-            <th className="px-4 py-2 text-right">Số tiền</th>
+            <th scope="col" className="px-4 py-2">Kỳ</th>
+            <th scope="col" className="px-4 py-2">Mô tả</th>
+            <th scope="col" className="px-4 py-2">Hạn</th>
+            <th scope="col" className="px-4 py-2">Trạng thái</th>
+            <th scope="col" className="px-4 py-2 text-right">Số tiền</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-warm-100">
@@ -142,13 +159,13 @@ function InstallmentDueTable({
                 </span>
               </td>
               <td className="whitespace-nowrap px-4 py-2 text-right font-mono font-semibold tabular-nums text-expense">
-                {formatCurrency(due.amount)}
+                {formatCurrency(due.amount, currency)}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+    </DataTableScrollRegion>
   );
 }
 
@@ -196,7 +213,7 @@ export function BillingCycleReportDetailModal({
           <div>
             <dt className="text-warm-500">Tổng phát sinh</dt>
             <dd className="font-mono font-semibold tabular-nums text-warm-900">
-              {formatCurrency(cycle.totalAmount)}
+              {formatCurrency(cycle.totalAmount, cycle.currency)}
             </dd>
           </div>
         </dl>
@@ -207,10 +224,10 @@ export function BillingCycleReportDetailModal({
               Giao dịch trả sau
             </h4>
             <span className="text-xs tabular-nums text-warm-500">
-              {cycle.transactions.length} dòng · {formatCurrency(txnTotal)}
+              {cycle.transactions.length} dòng · {formatCurrency(txnTotal, cycle.currency)}
             </span>
           </div>
-          <DeferredTxnTable txns={cycle.transactions} />
+          <DeferredTxnTable txns={cycle.transactions} currency={cycle.currency} />
         </section>
 
         <section className="space-y-3">
@@ -219,37 +236,37 @@ export function BillingCycleReportDetailModal({
               Trả góp phải thanh toán
             </h4>
             <span className="text-xs tabular-nums text-warm-500">
-              {cycle.installmentDues.length} kỳ · {formatCurrency(installmentTotal)}
+              {cycle.installmentDues.length} kỳ · {formatCurrency(installmentTotal, cycle.currency)}
             </span>
           </div>
-          <InstallmentDueTable dues={cycle.installmentDues} />
+          <InstallmentDueTable dues={cycle.installmentDues} currency={cycle.currency} />
         </section>
 
         <footer className="flex flex-col gap-1.5 border-t border-warm-200 pt-4 text-sm">
           <div className="flex items-center justify-between text-warm-600">
             <span>Giao dịch trả sau</span>
             <span className="font-mono tabular-nums">
-              {formatCurrency(txnTotal)}
+              {formatCurrency(txnTotal, cycle.currency)}
             </span>
           </div>
           <div className="flex items-center justify-between text-warm-600">
             <span>Trả góp</span>
             <span className="font-mono tabular-nums">
-              {formatCurrency(installmentTotal)}
+              {formatCurrency(installmentTotal, cycle.currency)}
             </span>
           </div>
           {cycle.paidAmount > 0 ? (
             <div className="flex items-center justify-between text-warm-600">
               <span>Đã thanh toán</span>
               <span className="font-mono tabular-nums">
-                {formatCurrency(cycle.paidAmount)}
+                {formatCurrency(cycle.paidAmount, cycle.currency)}
               </span>
             </div>
           ) : null}
           <div className="flex items-center justify-between font-semibold text-warm-800">
             <span>Tổng phát sinh</span>
             <span className="font-mono tabular-nums">
-              {formatCurrency(cycle.totalAmount)}
+              {formatCurrency(cycle.totalAmount, cycle.currency)}
             </span>
           </div>
         </footer>

@@ -77,7 +77,7 @@ export function KPICard({ metric }: KPICardProps) {
         {metric.label}
       </p>
       <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-warm-900">
-        {formatCurrency(metric.amount)}
+        {formatCurrency(metric.amount, metric.currency)}
       </p>
       <p className="mt-1 text-xs text-warm-400">So với tháng trước</p>
     </article>

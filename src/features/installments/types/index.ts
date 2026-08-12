@@ -13,12 +13,14 @@ export interface InstallmentPay {
   id: string;
   planId: string;
   installmentNumber: number;
+  statementDate: string;
   dueDate: string;
   amount: number;
   paidAmount: number;
   status: InstallmentPayLineStatus;
   paidAt: string | null;
   linkedTxnId?: string | null;
+  canPayDirectly: boolean;
 }
 
 /** Kế hoạch trả góp đầy đủ (từ GET …/installment-plans/:id). */
@@ -43,6 +45,7 @@ export interface InstallmentPlan {
   status: InstallmentStatus;
   cancellationReason?: string | null;
   canDelete?: boolean;
+  version: number;
   pays: InstallmentPay[];
 }
 
@@ -62,6 +65,7 @@ export interface InstallmentPlanListItem {
   totalAmount: number;
   canDelete: boolean;
   createdAt: string;
+  version: number;
 }
 
 export interface InstallmentDashboard {
@@ -109,6 +113,7 @@ export interface InstallmentUpcomingPay {
   planTitle: string;
   installmentNumber: number;
   totalInstallments: number;
+  statementDate: string;
   dueDate: string;
   amount: number;
   bucket: InstallmentUpcomingPayBucket;

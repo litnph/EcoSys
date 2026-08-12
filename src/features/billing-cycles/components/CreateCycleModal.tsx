@@ -42,11 +42,11 @@ export function CreateCycleModal({
   isOpen,
   onClose,
 }: CreateCycleModalProps) {
-  const now = new Date();
+  const [currentYear] = useState(() => new Date().getFullYear());
   const generateM = useGenerateCycle();
 
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(currentYear);
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1);
 
   const statementDay = card?.statementDay ?? 1;
   const paymentDueDays = card?.paymentDueDay ?? 25;
@@ -61,9 +61,8 @@ export function CreateCycleModal({
   }, [existingCycles]);
 
   const yearOptions = useMemo(() => {
-    const base = now.getFullYear();
-    return [base - 2, base - 1, base, base + 1];
-  }, [now]);
+    return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
+  }, [currentYear]);
 
   const preview = useMemo(
     () =>

@@ -7,11 +7,11 @@ import {
   Wallet,
 } from "lucide-react";
 
-import type { DashboardMetrics } from "../types";
+import type { DashboardCurrencyMetrics } from "../types";
 import type { KpiMetric } from "./buildDashboardKpis";
 
 export function buildDashboardMetricsKpis(
-  metrics: DashboardMetrics,
+  metrics: DashboardCurrencyMetrics,
 ): KpiMetric[] {
   return [
     {
@@ -22,6 +22,7 @@ export function buildDashboardMetricsKpis(
       positiveChangeIsGood: true,
       icon: Wallet,
       iconClassName: "bg-accent/10 text-accent",
+      currency: metrics.currency,
     },
     {
       id: "creditAvailable",
@@ -31,6 +32,7 @@ export function buildDashboardMetricsKpis(
       positiveChangeIsGood: true,
       icon: CreditCard,
       iconClassName: "bg-success/10 text-success",
+      currency: metrics.currency,
     },
     {
       id: "creditUsed",
@@ -40,6 +42,7 @@ export function buildDashboardMetricsKpis(
       positiveChangeIsGood: false,
       icon: Scale,
       iconClassName: "bg-warning/10 text-warning",
+      currency: metrics.currency,
     },
     {
       id: "debtBorrowed",
@@ -49,6 +52,7 @@ export function buildDashboardMetricsKpis(
       positiveChangeIsGood: false,
       icon: AlertCircle,
       iconClassName: "bg-danger/10 text-danger",
+      currency: metrics.currency,
     },
     {
       id: "debtLent",
@@ -58,6 +62,7 @@ export function buildDashboardMetricsKpis(
       positiveChangeIsGood: false,
       icon: HandCoins,
       iconClassName: "bg-info/10 text-info",
+      currency: metrics.currency,
     },
     {
       id: "savings",
@@ -67,6 +72,7 @@ export function buildDashboardMetricsKpis(
       positiveChangeIsGood: true,
       icon: PiggyBank,
       iconClassName: "bg-accent/10 text-accent-emphasis",
+      currency: metrics.currency,
     },
   ];
 }

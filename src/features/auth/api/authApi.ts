@@ -12,12 +12,17 @@ import { parseAuthPayload, parseTokenPair } from "./parseAuthPayload";
 
 const apiRoot = `${VITE_API_URL.replace(/\/$/, "")}/api/v1`;
 
-function toSuccessResponse<T>(data: T): ApiResponse<T> {
+type SuccessfulApiResponse<T> = ApiResponse<T> & {
+  success: true;
+  data: T;
+};
+
+function toSuccessResponse<T>(data: T): SuccessfulApiResponse<T> {
   return { success: true, data };
 }
 
 export async function login(
-  data: LoginRequest): Promise<ApiResponse<AuthResponse>> {
+  data: LoginRequest): Promise<SuccessfulApiResponse<AuthResponse>> {
   const { data: body } = await apiClient.post<unknown>("/auth/login", data);
   return toSuccessResponse(parseAuthPayload(body));
 }
@@ -33,7 +38,10 @@ export async function logout(): Promise<void> {
 }
 
 export async function refreshToken(
-  token: string): Promise<ApiResponse<{ accessToken: string; refreshToken: string }>> {
+  token: string): Promise<SuccessfulApiResponse<{
+    accessToken: string;
+    refreshToken: string;
+  }>> {
   const { data: body } = await axios.post<unknown>(
     `${apiRoot}/auth/refresh`,
     { refreshToken: token },

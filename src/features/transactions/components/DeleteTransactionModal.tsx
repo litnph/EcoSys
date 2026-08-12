@@ -11,6 +11,7 @@ export interface DeleteTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   transactionId: string | null;
+  expectedVersion?: number;
   mutation: UseMutationResult<
     string,
     unknown,
@@ -24,6 +25,7 @@ export function DeleteTransactionModal({
   isOpen,
   onClose,
   transactionId,
+  expectedVersion,
   mutation,
   onDeleted,
 }: DeleteTransactionModalProps) {
@@ -45,6 +47,7 @@ export function DeleteTransactionModal({
       {
         id: transactionId,
         reason: trimmed.length > 0 ? trimmed : undefined,
+        expectedVersion,
       },
       {
         onSuccess: () => {
@@ -52,7 +55,7 @@ export function DeleteTransactionModal({
           onDeleted?.();
         },
       });
-  }, [transactionId, reason, mutation, onClose, onDeleted]);
+  }, [transactionId, expectedVersion, reason, mutation, onClose, onDeleted]);
 
   return (
     <Modal

@@ -13,6 +13,7 @@ import type {
   MonthlyReportBillingCycleInstallmentDue,
   MonthlyReportBillingCycleStatus,
   MonthlyReportBillingCyclesSection,
+  MonthlyReportCurrencyGroup,
   MonthlyReportDirectExpenseItem,
   MonthlyReportDirectExpenseSection,
   MonthlyReportInstallmentPayStatus,
@@ -51,6 +52,15 @@ interface PeriodsEnvelope {
     reportCreatedAt: string;
     lastRefreshedAt?: string | null;
     closedAt?: string | null;
+    currency?: string | null;
+    consolidatedTotalsAvailable?: boolean;
+    currencyGroups?: Array<{
+      currency: string;
+      totalIncome: number;
+      totalExpense: number;
+      net: number;
+      savingsRatePercent?: number | null;
+    }> | null;
   }>;
 }
 
@@ -85,6 +95,14 @@ interface MonthOverMonthComparisonDto {
   incomeChangePercent: number | null;
   expenseChangePercent: number | null;
   netChangePercent: number | null;
+}
+
+interface MonthlyReportMetadataDto {
+  formulaVersion: string;
+  metricBasis: string;
+  currency?: string | null;
+  timeZone: string;
+  consolidatedTotalsAvailable?: boolean;
 }
 
 interface MonthlyReportDirectExpenseItemDto {
@@ -146,6 +164,17 @@ interface MonthlyReportBillingCyclesSectionDto {
   cycles: MonthlyReportBillingCycleItemDto[];
 }
 
+interface MonthlyReportCurrencyGroupDto {
+  currency: string;
+  summary: MonthlyReportSummaryDto;
+  categoryBreakdown: MonthCategorySlice[] | null;
+  sourceBreakdown: MonthSourceSlice[] | null;
+  dailyBreakdown: DailyCashflowSlice[] | null;
+  comparisonWithPreviousMonth: MonthOverMonthComparisonDto | null;
+  directExpenses: MonthlyReportDirectExpenseSectionDto | null;
+  billingCycles: MonthlyReportBillingCyclesSectionDto | null;
+}
+
 interface ReportEnvelope {
   report: {
     summary: MonthlyReportSummaryDto;
@@ -155,6 +184,8 @@ interface ReportEnvelope {
     comparisonWithPreviousMonth: MonthOverMonthComparisonDto | null;
     directExpenses: MonthlyReportDirectExpenseSectionDto | null;
     billingCycles: MonthlyReportBillingCyclesSectionDto | null;
+    metadata?: MonthlyReportMetadataDto | null;
+    currencyGroups?: MonthlyReportCurrencyGroupDto[] | null;
   };
 }
 
@@ -195,6 +226,18 @@ export async function getMonthlyPeriods(
     reportCreatedAt: p.reportCreatedAt,
     lastRefreshedAt: p.lastRefreshedAt ?? null,
     closedAt: p.closedAt ?? null,
+    currency: p.currency ?? null,
+    consolidatedTotalsAvailable: p.consolidatedTotalsAvailable ?? true,
+    currencyGroups: (p.currencyGroups ?? []).map((group) => ({
+      currency: group.currency,
+      totalIncome: Number(group.totalIncome),
+      totalExpense: Number(group.totalExpense),
+      net: Number(group.net),
+      savingsRatePercent:
+        group.savingsRatePercent === null || group.savingsRatePercent === undefined
+          ? null
+          : Number(group.savingsRatePercent),
+    })),
   }));
 }
 
@@ -307,9 +350,11 @@ function mapBillingCycleInstallmentDue(
 
 function mapBillingCycleItem(
   row: MonthlyReportBillingCycleItemDto,
+  currency: string,
 ): MonthlyReportBillingCycleItem {
   return {
     id: row.id,
+    currency,
     sourceId: row.sourceId,
     sourceName: row.sourceName?.trim()?.length ? row.sourceName : "—",
     name: row.name?.trim()?.length ? row.name : "—",
@@ -333,8 +378,10 @@ function mapBillingCycleItem(
 
 function mapBillingCycles(
   dto: MonthlyReportBillingCyclesSectionDto | null | undefined,
+  currency = "VND",
 ): MonthlyReportBillingCyclesSection {
-  const cycles = (dto?.cycles ?? []).map(mapBillingCycleItem);
+  const cycles = (dto?.cycles ?? []).map((row) =>
+    mapBillingCycleItem(row, currency));
   return {
     totalAmount: Number(dto?.totalAmount ?? 0),
     cycleCount: Number(dto?.cycleCount ?? cycles.length),
@@ -358,6 +405,35 @@ async function fetchPeriodMeta(year: number, month: number) {
     ),
   );
   return data.summary;
+}
+
+function mapCurrencyGroup(
+  dto: MonthlyReportCurrencyGroupDto,
+  year: number,
+  month: number,
+): MonthlyReportCurrencyGroup {
+  const mappedDaily = (dto.dailyBreakdown ?? [])
+    .map(mapDaily)
+    .filter((day): day is DailyPoint => Boolean(day));
+  const savingsRaw = dto.summary.savingsRatePercent;
+
+  return {
+    currency: dto.currency,
+    totalIncome: Number(dto.summary.totalIncome),
+    totalExpense: Number(dto.summary.totalExpense),
+    net: Number(dto.summary.net),
+    savingsRate:
+      savingsRaw === null || savingsRaw === undefined
+        ? null
+        : Number(savingsRaw),
+    categoryBreakdown: mapCategorySlices(dto.categoryBreakdown ?? []),
+    sourceBreakdown: mapSourceSlices(dto.sourceBreakdown ?? []),
+    dailyBreakdown:
+      mappedDaily.length > 0 ? mappedDaily : fillEmptyDaily(year, month),
+    comparisonWithPrevious: mapComparison(dto.comparisonWithPreviousMonth),
+    directExpenses: mapDirectExpenses(dto.directExpenses),
+    billingCycles: mapBillingCycles(dto.billingCycles, dto.currency),
+  };
 }
 
 export async function getMonthlyReport(
@@ -384,6 +460,8 @@ export async function getMonthlyReport(
     savingsRaw === null || savingsRaw === undefined
       ? null
       : Number(savingsRaw);
+  const currencyGroups = (reportSlice.currencyGroups ?? []).map((group) =>
+    mapCurrencyGroup(group, year, month));
 
   return {
     year,
@@ -398,7 +476,21 @@ export async function getMonthlyReport(
     dailyBreakdown: mappedDaily.length > 0 ? mappedDaily : fillEmptyDaily(year, month),
     comparisonWithPrevious: mapComparison(reportSlice.comparisonWithPreviousMonth),
     directExpenses: mapDirectExpenses(reportSlice.directExpenses),
-    billingCycles: mapBillingCycles(reportSlice.billingCycles),
+    billingCycles: mapBillingCycles(
+      reportSlice.billingCycles,
+      reportSlice.metadata?.currency ?? "VND",
+    ),
+    metadata: reportSlice.metadata
+      ? {
+          formulaVersion: reportSlice.metadata.formulaVersion,
+          metricBasis: reportSlice.metadata.metricBasis,
+          currency: reportSlice.metadata.currency ?? null,
+          timeZone: reportSlice.metadata.timeZone,
+          consolidatedTotalsAvailable:
+            reportSlice.metadata.consolidatedTotalsAvailable ?? true,
+        }
+      : null,
+    currencyGroups,
   };
 }
 

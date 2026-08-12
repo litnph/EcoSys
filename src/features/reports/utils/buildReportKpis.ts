@@ -32,7 +32,7 @@ export function buildReportKpis(report: MonthlyReport): KpiMetric[] {
   const comp = report.comparisonWithPrevious;
   const saved = report.totalIncome - report.totalExpense;
 
-  return [
+  const metrics: KpiMetric[] = [
     {
       id: "income",
       label: "Thu nhập tháng này",
@@ -70,4 +70,9 @@ export function buildReportKpis(report: MonthlyReport): KpiMetric[] {
       iconClassName: "bg-info/10 text-info",
     },
   ];
+
+  return metrics.map((metric) => ({
+    ...metric,
+    currency: report.metadata?.currency ?? undefined,
+  }));
 }

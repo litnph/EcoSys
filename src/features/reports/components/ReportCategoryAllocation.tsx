@@ -84,6 +84,7 @@ export function ReportCategoryAllocation({
           data={chartData}
           isLoading={false}
           embedded
+          currency={report.metadata?.currency ?? "VND"}
           emptyMessage={
             filter === "installments"
               ? "Không có chi trả góp theo danh mục trong tháng"

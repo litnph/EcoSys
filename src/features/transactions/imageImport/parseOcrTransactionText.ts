@@ -3,7 +3,7 @@ import type { ImageImportDraft } from "./types";
 import { newDraftId } from "./types";
 
 const DATE_IN_LINE =
-  /(\d{1,2})\s*[\/.\-]\s*(\d{1,2})\s*[\/.\-]\s*(\d{2,4})/;
+  /(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(\d{2,4})/;
 
 const SKIP_LINE =
   /lịch\s*sử|thẻ\s*tín\s*dụng|tìm\s*kiếm|transaction\s*history|credit\s*card|giao\s*dịch\s*thanh\s*toán|purchase|card\s*no|số\s*thẻ|so\s*the/i;
@@ -13,11 +13,11 @@ const REFUND_HINT =
 
 /** Số tiền ở cuối dòng: `- 20,000`, `+ 69,000`, `-170,233`. */
 const AMOUNT_TAIL =
-  /(?:^|\s)([+\-−–])?\s*([\dOoIlSsBbZzG]{1,3}(?:[.,\s][\dOoIlSsBbZzG]{3})*(?:[.,][\dOoIlSsBbZzG]+)?)\s*$/;
+  /(?:^|\s)([-+−–])?\s*([\dOoIlSsBbZzG]{1,3}(?:[.,\s][\dOoIlSsBbZzG]{3})*(?:[.,][\dOoIlSsBbZzG]+)?)\s*$/;
 
 /** Dòng chỉ có số tiền (merchant nằm dòng trên trong ảnh sao kê). */
 const AMOUNT_ONLY =
-  /^\s*([+\-−–])?\s*([\dOoIlSsBbZzG]{1,3}(?:[.,\s][\dOoIlSsBbZzG]{3})*(?:[.,][\dOoIlSsBbZzG]+)?)\s*$/;
+  /^\s*([-+−–])?\s*([\dOoIlSsBbZzG]{1,3}(?:[.,\s][\dOoIlSsBbZzG]{3})*(?:[.,][\dOoIlSsBbZzG]+)?)\s*$/;
 
 function normalizeOcrLine(raw: string): string {
   return raw.replace(/\|/g, "I").replace(/[ \t]+/g, " ").trim();
@@ -72,7 +72,7 @@ function extractDateFromLine(line: string): string | null {
 
   const rest = normalized
     .slice((m.index ?? 0) + m[0].length)
-    .replace(/^\s*[:\-]?\s*/, "");
+    .replace(/^\s*[:-]?\s*/, "");
   if (rest.length > 0 && /\d/.test(rest) && !SKIP_LINE.test(line)) {
     return null;
   }

@@ -11,6 +11,7 @@ import type { FinSource } from "../types";
 
 type DeleteVars = {
   id: string;
+  expectedVersion?: number;
 };
 
 export function useDeleteSource() {
@@ -18,7 +19,8 @@ export function useDeleteSource() {
   const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
-    mutationFn: ({ id }: DeleteVars) => deleteSource(id),
+    mutationFn: ({ id, expectedVersion }: DeleteVars) =>
+      deleteSource(id, expectedVersion),
     onMutate: async (variables) => {
       const listKey = sourceKeys.list();
       await queryClient.cancelQueries({ queryKey: listKey });

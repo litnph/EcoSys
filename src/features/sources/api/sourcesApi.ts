@@ -44,6 +44,7 @@ interface RemoteFinSourceDto {
   color?: string | null;
   sortOrder: number;
   installmentRemainingAmount?: number;
+  version: number;
 }
 
 interface SourcesListEnvelope {
@@ -79,6 +80,7 @@ function mapRemoteSource(row: RemoteFinSourceDto): FinSource {
     color: row.color ?? null,
     sortOrder: row.sortOrder,
     installmentRemainingAmount: row.installmentRemainingAmount ?? 0,
+    version: row.version,
   };
 }
 
@@ -122,6 +124,7 @@ function buildUpdateBody(data: UpdateSourceRequest) {
     minInstallmentAmt: isCard
       ? toApiWholeAmountOrNull(data.minInstallmentAmt ?? null)
       : null,
+    expectedVersion: data.expectedVersion ?? null,
   };
 }
 
@@ -151,9 +154,11 @@ export async function updateSource(
   return mapRemoteSource(envelope.source);
 }
 
-export async function deleteSource(id: string): Promise<string> {
+export async function deleteSource(id: string, expectedVersion?: number): Promise<string> {
   const envelope = await unwrap<DeleteSourceEnvelope>(
-    apiClient.delete(`/finance/sources/${id}`));
+    apiClient.delete(`/finance/sources/${id}`, {
+      params: { expected_version: expectedVersion },
+    }));
   return envelope.id;
 }
 

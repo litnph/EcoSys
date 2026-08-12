@@ -75,7 +75,7 @@ function CycleBlock({
         <p className="truncate text-xs text-warm-500">{cycle.sourceName}</p>
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="font-mono text-sm font-semibold tabular-nums text-warm-900">
-            {formatCurrency(cycle.totalAmount)}
+            {formatCurrency(cycle.totalAmount, cycle.currency)}
           </span>
           <span className="text-xs text-warm-400" aria-hidden>
             ·
@@ -99,7 +99,7 @@ function CycleBlock({
           type="button"
           variant="ghost"
           size="sm"
-          className="size-8 shrink-0 px-0"
+          className="size-11 shrink-0 px-0 sm:size-8"
           aria-label="Xem chi tiết kỳ sao kê"
           onClick={() => onViewDetail(cycle)}
         >
@@ -183,12 +183,12 @@ export function BillingCyclesReportSection({
               kỳ sao kê
             </p>
             <p className="font-mono font-semibold tabular-nums text-warm-900">
-              {formatCurrency(total)}
+              {formatCurrency(total, cycles[0]?.currency ?? "VND")}
             </p>
           </div>
           <p className="mt-1 text-[11px] text-warm-500">
-            Quẹt thẻ {formatCurrency(cardSpendTotal)} · Trả góp{" "}
-            {formatCurrency(installmentTotal)}
+            Quẹt thẻ {formatCurrency(cardSpendTotal, cycles[0]?.currency ?? "VND")} · Trả góp{" "}
+            {formatCurrency(installmentTotal, cycles[0]?.currency ?? "VND")}
           </p>
         </div>
 

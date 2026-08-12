@@ -3,7 +3,7 @@ import { apiClient } from "@/shared/lib/axios";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
 import { getFlatCategories } from "@/features/categories/api/categoriesApi";
-import { getDebtSummary } from "@/features/debt/api/debtApi";
+import { getDebtRecords } from "@/features/debt/api/debtApi";
 import { getMonthlyReport } from "@/features/reports/api/reportsApi";
 import type { CategoryBreakdownItem } from "@/features/reports/types";
 import { getSavings } from "@/features/savings/api/savingsApi";
@@ -78,6 +78,13 @@ interface MonthlyPeriodRow {
   totalIncome: number;
   totalExpense: number;
   net: number;
+  currency?: string | null;
+  currencyGroups?: Array<{
+    currency: string;
+    totalIncome: number;
+    totalExpense: number;
+    net: number;
+  }> | null;
 }
 
 interface PeriodsEnvelope {
@@ -144,6 +151,7 @@ interface InstallmentPlansEnvelope {
 
 interface InstallmentPaySlice {
   installmentNumber: number;
+  statementDate: string;
   dueDate: string;
   amount: number;
   paidAmount: number;
@@ -278,6 +286,7 @@ async function fetchInstallmentDueLines(
           planId: detail.plan.id,
           planDescription: detail.plan.originalTxnDescription,
           installmentNumber: pay.installmentNumber,
+          statementDate: pay.statementDate,
           dueDate: pay.dueDate,
           amount: pay.amount,
           remainingAmount,
@@ -349,34 +358,45 @@ export async function getSpendingByCategory(
 }
 
 export async function getMonthlyTrend(
-  months = 6): Promise<MonthlyTrendPoint[]> {
+  months = 6,
+  currency = "VND",
+): Promise<MonthlyTrendPoint[]> {
   const envelope = await unwrap<PeriodsEnvelope>(
     apiClient.get("/finance/monthly-periods"));
 
   const window = envelope.periods.slice(0, months).reverse();
 
-  return window.map((row) => ({
-    year: row.year,
-    month: row.month,
-    income: row.totalIncome,
-    expense: row.totalExpense,
-  }));
+  return window.map((row) => {
+    const group = row.currencyGroups?.find(
+      (item) => item.currency === currency,
+    );
+    const legacyMatches =
+      row.currency === currency || (row.currency == null && currency === "VND");
+    return {
+      year: row.year,
+      month: row.month,
+      income: group?.totalIncome ?? (legacyMatches ? row.totalIncome : 0),
+      expense: group?.totalExpense ?? (legacyMatches ? row.totalExpense : 0),
+      currency,
+    };
+  });
 }
 
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
-  const [sources, debt, savings] = await Promise.all([
+  const [sources, debts, savings] = await Promise.all([
     getSources(),
-    getDebtSummary(),
+    getDebtRecords({ status: "active" }),
     getSavings(),
   ]);
-  return computeDashboardMetrics(sources, debt, savings);
+  return computeDashboardMetrics(sources, debts, savings);
 }
 
 export async function getCategorySpendingTrendBundle(
   months = 6,
+  currency = "VND",
 ): Promise<CategorySpendingTrendBundle> {
   const [periods, categories] = await Promise.all([
-    getMonthlyTrend(months),
+    getMonthlyTrend(months, currency),
     getFlatCategories("expense"),
   ]);
 
@@ -384,9 +404,17 @@ export async function getCategorySpendingTrendBundle(
     periods.map(async (p) => {
       try {
         const report = await getMonthlyReport(p.year, p.month);
+        const group = report.currencyGroups.find(
+          (item) => item.currency === currency,
+        );
+        const legacyMatches =
+          report.metadata?.currency === currency ||
+          (report.metadata?.currency == null && currency === "VND");
         return {
           key: `${String(p.year)}-${String(p.month)}`,
-          breakdown: report.categoryBreakdown,
+          breakdown:
+            group?.categoryBreakdown ??
+            (legacyMatches ? report.categoryBreakdown : []),
         };
       } catch {
         return {
@@ -402,6 +430,7 @@ export async function getCategorySpendingTrendBundle(
   );
 
   return {
+    currency,
     parent: buildCategorySpendingTrend(
       periods,
       reportsByMonth,

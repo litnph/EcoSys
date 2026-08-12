@@ -21,6 +21,7 @@ export type MonthlySavingsCardProps = {
   savingsRate: number | null;
   savedAmount: number;
   incomeAmount: number;
+  currency?: string;
   /** e.g. "Cuối tháng · 30 tháng 6 2026" — defaults to today */
   periodHint?: string;
   title?: string;
@@ -32,6 +33,7 @@ export function MonthlySavingsCard({
   savingsRate,
   savedAmount,
   incomeAmount,
+  currency = "VND",
   periodHint,
   title = "Tiết kiệm tháng này",
   subtitle = `Mục tiêu ${SAVINGS_TARGET_RATE}% thu nhập`,
@@ -124,11 +126,11 @@ export function MonthlySavingsCard({
 
         <div className="w-full space-y-2 text-center">
           <p className="font-mono text-sm font-semibold tabular-nums text-warm-900">
-            {formatCurrency(savedAmount)}
+            {formatCurrency(savedAmount, currency)}
             {targetAmount > 0 ? (
               <span className="font-normal text-warm-400">
                 {" "}
-                / {formatCurrency(targetAmount)}
+                / {formatCurrency(targetAmount, currency)}
               </span>
             ) : null}
           </p>

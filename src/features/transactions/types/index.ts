@@ -14,6 +14,15 @@ export const TRANSACTION_TYPES = [
 
 export type TransactionType = (typeof TRANSACTION_TYPES)[number];
 
+export type TransactionPurpose =
+  | "general"
+  | "statementPayment"
+  | "installmentPayment"
+  | "conversionFee"
+  | "savingDeposit"
+  | "savingWithdrawal"
+  | "refund";
+
 export type TxnStatus =
   | "new"
   | "transferredToInstallment"
@@ -80,6 +89,7 @@ export interface TransactionTag {
 export interface Transaction {
   id: string;
   type: TransactionType;
+  purpose: TransactionPurpose;
   amount: number;
   currency: string;
   sourceId: string;
@@ -90,6 +100,8 @@ export interface Transaction {
   note?: string | null;
   description?: string | null;
   refTxnId?: string | null;
+  savingId?: string | null;
+  billingCycleId?: string | null;
   /** Present on billing-cycle detail lines only. */
   inclusionSource?: "refresh" | "manualAdd";
   status: TxnStatus;

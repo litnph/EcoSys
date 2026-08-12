@@ -48,6 +48,7 @@ export function DebtPaymentModal({
 
   const currency = record?.currency ?? "VND";
   const remaining = record ? Math.max(0, record.remainingAmount) : 0;
+  const sourceError = error === "Chọn nguồn tiền" ? error : undefined;
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -89,6 +90,7 @@ export function DebtPaymentModal({
         txnDate,
         note: note.trim() ? note.trim() : null,
         debtRecordId: record.id,
+        expectedAggregateVersion: record.version,
       });
       onClose();
     } catch {
@@ -132,6 +134,8 @@ export function DebtPaymentModal({
           </label>
           <select
             id="debt-pay-source"
+            aria-invalid={sourceError ? true : undefined}
+            aria-describedby={sourceError ? "debt-pay-source-error" : undefined}
             className={selectClassName}
             value={sourceId}
             onChange={(ev) => setSourceId(ev.target.value)}
@@ -146,6 +150,11 @@ export function DebtPaymentModal({
               </option>
             ))}
           </select>
+          {sourceError ? (
+            <p id="debt-pay-source-error" className="mt-1 text-sm text-danger" role="alert">
+              {sourceError}
+            </p>
+          ) : null}
         </div>
 
         <div>
@@ -183,7 +192,11 @@ export function DebtPaymentModal({
           />
         </div>
 
-        {error ? <p className="text-sm text-danger">{error}</p> : null}
+        {error && !sourceError ? (
+          <p className="text-sm text-danger" role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button

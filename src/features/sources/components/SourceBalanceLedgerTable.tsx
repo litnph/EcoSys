@@ -1,5 +1,6 @@
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 
 import type { SourceBalanceLedgerEntry } from "../types/balanceLedger";
 
@@ -39,15 +40,19 @@ export function SourceBalanceLedgerTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-card border border-warm-200">
+    <DataTableScrollRegion
+      label="Sổ biến động số dư"
+      className="rounded-card border border-warm-200"
+    >
       <table className="w-full min-w-[640px] text-left text-sm">
+        <caption className="sr-only">Sổ biến động số dư</caption>
         <thead className="border-b border-warm-200 bg-warm-50 text-warm-600">
           <tr>
-            <th className="px-3 py-2 font-medium">Ngày</th>
-            <th className="px-3 py-2 font-medium">Loại</th>
-            <th className="px-3 py-2 font-medium">Mô tả</th>
-            <th className="px-3 py-2 text-right font-medium">Biến động</th>
-            <th className="px-3 py-2 text-right font-medium">Số dư sau</th>
+            <th scope="col" className="px-3 py-2 font-medium">Ngày</th>
+            <th scope="col" className="px-3 py-2 font-medium">Loại</th>
+            <th scope="col" className="px-3 py-2 font-medium">Mô tả</th>
+            <th scope="col" className="px-3 py-2 text-right font-medium">Biến động</th>
+            <th scope="col" className="px-3 py-2 text-right font-medium">Số dư sau</th>
           </tr>
         </thead>
         <tbody>
@@ -87,6 +92,6 @@ export function SourceBalanceLedgerTable({
           ))}
         </tbody>
       </table>
-    </div>
+    </DataTableScrollRegion>
   );
 }

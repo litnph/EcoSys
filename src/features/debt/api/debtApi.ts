@@ -1,5 +1,6 @@
 import type { ApiResponse } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
+import { toApiWholeAmount } from "@/shared/lib/currencyUnits";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
 import type {
@@ -44,6 +45,7 @@ interface RemoteDebtRecordRow {
   status: DebtStatus;
   daysUntilDue?: number | null;
   createdAt: string;
+  version: number;
 }
 
 interface RemoteDebtListBody {
@@ -63,6 +65,7 @@ function mapDebtListRow(row: RemoteDebtRecordRow): DebtRecordListItem {
     status: row.status,
     daysUntilDue: row.daysUntilDue ?? null,
     createdAt: row.createdAt,
+    version: row.version,
   };
 }
 
@@ -164,9 +167,11 @@ interface RemoteDeleteDebtBody {
   debtRecordId: string;
 }
 
-export async function deleteDebtRecord(id: string): Promise<string> {
+export async function deleteDebtRecord(id: string, expectedVersion: number): Promise<string> {
   const envelope = await unwrap<RemoteDeleteDebtBody>(
-    apiClient.delete(`/finance/debt-records/${id}`));
+    apiClient.delete(`/finance/debt-records/${id}`, {
+      params: { expected_version: expectedVersion },
+    }));
   return envelope.debtRecordId;
 }
 
@@ -188,7 +193,7 @@ export async function createDebtRecord(
       direction: payload.direction,
       personName: payload.personName.trim(),
       personContact: payload.personContact?.trim() || null,
-      amount: payload.amount,
+      amount: toApiWholeAmount(payload.amount),
       currency: payload.currency?.trim() || null,
       dueDate: payload.dueDate?.trim() || null,
       note: payload.note?.trim() || null,

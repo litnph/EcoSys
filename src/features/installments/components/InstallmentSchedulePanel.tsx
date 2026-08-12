@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/shared/components/ui/Button";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
 
@@ -47,19 +48,10 @@ function ScheduleRow({
         "border-t border-warm-100 text-sm",
         clickable && "cursor-pointer hover:bg-warm-50/80")}
       onClick={clickable ? () => onOpenPlan(pay.planId) : undefined}
-      onKeyDown={
-        clickable
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onOpenPlan(pay.planId);
-              }
-            }
-          : undefined
-      }
-      tabIndex={clickable ? 0 : undefined}
-      role={clickable ? "button" : undefined}
     >
+      <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-warm-700">
+        {formatDate(pay.statementDate)}
+      </td>
       <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-warm-700">
         {formatDate(pay.dueDate)}
       </td>
@@ -87,6 +79,22 @@ function ScheduleRow({
           {bucketLabel(pay.bucket)}
         </span>
       </td>
+      {clickable ? (
+        <td className="px-3 py-2.5 text-right">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="min-h-11 sm:min-h-8"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenPlan(pay.planId);
+            }}
+          >
+            Xem kế hoạch
+          </Button>
+        </td>
+      ) : null}
     </tr>
   );
 }
@@ -101,7 +109,10 @@ export function InstallmentSchedulePanel({
   const [sourceFilter, setSourceFilter] = React.useState("all");
   const [includeOverdue, setIncludeOverdue] = React.useState(true);
 
-  const pays = data?.upcomingPays ?? [];
+  const pays = React.useMemo(
+    () => data?.upcomingPays ?? [],
+    [data?.upcomingPays],
+  );
   const sourceOptions = React.useMemo(
     () => uniqueSourceOptions(pays),
     [pays]);
@@ -232,16 +243,25 @@ export function InstallmentSchedulePanel({
           Không có kỳ thanh toán trong bộ lọc này
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left">
+        <DataTableScrollRegion label="Lịch thanh toán trả góp theo tháng">
+          <table className="w-full min-w-[760px] text-left">
+            <caption className="sr-only">
+              Lịch thanh toán trả góp theo tháng
+            </caption>
             <thead>
               <tr className="text-xs font-medium uppercase tracking-wide text-warm-500">
-                <th className="px-3 py-2.5">Ngày</th>
-                <th className="px-3 py-2.5">Thẻ</th>
-                <th className="px-3 py-2.5">Kế hoạch</th>
-                <th className="px-3 py-2.5">Kỳ</th>
-                <th className="px-3 py-2.5">Số tiền</th>
-                <th className="px-3 py-2.5">Trạng thái</th>
+                <th scope="col" className="px-3 py-2.5">Lên sao kê</th>
+                <th scope="col" className="px-3 py-2.5">Hạn thanh toán</th>
+                <th scope="col" className="px-3 py-2.5">Thẻ</th>
+                <th scope="col" className="px-3 py-2.5">Kế hoạch</th>
+                <th scope="col" className="px-3 py-2.5">Kỳ</th>
+                <th scope="col" className="px-3 py-2.5">Số tiền</th>
+                <th scope="col" className="px-3 py-2.5">Trạng thái</th>
+                {onOpenPlan ? (
+                  <th scope="col" className="px-3 py-2.5 text-right">
+                    <span className="sr-only">Thao tác</span>
+                  </th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
@@ -255,7 +275,7 @@ export function InstallmentSchedulePanel({
               ))}
             </tbody>
           </table>
-        </div>
+        </DataTableScrollRegion>
       )}
     </div>
   );

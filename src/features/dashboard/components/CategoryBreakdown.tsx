@@ -6,11 +6,13 @@ import type { CategoryBreakdown as CategoryBreakdownRow } from "../types";
 type CategoryBreakdownProps = {
   data: CategoryBreakdownRow[] | undefined;
   isLoading: boolean;
+  currency?: string;
 };
 
 export function CategoryBreakdown({
   data,
   isLoading,
+  currency = "VND",
 }: CategoryBreakdownProps) {
   if (isLoading || data === undefined) {
     return (
@@ -63,7 +65,7 @@ export function CategoryBreakdown({
                     {cat.categoryName}
                   </span>
                   <span className="shrink-0 font-mono text-xs tabular-nums text-warm-600">
-                    {formatCurrency(cat.amount)}
+                    {formatCurrency(cat.amount, currency)}
                   </span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-warm-100">

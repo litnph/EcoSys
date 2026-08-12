@@ -4,6 +4,34 @@ import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
 import type { Investment } from "../types";
 
+export interface CreateInvestmentRequest {
+  name: string;
+  type: "stock" | "fund" | "realEstate" | "crypto" | "other";
+  currency?: string | null;
+  note?: string | null;
+}
+
+export interface UpdateInvestmentRequest {
+  name: string;
+  type: CreateInvestmentRequest["type"];
+  currentValue: number;
+  currency: string;
+  note?: string | null;
+}
+
+interface RemoteInvestmentDto {
+  id: string;
+  name: string;
+  type: string;
+  currentValue: number;
+  totalInvested: number;
+  totalReturned: number;
+  currency: string;
+  note: string | null;
+  profitLoss: number;
+  profitLossFormulaVersion: string;
+}
+
 type ApiEnvelope<T> = ApiResponse<T>;
 
 function assertData<T>(body: ApiEnvelope<T>): asserts body is ApiEnvelope<T> & {
@@ -22,7 +50,7 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
   return body.data;
 }
 
-function mapInvestment(row: Record<string, unknown>): Investment {
+function mapInvestment(row: RemoteInvestmentDto): Investment {
   return {
     id: String(row.id),    name: String(row.name),
     type: String(row.type),
@@ -32,26 +60,29 @@ function mapInvestment(row: Record<string, unknown>): Investment {
     currency: String(row.currency ?? "VND"),
     note: row.note != null ? String(row.note) : null,
     profitLoss: Number(row.profitLoss ?? 0),
+    profitLossFormulaVersion: String(
+      row.profitLossFormulaVersion ?? "legacy-unversioned",
+    ),
   };
 }
 
 export async function getInvestments(): Promise<Investment[]> {
-  const envelope = await unwrap<{ items: Record<string, unknown>[] }>(
+  const envelope = await unwrap<{ items: RemoteInvestmentDto[] }>(
     apiClient.get("/finance/investments"));
   return envelope.items.map(mapInvestment);
 }
 
 export async function createInvestment(
-  body: Record<string, unknown>): Promise<Investment> {
-  const envelope = await unwrap<{ investment: Record<string, unknown> }>(
+  body: CreateInvestmentRequest): Promise<Investment> {
+  const envelope = await unwrap<{ investment: RemoteInvestmentDto }>(
     apiClient.post("/finance/investments", body));
   return mapInvestment(envelope.investment);
 }
 
 export async function updateInvestment(
   id: string,
-  body: Record<string, unknown>): Promise<Investment> {
-  const envelope = await unwrap<{ investment: Record<string, unknown> }>(
+  body: UpdateInvestmentRequest): Promise<Investment> {
+  const envelope = await unwrap<{ investment: RemoteInvestmentDto }>(
     apiClient.put(`/finance/investments/${id}`, body));
   return mapInvestment(envelope.investment);
 }

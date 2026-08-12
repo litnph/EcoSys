@@ -68,6 +68,7 @@ export function RecalculateSourceConfirmModal({
         color: null,
         sortOrder: 0,
         installmentRemainingAmount,
+        version: 0,
       })
     : null;
 

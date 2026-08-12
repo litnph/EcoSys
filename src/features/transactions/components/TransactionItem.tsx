@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 import * as React from "react";
 
 import type { FinCategoryFlat } from "@/features/categories/types";
@@ -93,23 +93,10 @@ function TransactionItemInner({
     onOpen(tx);
   }, [onOpen, tx]);
 
-  const handleRowKeyDown = React.useCallback(
-    (k: React.KeyboardEvent<HTMLTableRowElement>) => {
-      if (k.key === "Enter" || k.key === " ") {
-        k.preventDefault();
-        onOpen(tx);
-      }
-    },
-    [onOpen, tx],
-  );
-
   return (
     <tr
-      role="button"
-      tabIndex={0}
       data-txn-id={tx.id}
       onClick={handleOpenClick}
-      onKeyDown={handleRowKeyDown}
       className={cn(
         TXN_ROW_HOVER,
         "group border-b border-warm-100/80 last:border-b-0",
@@ -163,23 +150,38 @@ function TransactionItemInner({
         </span>
       </td>
 
-      <td className={cn(TXN_TD_LEFT_LAST, "relative min-w-0")}>
-        <span className="block truncate pr-6 text-sm font-medium text-warm-900">
-          {description}
-        </span>
-        {onDelete ? (
+      <td className={cn(TXN_TD_LEFT_LAST, "min-w-0")}>
+        <div className="flex min-w-0 items-center gap-1">
+          <span className="block min-w-0 flex-1 truncate text-sm font-medium text-warm-900">
+            {description}
+          </span>
+          <span className="flex shrink-0 items-center gap-1 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+            <button
+              type="button"
+              className="inline-flex size-11 items-center justify-center rounded-md text-warm-500 hover:bg-warm-100 hover:text-warm-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:size-8"
+              aria-label={`Xem giao dịch ${description}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpen(tx);
+              }}
+            >
+              <Eye className="size-3.5" aria-hidden />
+            </button>
+            {onDelete ? (
           <button
             type="button"
-            className="absolute right-2 top-1/2 z-[1] hidden -translate-y-1/2 rounded p-1 text-warm-400 hover:bg-warm-100 hover:text-danger group-hover:inline-flex"
-            aria-label="Xóa giao dịch"
+                className="inline-flex size-11 items-center justify-center rounded-md text-warm-500 hover:bg-warm-100 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger lg:size-8"
+                aria-label={`Xóa giao dịch ${description}`}
             onClick={(e) => {
               e.stopPropagation();
               onDelete(tx);
             }}
           >
-            <Trash2 className="size-3.5" />
+                <Trash2 className="size-3.5" aria-hidden />
           </button>
-        ) : null}
+            ) : null}
+          </span>
+        </div>
       </td>
     </tr>
   );

@@ -97,6 +97,7 @@ interface RemoteInstallmentDueDto {
 interface RemoteBillingTxnDto {
   id: string;
   type: string;
+  purpose?: Transaction["purpose"];
   status: string;
   amount: number;
   currency: string;
@@ -170,6 +171,7 @@ function mapBillingDetailTxn(row: RemoteBillingTxnDto): Transaction {
   return {
     id: row.id,
     type: normalizeTxnType(row.type),
+    purpose: row.purpose ?? "general",
     status: normalizeTxnStatus(row.status),
     amount: row.amount,
     currency: row.currency,
@@ -210,6 +212,7 @@ export interface BillingCycleDetailResult {
 interface RemoteAddableTxnDto {
   id: string;
   type: string;
+  purpose?: Transaction["purpose"];
   status: string;
   amount: number;
   currency: string;
@@ -231,6 +234,7 @@ function mapAddableTxn(row: RemoteAddableTxnDto): Transaction {
   return {
     id: row.id,
     type: normalizeTxnType(row.type) as TransactionType,
+    purpose: row.purpose ?? "general",
     status: normalizeTxnStatus(row.status),
     amount: row.amount,
     currency: row.currency,

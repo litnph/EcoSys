@@ -151,7 +151,11 @@ export function RecordExistingDebtModal({
           />
         </div>
 
-        {error ? <p className="text-sm text-danger">{error}</p> : null}
+        {error ? (
+          <p className="text-sm text-danger" role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button

@@ -10,6 +10,7 @@ import { useDeleteInstallmentPlan } from "../hooks/useDeleteInstallmentPlan";
 export interface DeleteInstallmentPlanModalProps {
   planId: string | null;
   planTitle?: string | null;
+  expectedVersion: number | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -17,6 +18,7 @@ export interface DeleteInstallmentPlanModalProps {
 export function DeleteInstallmentPlanModal({
   planId,
   planTitle,
+  expectedVersion,
   isOpen,
   onClose,
 }: DeleteInstallmentPlanModalProps) {
@@ -24,11 +26,12 @@ export function DeleteInstallmentPlanModal({
   const detailQ = useInstallmentPlanDetail(planId, isOpen);
 
   const handleConfirm = async () => {
-    if (!planId) return;
+    if (!planId || expectedVersion === null) return;
     try {
       await deleteM.mutateAsync({
         id: planId,
         originalTxnId: detailQ.data?.originalTxnId,
+        expectedVersion,
       });
       onClose();
     } catch {

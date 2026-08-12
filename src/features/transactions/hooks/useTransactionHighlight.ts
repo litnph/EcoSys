@@ -11,6 +11,7 @@ function detailToTransaction(detail: TransactionDetail): Transaction {
   return {
     id: detail.id,
     type: detail.type,
+    purpose: detail.purpose,
     status: detail.status,
     amount: detail.amount,
     currency: detail.currency,

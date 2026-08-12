@@ -115,6 +115,7 @@ export function CategorySelector({
         disabled={disableControl}
       >
         <SelectPrimitive.Trigger
+          aria-label="Danh mục"
           className={cn(
             "flex h-10 w-full items-center justify-between gap-2 rounded-button border bg-warm-50 px-3 text-left text-sm text-warm-900 transition-colors",
             "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
@@ -152,6 +153,7 @@ export function CategorySelector({
                 <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-warm-400" />
                 <input
                   type="search"
+                  aria-label="Tìm danh mục"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => e.stopPropagation()}

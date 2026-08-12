@@ -15,6 +15,7 @@ import {
   type EmptyStateAction,
 } from "@/shared/components/ui/EmptyState";
 import { Button } from "@/shared/components/ui/Button";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { SkeletonTable, SkeletonText } from "@/shared/components/ui/Skeleton";
 import { useIsMdUp } from "@/shared/hooks/useMediaQuery";
 import { formatCurrency } from "@/shared/lib/formatters";
@@ -336,15 +337,19 @@ export function TransactionList({
         className="min-h-0 flex-1 overflow-auto overscroll-contain"
       >
         {groupBy === "none" ? (
-          <div className={tableScrollClass}>
+          <DataTableScrollRegion
+            label="Danh sách giao dịch"
+            className={tableScrollClass}
+          >
             <table className={TXN_TABLE_CLASS}>
+              <caption className="sr-only">Danh sách giao dịch</caption>
               <TxnTableColGroup />
               <TxnTableHeader />
               <tbody>
                 {visibleItems.map((tx, index) => renderRow(tx, index))}
               </tbody>
             </table>
-          </div>
+          </DataTableScrollRegion>
         ) : (
           <div className="space-y-4 p-2">
             {groups.map((g) => (
@@ -365,18 +370,23 @@ export function TransactionList({
                     ) : null}
                   </p>
                 </header>
-                <div
+                <DataTableScrollRegion
+                  label={`Danh sách giao dịch ${g.label}`}
                   className={cn(
                     tableScrollClass,
                     "rounded-md border border-warm-100")}
                 >
                   <table className={TXN_TABLE_CLASS}>
+                    <caption className="sr-only">
+                      Danh sách giao dịch {g.label}
+                    </caption>
                     <TxnTableColGroup />
+                    <TxnTableHeader />
                     <tbody>
                       {g.rows.map((tx, index) => renderRow(tx, index))}
                     </tbody>
                   </table>
-                </div>
+                </DataTableScrollRegion>
               </section>
             ))}
           </div>

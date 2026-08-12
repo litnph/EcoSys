@@ -44,6 +44,7 @@ export interface DebtRecordListItem {
   status: DebtStatus;
   daysUntilDue: number | null;
   createdAt: string;
+  version: number;
 }
 
 export interface DebtSummary {

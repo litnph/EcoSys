@@ -35,12 +35,14 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 
 interface RemotePayDto {
   installmentNumber: number;
+  statementDate: string;
   dueDate: string;
   amount: number;
   paidAmount: number;
   status: InstallmentPayLineStatus;
   paidAt?: string | null;
   txnId?: string | null;
+  canPayDirectly: boolean;
 }
 
 interface RemotePlanDetailDto {
@@ -64,6 +66,7 @@ interface RemotePlanDetailDto {
   status: InstallmentStatus;
   cancellationReason?: string | null;
   canDelete?: boolean;
+  version: number;
   pays?: RemotePayDto[] | null;
 }
 
@@ -86,6 +89,7 @@ interface RemoteListItemDto {
   totalAmount: number;
   canDelete: boolean;
   createdAt: string;
+  version: number;
 }
 
 interface RemoteDashboardSourceDto {
@@ -108,6 +112,7 @@ interface RemoteUpcomingPayDto {
   planTitle: string;
   installmentNumber: number;
   totalInstallments: number;
+  statementDate: string;
   dueDate: string;
   amount: number;
   bucket: string;
@@ -146,12 +151,14 @@ function mapPay(
     id: `${planId}-${String(row.installmentNumber)}`,
     planId,
     installmentNumber: row.installmentNumber,
+    statementDate: row.statementDate,
     dueDate: row.dueDate,
     amount: Number(row.amount),
     paidAmount: Number(row.paidAmount),
     status: row.status,
     paidAt: row.paidAt ?? null,
     linkedTxnId: row.txnId ?? null,
+    canPayDirectly: row.canPayDirectly,
   };
 }
 
@@ -185,6 +192,7 @@ function mapPlan(dto: RemotePlanDetailDto): InstallmentPlan {
     status: dto.status,
     cancellationReason: dto.cancellationReason ?? null,
     canDelete: dto.canDelete ?? false,
+    version: dto.version,
     pays,
   };
 }
@@ -205,6 +213,7 @@ function mapListItem(row: RemoteListItemDto): InstallmentPlanListItem {
     totalAmount: Number(row.totalAmount),
     canDelete: row.canDelete,
     createdAt: row.createdAt,
+    version: row.version,
   };
 }
 
@@ -256,6 +265,7 @@ export async function getInstallmentDashboard(): Promise<InstallmentDashboard> {
       planTitle: p.planTitle,
       installmentNumber: p.installmentNumber,
       totalInstallments: p.totalInstallments,
+      statementDate: p.statementDate,
       dueDate: p.dueDate,
       amount: p.amount,
       bucket: normalizeUpcomingBucket(p.bucket),
@@ -294,29 +304,38 @@ export async function createInstallmentPlan(
   return envelope;
 }
 
-export async function deleteInstallmentPlan(id: string): Promise<void> {
+export async function deleteInstallmentPlan(
+  id: string,
+  expectedVersion: number): Promise<void> {
   const { data: body } = await apiClient.delete<
     ApiEnvelope<Record<string, never>>
-  >(`/finance/installment-plans/${id}`);
+  >(`/finance/installment-plans/${id}`, {
+    params: { expected_version: expectedVersion },
+  });
   assertData(body);
 }
 
 export async function cancelInstallmentPlan(
   id: string,
-  reason?: string): Promise<void> {
+  reason: string | undefined,
+  expectedVersion: number): Promise<void> {
   const { data: body } = await apiClient.post<
     ApiEnvelope<Record<string, never>>
-  >(`/finance/installment-plans/${id}/cancel`, { reason: reason ?? null });
+  >(`/finance/installment-plans/${id}/cancel`, {
+    reason: reason ?? null,
+    expectedVersion,
+  });
   assertData(body);
 }
 
 export async function recordInstallmentPayment(
   planId: string,
   installmentNumber: number,
-  paymentSourceId: string): Promise<{ transactionId: string }> {
+  paymentSourceId: string,
+  expectedVersion: number): Promise<{ transactionId: string }> {
   const envelope = await unwrap<{ transactionId: string }>(
     apiClient.post(
       `/finance/installment-plans/${planId}/pays/${String(installmentNumber)}/payment`,
-      { paymentSourceId }));
+      { paymentSourceId, expectedVersion }));
   return envelope;
 }

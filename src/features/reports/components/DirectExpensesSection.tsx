@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 
 import type { MonthlyReportDirectExpenseSection } from "../types";
 
@@ -82,7 +83,7 @@ export function DirectExpensesSection({
           <span className="font-semibold tabular-nums text-warm-900">{count}</span> giao dịch
         </p>
         <p className="font-mono font-semibold tabular-nums text-danger">
-          {formatCurrency(total)}
+          {formatCurrency(total, items[0]?.currency ?? "VND")}
         </p>
       </div>
 
@@ -91,15 +92,16 @@ export function DirectExpensesSection({
           Không có giao dịch chi trả trực tiếp trong tháng này.
         </p>
       ) : (
-        <div className="overflow-x-auto">
+        <DataTableScrollRegion label="Giao dịch chi trả trực tiếp">
           <table className="min-w-full text-sm">
+            <caption className="sr-only">Giao dịch chi trả trực tiếp</caption>
             <thead>
               <tr className="border-b border-warm-100 text-left text-[10px] font-semibold uppercase tracking-wide text-warm-500">
-                <th className="px-4 py-2">Ngày</th>
-                <th className="px-4 py-2">Mô tả</th>
-                <th className="px-4 py-2">Danh mục</th>
-                <th className="px-4 py-2">Nguồn tiền</th>
-                <th className="px-4 py-2 text-right">Số tiền</th>
+                <th scope="col" className="px-4 py-2">Ngày</th>
+                <th scope="col" className="px-4 py-2">Mô tả</th>
+                <th scope="col" className="px-4 py-2">Danh mục</th>
+                <th scope="col" className="px-4 py-2">Nguồn tiền</th>
+                <th scope="col" className="px-4 py-2 text-right">Số tiền</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-warm-100">
@@ -122,7 +124,7 @@ export function DirectExpensesSection({
               ))}
             </tbody>
           </table>
-        </div>
+        </DataTableScrollRegion>
       )}
     </SectionShell>
   );

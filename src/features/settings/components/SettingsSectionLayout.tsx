@@ -40,8 +40,9 @@ export function SettingsSectionLayout({ children }: SettingsSectionLayoutProps) 
               <Link
                 key={href}
                 href={href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-lg px-3 py-2 text-sm font-medium transition-colors outline-none",
+                  "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors outline-none",
                   "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
                   active
                     ? "bg-accent/15 text-warm-900"

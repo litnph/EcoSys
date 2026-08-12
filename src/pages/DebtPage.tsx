@@ -86,16 +86,18 @@ export function DebtPage() {
   const deleteDebt = React.useCallback(
     (id: string) => {
       void (async () => {
+        const row = listQ.data?.find((item) => item.id === id);
+        if (!row) return;
         setDeletingId(id);
         try {
-          await delM.mutateAsync(id);
+          await delM.mutateAsync({ id, expectedVersion: row.version });
           setExpandedId((prev) => (prev === id ? null : prev));
         } finally {
           setDeletingId(null);
         }
       })();
     },
-    [delM]);
+    [delM, listQ.data]);
 
   const summaryCurrency =
     borrowedActiveQ.data?.[0]?.currency ??

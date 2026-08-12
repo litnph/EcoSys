@@ -14,6 +14,8 @@ import { useFlatCategories } from "@/features/categories/hooks/useFlatCategories
 import type { CategoryRollupLevel, CategorySpendingTrend } from "@/features/dashboard/types";
 import { Button } from "@/shared/components/ui/Button";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
+import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { formatCurrency } from "@/shared/lib/formatters";
 
 import type { MonthlyReport } from "../types";
@@ -45,6 +47,7 @@ type TrendTooltipProps = {
   active?: boolean;
   payload?: ReadonlyArray<{ name: string; value: number; color: string }>;
   label?: string;
+  currency: string;
 };
 
 const compactAxis = new Intl.NumberFormat("vi-VN", {
@@ -52,7 +55,7 @@ const compactAxis = new Intl.NumberFormat("vi-VN", {
   maximumFractionDigits: 1,
 });
 
-function TrendTooltip({ active, payload, label }: TrendTooltipProps) {
+function TrendTooltip({ active, payload, label, currency }: TrendTooltipProps) {
   if (!active || !payload?.length) return null;
 
   return (
@@ -64,7 +67,7 @@ function TrendTooltip({ active, payload, label }: TrendTooltipProps) {
           className="font-mono text-sm"
           style={{ color: entry.color }}
         >
-          {entry.name} · {formatCurrency(entry.value)}
+          {entry.name} · {formatCurrency(entry.value, currency)}
         </p>
       ))}
     </div>
@@ -129,6 +132,16 @@ export function ReportCategorySpendingTrendChart({
     );
   }
 
+  if (categoriesQ.isError) {
+    return (
+      <AsyncStateError
+        title="Không tải được danh mục cho biểu đồ"
+        description="Vui lòng thử lại để dựng xu hướng từ dữ liệu báo cáo."
+        onRetry={() => void categoriesQ.refetch()}
+      />
+    );
+  }
+
   const empty =
     !trend ||
     trend.series.length === 0 ||
@@ -188,9 +201,15 @@ export function ReportCategorySpendingTrendChart({
           {emptyMessage(expenseFilter)}
         </p>
       ) : (
-        <div className="min-h-0 flex-1">
+        <>
+        <div
+          className="min-h-0 flex-1"
+          role="img"
+          aria-label={`Biểu đồ xu hướng chi theo danh mục trong ${periodLabel}, đơn vị VND`}
+        >
           <ResponsiveContainer width="100%" height={300}>
             <LineChart
+              accessibilityLayer
               data={chartRows}
               margin={{ top: 8, right: 12, left: -8, bottom: 0 }}
             >
@@ -217,7 +236,7 @@ export function ReportCategorySpendingTrendChart({
                 tickFormatter={(v: number) => compactAxis.format(v)}
                 width={56}
               />
-              <Tooltip content={<TrendTooltip />} />
+              <Tooltip content={<TrendTooltip currency={report?.metadata?.currency ?? "VND"} />} />
               <Legend
                 verticalAlign="top"
                 align="right"
@@ -242,6 +261,54 @@ export function ReportCategorySpendingTrendChart({
             </LineChart>
           </ResponsiveContainer>
         </div>
+        <details className="mt-3 text-sm text-warm-600">
+          <summary className="cursor-pointer font-medium text-warm-700">
+            Xem dữ liệu biểu đồ
+          </summary>
+          <DataTableScrollRegion
+            label={`Dữ liệu xu hướng chi theo danh mục trong ${periodLabel}`}
+            className="mt-2 rounded-input border border-warm-200"
+          >
+            <table className="min-w-full text-left text-sm">
+              <caption className="sr-only">
+                Dữ liệu xu hướng chi theo danh mục trong {periodLabel}
+              </caption>
+              <thead className="bg-warm-50 text-warm-600">
+                <tr>
+                  <th scope="col" className="px-3 py-2 font-medium">Mốc thời gian</th>
+                  {trend.series.map((series) => (
+                    <th
+                      key={series.key}
+                      scope="col"
+                      className="px-3 py-2 text-right font-medium"
+                    >
+                      {series.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-warm-100">
+                {chartRows.map((row) => (
+                  <tr key={String(row.label)}>
+                    <td className="whitespace-nowrap px-3 py-2">{row.label}</td>
+                    {trend.series.map((series) => (
+                      <td
+                        key={series.key}
+                        className="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums"
+                      >
+                        {formatCurrency(
+                          Number(row[series.key] ?? 0),
+                          report?.metadata?.currency ?? "VND",
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </DataTableScrollRegion>
+        </details>
+        </>
       )}
     </article>
   );

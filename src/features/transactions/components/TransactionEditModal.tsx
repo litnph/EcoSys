@@ -106,6 +106,7 @@ export function TransactionEditModal({
                 categoryId: vals.categoryId || null,
                 monthlyPeriodId: transaction.monthlyPeriodId ?? null,
                 amount: amountPayload,
+                expectedVersion: transaction.version,
               },
             });
             await syncTransactionTags(

@@ -11,6 +11,7 @@ import {
 } from "recharts";
 
 import { Button } from "@/shared/components/ui/Button";
+import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { formatCurrency } from "@/shared/lib/formatters";
 
@@ -38,9 +39,10 @@ type TrendTooltipProps = {
   active?: boolean;
   payload?: ReadonlyArray<{ name: string; value: number; color: string }>;
   label?: string;
+  currency: string;
 };
 
-function TrendTooltip({ active, payload, label }: TrendTooltipProps) {
+function TrendTooltip({ active, payload, label, currency }: TrendTooltipProps) {
   if (!active || !payload?.length) return null;
 
   return (
@@ -52,7 +54,7 @@ function TrendTooltip({ active, payload, label }: TrendTooltipProps) {
           className="font-mono text-sm"
           style={{ color: entry.color }}
         >
-          {entry.name} · {formatCurrency(entry.value)}
+          {entry.name} · {formatCurrency(entry.value, currency)}
         </p>
       ))}
     </div>
@@ -80,6 +82,7 @@ export function CategorySpendingTrendChart({
   level,
   onLevelChange,
 }: CategorySpendingTrendChartProps) {
+  const titleId = "dashboard-category-spending-trend-title";
   const trend = bundle?.[level];
 
   const chartRows = useMemo(
@@ -104,10 +107,16 @@ export function CategorySpendingTrendChart({
     );
 
   return (
-    <article className="flex min-h-[360px] flex-col rounded-lg border border-warm-200 bg-surface p-5 shadow-sm">
+    <article
+      aria-labelledby={titleId}
+      className="flex min-h-[360px] flex-col rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
+    >
       <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="font-display text-base font-semibold text-warm-900">
+          <h3
+            id={titleId}
+            className="font-display text-base font-semibold text-warm-900"
+          >
             Chi tiêu theo danh mục — 6 tháng
           </h3>
           <p className="mt-1 text-sm text-warm-500">
@@ -139,6 +148,7 @@ export function CategorySpendingTrendChart({
         <div className="min-h-0 flex-1">
           <ResponsiveContainer width="100%" height={300}>
             <LineChart
+              accessibilityLayer
               data={chartRows}
               margin={{ top: 8, right: 12, left: -8, bottom: 0 }}
             >
@@ -163,7 +173,7 @@ export function CategorySpendingTrendChart({
                 tickFormatter={(v: number) => compactAxis.format(v)}
                 width={56}
               />
-              <Tooltip content={<TrendTooltip />} />
+              <Tooltip content={<TrendTooltip currency={bundle?.currency ?? "VND"} />} />
               <Legend
                 verticalAlign="top"
                 align="right"
@@ -187,6 +197,52 @@ export function CategorySpendingTrendChart({
               ))}
             </LineChart>
           </ResponsiveContainer>
+          <details className="mt-3 text-sm">
+            <summary className="cursor-pointer font-medium text-accent outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
+              Dữ liệu biểu đồ
+            </summary>
+            <DataTableScrollRegion
+              label="Dữ liệu chi tiêu theo danh mục trong 6 tháng"
+              className="mt-2 rounded-button border border-warm-200"
+            >
+              <table className="w-full min-w-[520px] text-sm">
+                <caption className="sr-only">
+                  Chi tiêu theo danh mục và tháng, đơn vị tiền tệ hiện tại
+                </caption>
+                <thead className="bg-warm-50 text-left text-warm-600">
+                  <tr>
+                    <th scope="col" className="px-3 py-2 font-medium">Tháng</th>
+                    {trend.series.map((series) => (
+                      <th
+                        key={series.key}
+                        scope="col"
+                        className="px-3 py-2 text-right font-medium"
+                      >
+                        {series.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-warm-100">
+                  {chartRows.map((row) => (
+                    <tr key={String(row.label)}>
+                      <th scope="row" className="px-3 py-2 text-left font-medium text-warm-800">
+                        {row.label}
+                      </th>
+                      {trend.series.map((series) => (
+                        <td
+                          key={series.key}
+                          className="px-3 py-2 text-right font-mono tabular-nums text-warm-900"
+                        >
+                          {formatCurrency(row[series.key] as number, bundle?.currency ?? "VND")}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </DataTableScrollRegion>
+          </details>
         </div>
       )}
     </article>
