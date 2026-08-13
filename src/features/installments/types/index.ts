@@ -84,6 +84,7 @@ export interface InstallmentDashboard {
   completionPercent: number;
   bySource: InstallmentDashboardSource[];
   upcomingPays: InstallmentUpcomingPay[];
+  schedulePays: InstallmentSchedulePay[];
 }
 
 export type InstallmentUpcomingPayBucket =
@@ -117,6 +118,22 @@ export interface InstallmentUpcomingPay {
   dueDate: string;
   amount: number;
   bucket: InstallmentUpcomingPayBucket;
+}
+
+export interface InstallmentSchedulePay {
+  planId: string;
+  sourceId: string;
+  sourceName: string;
+  sourceIcon?: string | null;
+  planTitle: string;
+  installmentNumber: number;
+  totalInstallments: number;
+  statementDate: string;
+  dueDate: string;
+  amount: number;
+  status: InstallmentPayLineStatus;
+  paidAt: string | null;
+  bucket: InstallmentUpcomingPayBucket | null;
 }
 
 export interface CreateInstallmentPlanPayload {

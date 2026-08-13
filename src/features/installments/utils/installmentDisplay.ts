@@ -1,4 +1,4 @@
-import type { InstallmentUpcomingPay, InstallmentUpcomingPayBucket } from "../types";
+import type { InstallmentSchedulePay, InstallmentUpcomingPayBucket } from "../types";
 
 export function bucketLabel(bucket: InstallmentUpcomingPayBucket): string {
   switch (bucket) {
@@ -62,13 +62,13 @@ function dueInMonth(isoDate: string, monthKey: string): boolean {
 }
 
 export function filterSchedulePays(
-  pays: InstallmentUpcomingPay[],
+  pays: InstallmentSchedulePay[],
   opts: {
     monthKey: string;
     sourceId: string;
     includeOverdue: boolean;
   },
-): InstallmentUpcomingPay[] {
+): InstallmentSchedulePay[] {
   const nowKey = currentMonthKey();
   const viewingCurrentMonth = opts.monthKey === nowKey;
 
@@ -92,7 +92,7 @@ export function filterSchedulePays(
 }
 
 export function uniqueSourceOptions(
-  pays: InstallmentUpcomingPay[],
+  pays: InstallmentSchedulePay[],
 ): { id: string; name: string; icon?: string | null }[] {
   const map = new Map<string, { id: string; name: string; icon?: string | null }>();
   for (const p of pays) {

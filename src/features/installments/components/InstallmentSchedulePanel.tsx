@@ -8,7 +8,7 @@ import { cn } from "@/shared/lib/utils";
 
 import type {
   InstallmentDashboard,
-  InstallmentUpcomingPay,
+  InstallmentSchedulePay,
 } from "../types";
 import {
   bucketBadgeClass,
@@ -36,7 +36,7 @@ function ScheduleRow({
   currency,
   onOpenPlan,
 }: {
-  pay: InstallmentUpcomingPay;
+  pay: InstallmentSchedulePay;
   currency: string;
   onOpenPlan?: (planId: string) => void;
 }) {
@@ -74,9 +74,18 @@ function ScheduleRow({
         <span
           className={cn(
             "inline-flex rounded-badge px-2 py-0.5 text-[10px] font-medium ring-1",
-            bucketBadgeClass(pay.bucket))}
+            pay.status === "paid"
+              ? "bg-success/10 text-success ring-success/20"
+              : bucketBadgeClass(pay.bucket ?? "later"))}
+          title={
+            pay.status === "paid" && pay.paidAt
+              ? `Đã thanh toán ${formatDate(pay.paidAt)}`
+              : undefined
+          }
         >
-          {bucketLabel(pay.bucket)}
+          {pay.status === "paid"
+            ? "Đã thanh toán"
+            : bucketLabel(pay.bucket ?? "later")}
         </span>
       </td>
       {clickable ? (
@@ -110,8 +119,8 @@ export function InstallmentSchedulePanel({
   const [includeOverdue, setIncludeOverdue] = React.useState(true);
 
   const pays = React.useMemo(
-    () => data?.upcomingPays ?? [],
-    [data?.upcomingPays],
+    () => data?.schedulePays ?? [],
+    [data?.schedulePays],
   );
   const sourceOptions = React.useMemo(
     () => uniqueSourceOptions(pays),
