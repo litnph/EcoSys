@@ -119,6 +119,12 @@ interface RemoteUpcomingPayDto {
   bucket: string;
 }
 
+interface RemoteSchedulePayDto extends Omit<RemoteUpcomingPayDto, "bucket"> {
+  status?: string;
+  paidAt?: string | null;
+  bucket?: string | null;
+}
+
 interface RemoteDashboardDto {
   activePlanCount: number;
   totalRemainingAmount: number;
@@ -135,6 +141,7 @@ interface RemoteDashboardDto {
   completionPercent: number;
   bySource?: RemoteDashboardSourceDto[] | null;
   upcomingPays?: RemoteUpcomingPayDto[] | null;
+  schedulePays?: RemoteSchedulePayDto[] | null;
 }
 
 interface RemoteDashboardEnvelope {
@@ -231,6 +238,7 @@ function normalizeUpcomingBucket(raw: string): InstallmentUpcomingPayBucket {
   return map[raw] ?? "later";
 }
 
+<<<<<<< HEAD
 function bucketForDueDate(
   dueDate: string,
   today = businessTodayDateOnly(),
@@ -293,13 +301,31 @@ async function loadCompleteUpcomingPays(): Promise<
         left.dueDate.localeCompare(right.dueDate) ||
         left.sourceName.localeCompare(right.sourceName, "vi"),
     );
+=======
+function normalizePayStatus(
+  raw: string | undefined,
+  bucket: InstallmentUpcomingPayBucket | null,
+): InstallmentPayLineStatus {
+  if (raw === "paid" || raw === "due" || raw === "overdue" || raw === "upcoming") {
+    return raw;
+  }
+  if (bucket === "overdue") return "overdue";
+  if (bucket === "dueToday") return "due";
+  return "upcoming";
+>>>>>>> dev-codex
 }
 
 export async function getInstallmentDashboard(): Promise<InstallmentDashboard> {
   const envelope = await unwrap<RemoteDashboardEnvelope>(
     apiClient.get("/finance/installment-plans/dashboard"));
   const d = envelope.dashboard;
+<<<<<<< HEAD
   const dashboard: InstallmentDashboard = {
+=======
+  const remoteSchedulePays: RemoteSchedulePayDto[] =
+    d.schedulePays ?? d.upcomingPays ?? [];
+  return {
+>>>>>>> dev-codex
     activePlanCount: d.activePlanCount,
     totalRemainingAmount: d.totalRemainingAmount,
     dueCount: d.dueCount,
@@ -337,6 +363,24 @@ export async function getInstallmentDashboard(): Promise<InstallmentDashboard> {
       amount: p.amount,
       bucket: normalizeUpcomingBucket(p.bucket),
     })),
+    schedulePays: remoteSchedulePays.map((p) => {
+      const bucket = p.bucket ? normalizeUpcomingBucket(p.bucket) : null;
+      return {
+        planId: p.planId,
+        sourceId: p.sourceId,
+        sourceName: p.sourceName,
+        sourceIcon: p.sourceIcon ?? null,
+        planTitle: p.planTitle,
+        installmentNumber: p.installmentNumber,
+        totalInstallments: p.totalInstallments,
+        statementDate: p.statementDate,
+        dueDate: p.dueDate,
+        amount: Number(p.amount),
+        status: normalizePayStatus(p.status, bucket),
+        paidAt: p.paidAt ?? null,
+        bucket,
+      };
+    }),
   };
 
   // Older API revisions cap this collection at 30 rows. The schedule tab needs the complete
