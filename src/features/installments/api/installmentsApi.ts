@@ -1,6 +1,7 @@
 import type { ApiResponse } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
+import { businessTodayDateOnly } from "../utils/installmentPaySchedule";
 
 import type {
   InstallmentPayLineStatus,
@@ -35,14 +36,14 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 
 interface RemotePayDto {
   installmentNumber: number;
-  statementDate: string;
+  statementDate?: string | null;
   dueDate: string;
   amount: number;
   paidAmount: number;
   status: InstallmentPayLineStatus;
   paidAt?: string | null;
   txnId?: string | null;
-  canPayDirectly: boolean;
+  canPayDirectly?: boolean | null;
 }
 
 interface RemotePlanDetailDto {
@@ -66,7 +67,7 @@ interface RemotePlanDetailDto {
   status: InstallmentStatus;
   cancellationReason?: string | null;
   canDelete?: boolean;
-  version: number;
+  version?: number | null;
   pays?: RemotePayDto[] | null;
 }
 
@@ -89,7 +90,7 @@ interface RemoteListItemDto {
   totalAmount: number;
   canDelete: boolean;
   createdAt: string;
-  version: number;
+  version?: number | null;
 }
 
 interface RemoteDashboardSourceDto {
@@ -112,7 +113,7 @@ interface RemoteUpcomingPayDto {
   planTitle: string;
   installmentNumber: number;
   totalInstallments: number;
-  statementDate: string;
+  statementDate?: string | null;
   dueDate: string;
   amount: number;
   bucket: string;
@@ -151,14 +152,16 @@ function mapPay(
     id: `${planId}-${String(row.installmentNumber)}`,
     planId,
     installmentNumber: row.installmentNumber,
-    statementDate: row.statementDate,
+    statementDate: row.statementDate?.trim() || row.dueDate,
     dueDate: row.dueDate,
     amount: Number(row.amount),
     paidAmount: Number(row.paidAmount),
     status: row.status,
     paidAt: row.paidAt ?? null,
     linkedTxnId: row.txnId ?? null,
-    canPayDirectly: row.canPayDirectly,
+    canPayDirectly:
+      row.canPayDirectly ??
+      (row.status === "due" || row.status === "overdue"),
   };
 }
 
@@ -192,7 +195,7 @@ function mapPlan(dto: RemotePlanDetailDto): InstallmentPlan {
     status: dto.status,
     cancellationReason: dto.cancellationReason ?? null,
     canDelete: dto.canDelete ?? false,
-    version: dto.version,
+    version: dto.version ?? 1,
     pays,
   };
 }
@@ -213,7 +216,7 @@ function mapListItem(row: RemoteListItemDto): InstallmentPlanListItem {
     totalAmount: Number(row.totalAmount),
     canDelete: row.canDelete,
     createdAt: row.createdAt,
-    version: row.version,
+    version: row.version ?? 1,
   };
 }
 
@@ -228,11 +231,75 @@ function normalizeUpcomingBucket(raw: string): InstallmentUpcomingPayBucket {
   return map[raw] ?? "later";
 }
 
+function bucketForDueDate(
+  dueDate: string,
+  today = businessTodayDateOnly(),
+): InstallmentUpcomingPayBucket {
+  if (dueDate < today) return "overdue";
+  if (dueDate === today) return "dueToday";
+
+  const dueMonth = dueDate.slice(0, 7);
+  const todayMonth = today.slice(0, 7);
+  if (dueMonth === todayMonth) return "thisMonth";
+
+  const [year, month] = todayMonth.split("-").map(Number);
+  const nextMonthDate = new Date(Date.UTC(year, month, 1));
+  const nextMonth = `${String(nextMonthDate.getUTCFullYear())}-${String(
+    nextMonthDate.getUTCMonth() + 1,
+  ).padStart(2, "0")}`;
+  return dueMonth === nextMonth ? "nextMonth" : "later";
+}
+
+const bucketOrder: Record<InstallmentUpcomingPayBucket, number> = {
+  overdue: 0,
+  dueToday: 1,
+  thisMonth: 2,
+  nextMonth: 3,
+  later: 4,
+};
+
+async function loadCompleteUpcomingPays(): Promise<
+  InstallmentDashboard["upcomingPays"]
+> {
+  const plans = await getInstallmentPlans("active");
+  const details = await Promise.all(
+    plans.map((plan) => getInstallmentPlanDetail(plan.id)),
+  );
+
+  return details
+    .flatMap((plan) =>
+      plan.pays
+        .filter((pay) => pay.status !== "paid" && pay.amount > pay.paidAmount)
+        .map((pay) => ({
+          planId: plan.id,
+          sourceId: plan.sourceId,
+          sourceName: plan.sourceName ?? "Thẻ tín dụng",
+          sourceIcon: plan.sourceIcon ?? null,
+          planTitle:
+            plan.originalTxnCategoryName?.trim() ||
+            plan.originalTxnDescription?.trim() ||
+            "Kế hoạch trả góp",
+          installmentNumber: pay.installmentNumber,
+          totalInstallments: plan.totalMonths,
+          statementDate: pay.statementDate,
+          dueDate: pay.dueDate,
+          amount: Math.max(0, pay.amount - pay.paidAmount),
+          bucket: bucketForDueDate(pay.dueDate),
+        })),
+    )
+    .sort(
+      (left, right) =>
+        bucketOrder[left.bucket] - bucketOrder[right.bucket] ||
+        left.dueDate.localeCompare(right.dueDate) ||
+        left.sourceName.localeCompare(right.sourceName, "vi"),
+    );
+}
+
 export async function getInstallmentDashboard(): Promise<InstallmentDashboard> {
   const envelope = await unwrap<RemoteDashboardEnvelope>(
     apiClient.get("/finance/installment-plans/dashboard"));
   const d = envelope.dashboard;
-  return {
+  const dashboard: InstallmentDashboard = {
     activePlanCount: d.activePlanCount,
     totalRemainingAmount: d.totalRemainingAmount,
     dueCount: d.dueCount,
@@ -265,12 +332,25 @@ export async function getInstallmentDashboard(): Promise<InstallmentDashboard> {
       planTitle: p.planTitle,
       installmentNumber: p.installmentNumber,
       totalInstallments: p.totalInstallments,
-      statementDate: p.statementDate,
+      statementDate: p.statementDate?.trim() || p.dueDate,
       dueDate: p.dueDate,
       amount: p.amount,
       bucket: normalizeUpcomingBucket(p.bucket),
     })),
   };
+
+  // Older API revisions cap this collection at 30 rows. The schedule tab needs the complete
+  // timeline to filter future months, so hydrate it from plan details until the uncapped API is
+  // deployed. If the compatibility fetch fails, retain the otherwise usable dashboard payload.
+  if (dashboard.upcomingPays.length === 30) {
+    try {
+      dashboard.upcomingPays = await loadCompleteUpcomingPays();
+    } catch {
+      // Keep the dashboard response rather than making the entire installments page unavailable.
+    }
+  }
+
+  return dashboard;
 }
 
 export async function getInstallmentPlans(

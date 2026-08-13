@@ -33,9 +33,11 @@ export function formatCurrency(amount: number, currency = "VND"): string {
 }
 
 export function formatDate(
-  date: string | Date,
+  date: string | Date | null | undefined,
   formatStr?: string): string {
+  if (date === null || date === undefined || date === "") return "—";
   const d = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return "—";
   const locale = getDateFnsLocale();
   const pattern =
     formatStr ??

@@ -151,7 +151,7 @@ interface InstallmentPlansEnvelope {
 
 interface InstallmentPaySlice {
   installmentNumber: number;
-  statementDate: string;
+  statementDate?: string | null;
   dueDate: string;
   amount: number;
   paidAmount: number;
@@ -286,7 +286,7 @@ async function fetchInstallmentDueLines(
           planId: detail.plan.id,
           planDescription: detail.plan.originalTxnDescription,
           installmentNumber: pay.installmentNumber,
-          statementDate: pay.statementDate,
+          statementDate: pay.statementDate?.trim() || pay.dueDate,
           dueDate: pay.dueDate,
           amount: pay.amount,
           remainingAmount,
