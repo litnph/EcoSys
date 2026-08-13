@@ -238,7 +238,6 @@ function normalizeUpcomingBucket(raw: string): InstallmentUpcomingPayBucket {
   return map[raw] ?? "later";
 }
 
-<<<<<<< HEAD
 function bucketForDueDate(
   dueDate: string,
   today = businessTodayDateOnly(),
@@ -301,7 +300,8 @@ async function loadCompleteUpcomingPays(): Promise<
         left.dueDate.localeCompare(right.dueDate) ||
         left.sourceName.localeCompare(right.sourceName, "vi"),
     );
-=======
+}
+
 function normalizePayStatus(
   raw: string | undefined,
   bucket: InstallmentUpcomingPayBucket | null,
@@ -312,20 +312,16 @@ function normalizePayStatus(
   if (bucket === "overdue") return "overdue";
   if (bucket === "dueToday") return "due";
   return "upcoming";
->>>>>>> dev-codex
 }
 
 export async function getInstallmentDashboard(): Promise<InstallmentDashboard> {
   const envelope = await unwrap<RemoteDashboardEnvelope>(
     apiClient.get("/finance/installment-plans/dashboard"));
   const d = envelope.dashboard;
-<<<<<<< HEAD
-  const dashboard: InstallmentDashboard = {
-=======
+  const hasSchedulePays = Array.isArray(d.schedulePays);
   const remoteSchedulePays: RemoteSchedulePayDto[] =
     d.schedulePays ?? d.upcomingPays ?? [];
-  return {
->>>>>>> dev-codex
+  const dashboard: InstallmentDashboard = {
     activePlanCount: d.activePlanCount,
     totalRemainingAmount: d.totalRemainingAmount,
     dueCount: d.dueCount,
@@ -373,7 +369,7 @@ export async function getInstallmentDashboard(): Promise<InstallmentDashboard> {
         planTitle: p.planTitle,
         installmentNumber: p.installmentNumber,
         totalInstallments: p.totalInstallments,
-        statementDate: p.statementDate,
+        statementDate: p.statementDate?.trim() || p.dueDate,
         dueDate: p.dueDate,
         amount: Number(p.amount),
         status: normalizePayStatus(p.status, bucket),
@@ -389,6 +385,13 @@ export async function getInstallmentDashboard(): Promise<InstallmentDashboard> {
   if (dashboard.upcomingPays.length === 30) {
     try {
       dashboard.upcomingPays = await loadCompleteUpcomingPays();
+      if (!hasSchedulePays) {
+        dashboard.schedulePays = dashboard.upcomingPays.map((pay) => ({
+          ...pay,
+          status: normalizePayStatus(undefined, pay.bucket),
+          paidAt: null,
+        }));
+      }
     } catch {
       // Keep the dashboard response rather than making the entire installments page unavailable.
     }
