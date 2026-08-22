@@ -255,7 +255,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
           ocrProgress: 0,
         });
 
-        const text = await runImageOcr(img.file, (progress) => {
+        const { text, numericText } = await runImageOcr(img.file, (progress) => {
           setScanProgress({
             imageIndex: i + 1,
             totalImages: images.length,
@@ -263,7 +263,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
           });
         });
 
-        const parsed = parseOcrTransactionText(text, img.id);
+        const parsed = parseOcrTransactionText(text, img.id, numericText);
         if (parsed.length === 0) {
           warnings.push(
             `Ảnh ${String(i + 1)}: không nhận diện được giao dịch — thêm dòng trống để nhập thủ công.`,

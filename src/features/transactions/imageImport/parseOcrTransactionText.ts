@@ -13,11 +13,15 @@ const REFUND_HINT =
 
 /** Số tiền ở cuối dòng: `- 20,000`, `+ 69,000`, `-170,233`. */
 const AMOUNT_TAIL =
-  /(?:^|\s)([-+−–])?\s*([\dOoIlSsBbZzG]{1,3}(?:[.,\s][\dOoIlSsBbZzG]{3})*(?:[.,][\dOoIlSsBbZzG]+)?)\s*$/;
+  /(?:^|\s)([-+−–~])?\s*([\dOoIlSsBbZzG]{1,3}(?:[.,/\s][\dOoIlSsBbZzG]{3})+|[\dOoIlSsBbZzG]{1,12})\s*$/;
 
 /** Dòng chỉ có số tiền (merchant nằm dòng trên trong ảnh sao kê). */
 const AMOUNT_ONLY =
-  /^\s*([-+−–])?\s*([\dOoIlSsBbZzG]{1,3}(?:[.,\s][\dOoIlSsBbZzG]{3})*(?:[.,][\dOoIlSsBbZzG]+)?)\s*$/;
+  /^\s*([-+−–~])?\s*([\dOoIlSsBbZzG]{1,3}(?:[.,/\s][\dOoIlSsBbZzG]{3})+|[\dOoIlSsBbZzG]{1,12})\s*$/;
+
+/** Lượt OCR số phải có dấu để bỏ qua giờ, số thẻ và số trong tên merchant. */
+const SIGNED_AMOUNT_TAIL =
+  /(?:^|\s)([-+−–~])\s*([\dOoIlSsBbZzG]{1,3}(?:[.,/\s][\dOoIlSsBbZzG]{3})+|[\dOoIlSsBbZzG]{1,12})\s*$/;
 
 function normalizeOcrLine(raw: string): string {
   return raw.replace(/\|/g, "I").replace(/[ \t]+/g, " ").trim();
@@ -84,7 +88,8 @@ function parseVndAmount(raw: string): number | null {
   const cleaned = normalizeOcrDigits(raw)
     .replace(/\s/g, "")
     .replace(/\./g, "")
-    .replace(/,/g, "");
+    .replace(/,/g, "")
+    .replace(/\//g, "");
 
   if (!/^\d+$/.test(cleaned)) return null;
 
@@ -94,6 +99,12 @@ function parseVndAmount(raw: string): number | null {
 
 function isRefundText(...parts: Array<string | undefined>): boolean {
   return parts.some((p) => p && REFUND_HINT.test(p));
+}
+
+function cleanMerchantDescription(raw: string): string {
+  return raw
+    .replace(/^(?:\(\s*(?:KX|Ny)\s*\)|[®©]\)?)\s*/i, "")
+    .trim();
 }
 
 function parseTxnLine(
@@ -108,13 +119,15 @@ function parseTxnLine(
   const amount = parseVndAmount(amountMatch[2]);
   if (amount === null) return null;
 
-  const sign = amountMatch[1]?.replace(/−|–/g, "-") ?? "";
+  const sign = amountMatch[1]?.replace(/−|–|~/g, "-") ?? "";
   const isRefund = sign === "+" || isRefundText(trimmed);
 
-  const description = trimmed
-    .slice(0, trimmed.length - amountMatch[0].length)
-    .replace(/\s*[-+]\s*$/, "")
-    .trim();
+  const description = cleanMerchantDescription(
+    trimmed
+      .slice(0, trimmed.length - amountMatch[0].length)
+      .replace(/\s*[-+]\s*$/, "")
+      .trim(),
+  );
 
   if (description.length < 2) return null;
   if (SKIP_LINE.test(description)) return null;
@@ -132,7 +145,7 @@ function parseAmountOnlyLine(
   const amount = parseVndAmount(m[2]);
   if (amount === null) return null;
 
-  const sign = m[1]?.replace(/−|–/g, "-") ?? "";
+  const sign = m[1]?.replace(/−|–|~/g, "-") ?? "";
   return { amount, isRefund: sign === "+" };
 }
 
@@ -149,6 +162,11 @@ function isLikelyMerchantLine(line: string): boolean {
 }
 
 type DateMarker = { index: number; date: string };
+type NumericTransaction = {
+  txnDate: string;
+  amount: number;
+  isRefund: boolean;
+};
 
 function findDateMarkers(lines: string[]): DateMarker[] {
   const markers: DateMarker[] = [];
@@ -171,6 +189,95 @@ function resolveDateForLine(
     else break;
   }
   return resolved;
+}
+
+function extractNumericTransactions(text: string): NumericTransaction[] {
+  const lines = text
+    .split(/\r?\n/)
+    .map(normalizeOcrLine)
+    .filter((line) => line.length > 0);
+  const transactions: NumericTransaction[] = [];
+  let txnDate: string | null = null;
+
+  for (const line of lines) {
+    const date = extractDateFromLine(line);
+    if (date) {
+      txnDate = date;
+      continue;
+    }
+    if (!txnDate) continue;
+
+    const match = line.match(SIGNED_AMOUNT_TAIL);
+    if (!match) continue;
+
+    const amount = parseVndAmount(match[2]);
+    if (amount === null) continue;
+
+    const sign = match[1].replace(/−|–|~/g, "-");
+    transactions.push({ txnDate, amount, isRefund: sign === "+" });
+  }
+
+  return transactions;
+}
+
+function formatDisplayDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+function formatOcrAmount(amount: number): string {
+  return String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/**
+ * Lấy ngày và số tiền từ lượt OCR chỉ dành cho chữ số, sau đó ghép lại với
+ * merchant của lượt OCR ngôn ngữ. Việc ghép theo thứ tự phù hợp với danh sách
+ * giao dịch dọc và tránh lỗi 30/31 → 50/51 hoặc 43.000 → 45.000.
+ */
+function reconcileWithNumericOcr(text: string, numericText?: string): string {
+  if (!numericText) return text;
+
+  const numericTransactions = extractNumericTransactions(numericText);
+  if (numericTransactions.length === 0) return text;
+
+  const textLines = text.split(/\r?\n/);
+  const signedAmountLineCount = textLines.reduce((count, rawLine) => {
+    return count + (SIGNED_AMOUNT_TAIL.test(normalizeOcrLine(rawLine)) ? 1 : 0);
+  }, 0);
+  if (signedAmountLineCount !== numericTransactions.length) return text;
+
+  const reconciledLines: string[] = [];
+  let numericIndex = 0;
+  let lastInjectedDate = "";
+
+  for (const rawLine of textLines) {
+    const line = normalizeOcrLine(rawLine);
+
+    // Bỏ cả ngày hợp lệ lẫn ngày OCR sai; ngày đáng tin cậy sẽ được chèn ngay
+    // trước giao dịch tương ứng từ lượt OCR số.
+    if (DATE_IN_LINE.test(normalizeOcrDigits(line))) continue;
+
+    const amountMatch = line.match(SIGNED_AMOUNT_TAIL);
+    const numericTransaction = numericTransactions[numericIndex];
+    if (!amountMatch || !numericTransaction) {
+      reconciledLines.push(rawLine);
+      continue;
+    }
+
+    if (numericTransaction.txnDate !== lastInjectedDate) {
+      reconciledLines.push(formatDisplayDate(numericTransaction.txnDate));
+      lastInjectedDate = numericTransaction.txnDate;
+    }
+
+    const prefix = line.slice(0, amountMatch.index).trimEnd();
+    const sign = numericTransaction.isRefund ? "+" : "-";
+    reconciledLines.push(
+      `${prefix} ${sign} ${formatOcrAmount(numericTransaction.amount)}`.trim(),
+    );
+    numericIndex++;
+  }
+
+  return reconciledLines.join("\n");
 }
 
 function pushDraft(
@@ -229,8 +336,9 @@ function applyRefundPairing(drafts: ImageImportDraft[]): ImageImportDraft[] {
 export function parseOcrTransactionText(
   text: string,
   imageId = "",
+  numericText?: string,
 ): ImageImportDraft[] {
-  const lines = text
+  const lines = reconcileWithNumericOcr(text, numericText)
     .split(/\r?\n/)
     .map(normalizeOcrLine)
     .filter((l) => l.length > 0);
@@ -238,14 +346,12 @@ export function parseOcrTransactionText(
   const dateMarkers = findDateMarkers(lines);
   const drafts: ImageImportDraft[] = [];
   let pendingMerchant: string | undefined;
-  let pendingNote: string | undefined;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     if (extractDateFromLine(line)) {
       pendingMerchant = undefined;
-      pendingNote = undefined;
       continue;
     }
 
@@ -254,46 +360,50 @@ export function parseOcrTransactionText(
 
     const inlineTxn = parseTxnLine(line);
     if (inlineTxn) {
-      const noteRefund = isRefundText(pendingNote);
       pushDraft(
         drafts,
         imageId,
         txnDate,
         inlineTxn.description,
         inlineTxn.amount,
-        inlineTxn.isRefund || noteRefund,
-        pendingNote ?? "",
+        inlineTxn.isRefund,
+        "",
       );
       pendingMerchant = undefined;
-      pendingNote = undefined;
       continue;
     }
 
     const amountOnly = parseAmountOnlyLine(line);
     if (amountOnly && pendingMerchant) {
-      const noteRefund = isRefundText(pendingNote, pendingMerchant);
       pushDraft(
         drafts,
         imageId,
         txnDate,
         pendingMerchant,
         amountOnly.amount,
-        amountOnly.isRefund || noteRefund,
-        pendingNote ?? "",
+        amountOnly.isRefund || isRefundText(pendingMerchant),
+        "",
       );
       pendingMerchant = undefined;
-      pendingNote = undefined;
       continue;
     }
 
     if (shouldUseAsNote(line)) {
-      pendingNote = line;
+      // Trong lịch sử giao dịch ngân hàng, dòng Purchase/Revert nằm ngay dưới
+      // giao dịch mà nó mô tả. Gắn vào dòng vừa tạo thay vì dòng kế tiếp.
+      const previousDraft = drafts[drafts.length - 1];
+      if (previousDraft?.txnDate === txnDate) {
+        previousDraft.note = line;
+        if (isRefundText(line)) {
+          previousDraft.isRefund = true;
+          previousDraft.selected = false;
+        }
+      }
       continue;
     }
 
     if (isLikelyMerchantLine(line)) {
-      pendingMerchant = line;
-      pendingNote = undefined;
+      pendingMerchant = cleanMerchantDescription(line);
     }
   }
 
