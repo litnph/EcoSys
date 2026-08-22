@@ -265,6 +265,7 @@ function serializeStatusForQuery(status: TxnStatus): string {
   const map: Record<TxnStatus, string> = {
     new: "new",
     transferredToInstallment: "transferredToInstallment",
+    statemented: "statemented",
     completed: "completed",
     cancelled: "cancelled",
   };

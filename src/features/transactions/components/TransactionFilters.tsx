@@ -71,6 +71,7 @@ const STATUS_OPTIONS: Array<{ value: StatusFilterValue; label: string }> = [
   { value: "all", label: "Tất cả trạng thái" },
   { value: "new", label: "Giao dịch mới" },
   { value: "transferredToInstallment", label: "Đã chuyển trả góp" },
+  { value: "statemented", label: "Đã sao kê" },
   { value: "completed", label: "Hoàn thành" },
 ];
 

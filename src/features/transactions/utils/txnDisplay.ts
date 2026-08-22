@@ -129,6 +129,7 @@ export function normalizeTxnStatus(raw: string): TxnStatus {
     pending: "new",
     transferredToInstallment: "transferredToInstallment",
     transferred_to_installment: "transferredToInstallment",
+    statemented: "statemented",
     completed: "completed",
     cancelled: "cancelled",
   };
@@ -141,6 +142,8 @@ export function txnStatusLabel(status: TxnStatus): string {
       return "Giao dịch mới";
     case "transferredToInstallment":
       return "Đã chuyển trả góp";
+    case "statemented":
+      return "Đã sao kê";
     case "completed":
       return "Hoàn thành";
     case "cancelled":
@@ -156,6 +159,8 @@ export function txnStatusBadgeClasses(status: TxnStatus): string {
       return "bg-accent/10 text-accent-emphasis ring-1 ring-accent/25";
     case "transferredToInstallment":
       return "bg-amber-100 text-amber-900 ring-1 ring-amber-200";
+    case "statemented":
+      return "bg-sky-100 text-sky-900 ring-1 ring-sky-200";
     case "completed":
       return "bg-success/10 text-success ring-1 ring-success/20";
     case "cancelled":

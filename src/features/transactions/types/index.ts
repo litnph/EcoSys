@@ -26,6 +26,7 @@ export type TransactionPurpose =
 export type TxnStatus =
   | "new"
   | "transferredToInstallment"
+  | "statemented"
   | "completed"
   | "cancelled";
 

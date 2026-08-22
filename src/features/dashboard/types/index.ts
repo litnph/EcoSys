@@ -13,6 +13,7 @@ export type TransactionType =
 export type TxnStatus =
   | "new"
   | "transferredToInstallment"
+  | "statemented"
   | "completed"
   | "cancelled";
 
