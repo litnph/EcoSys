@@ -176,6 +176,7 @@ interface MonthlyReportCurrencyGroupDto {
 }
 
 interface ReportEnvelope {
+  status: MonthlyPeriodStatus;
   report: {
     summary: MonthlyReportSummaryDto;
     categoryBreakdown: MonthCategorySlice[] | null;
@@ -186,17 +187,6 @@ interface ReportEnvelope {
     billingCycles: MonthlyReportBillingCyclesSectionDto | null;
     metadata?: MonthlyReportMetadataDto | null;
     currencyGroups?: MonthlyReportCurrencyGroupDto[] | null;
-  };
-}
-
-interface MonthlyPeriodEnvelope {
-  summary: {
-    year: number;
-    month: number;
-    status: MonthlyPeriodStatus;
-    totalIncome: number;
-    totalExpense: number;
-    net: number;
   };
 }
 
@@ -395,16 +385,7 @@ async function fetchReportPayload(year: number, month: number) {
       `/finance/monthly-periods/${String(year)}/${String(month)}/report`,
     ),
   );
-  return data.report;
-}
-
-async function fetchPeriodMeta(year: number, month: number) {
-  const data = await unwrap<MonthlyPeriodEnvelope>(
-    apiClient.get(
-      `/finance/monthly-periods/${String(year)}/${String(month)}`,
-    ),
-  );
-  return data.summary;
+  return data;
 }
 
 function mapCurrencyGroup(
@@ -439,10 +420,7 @@ function mapCurrencyGroup(
 export async function getMonthlyReport(
   year: number,
   month: number): Promise<MonthlyReport> {
-  const [reportSlice, summary] = await Promise.all([
-    fetchReportPayload(year, month),
-    fetchPeriodMeta(year, month),
-  ]);
+  const { report: reportSlice, status } = await fetchReportPayload(year, month);
 
   const dailyRaw = reportSlice.dailyBreakdown ?? [];
   const mappedDaily = dailyRaw
@@ -466,7 +444,7 @@ export async function getMonthlyReport(
   return {
     year,
     month,
-    status: summary.status,
+    status,
     totalIncome,
     totalExpense,
     net,
