@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
+import { invalidateBudgetAwareness } from "@/features/budgets/lib/invalidateBudgetAwareness";
 
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
 
@@ -14,6 +15,7 @@ function invalidateCycle(queryClient: ReturnType<typeof useQueryClient>, cycleId
   void queryClient.invalidateQueries({ queryKey: billingCycleKeys.detail(cycleId) });
   void queryClient.invalidateQueries({ queryKey: billingCycleKeys.addable(cycleId) });
   invalidateDashboard(queryClient);
+  void invalidateBudgetAwareness(queryClient);
 }
 
 export function useAddCycleItem(cycleId: string) {

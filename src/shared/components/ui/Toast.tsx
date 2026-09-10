@@ -19,10 +19,10 @@ const typeIcon: Record<ToastRecord["type"], typeof CheckCircle2> = {
 };
 
 const surfaceByType: Record<ToastRecord["type"], string> = {
-  success: "border-success/30 bg-surface shadow-md",
-  error: "border-danger/35 bg-surface shadow-md",
-  warning: "border-warning/45 bg-surface shadow-md",
-  info: "border-info/35 bg-surface shadow-md",
+  success: "border-success/30 bg-surface",
+  error: "border-danger/35 bg-surface",
+  warning: "border-warning/45 bg-surface",
+  info: "border-info/35 bg-surface",
 };
 
 const iconColor: Record<ToastRecord["type"], string> = {
@@ -47,21 +47,16 @@ function ToastItem({ toast }: { toast: ToastRecord }) {
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: "100%", scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
       exit={{
         opacity: 0,
-        y: 16,
-        scale: 0.97,
-        transition: { duration: 0.24, ease: [0.22, 1, 0.36, 1] },
+        y: 8,
+        transition: { duration: 0.16, ease: [0.16, 1, 0.3, 1] },
       }}
-      transition={{
-        type: "spring",
-        stiffness: 420,
-        damping: 36,
-      }}
+      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "relative flex gap-3 rounded-card border p-4 pr-10 text-sm",
+        "relative flex gap-3 rounded-card border p-4 pr-12 text-sm elevation-menu",
         surfaceByType[toast.type])}
       role="status"
       aria-live="polite"
@@ -79,7 +74,7 @@ function ToastItem({ toast }: { toast: ToastRecord }) {
       <button
         type="button"
         className={cn(
-          "absolute right-2 top-2 rounded-button p-1 text-warm-500",
+          "absolute right-1.5 top-1.5 flex size-10 items-center justify-center rounded-button text-warm-500",
           "hover:bg-warm-100 hover:text-warm-900",
           "outline-none focus-visible:ring-2 focus-visible:ring-accent")}
         aria-label="Đóng thông báo"

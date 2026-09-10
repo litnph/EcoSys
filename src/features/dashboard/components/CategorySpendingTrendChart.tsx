@@ -13,7 +13,7 @@ import {
 import { Button } from "@/shared/components/ui/Button";
 import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
-import { formatCurrency } from "@/shared/lib/formatters";
+import { formatCompactNumber, formatCurrency } from "@/shared/lib/formatters";
 
 import type {
   CategoryRollupLevel,
@@ -46,7 +46,7 @@ function TrendTooltip({ active, payload, label, currency }: TrendTooltipProps) {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="rounded-lg border border-warm-200 bg-surface px-3 py-2 shadow-md">
+    <div className="rounded-button border border-warm-200 bg-surface px-3 py-2 elevation-menu">
       <p className="mb-1.5 text-xs font-medium text-warm-500">{label}</p>
       {payload.map((entry) => (
         <p
@@ -60,11 +60,6 @@ function TrendTooltip({ active, payload, label, currency }: TrendTooltipProps) {
     </div>
   );
 }
-
-const compactAxis = new Intl.NumberFormat("vi-VN", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
 
 function toChartRows(trend: CategorySpendingTrend): ChartRow[] {
   return trend.months.map((month, idx) => {
@@ -92,7 +87,7 @@ export function CategorySpendingTrendChart({
 
   if (isLoading || bundle === undefined) {
     return (
-      <article className="flex min-h-[360px] flex-col rounded-lg border border-warm-200 bg-surface p-5 shadow-sm">
+      <article className="flex min-h-[360px] flex-col rounded-card border border-warm-200 bg-surface p-5">
         <SkeletonText className="mb-4 h-5 w-56" />
         <SkeletonText className="min-h-[300px] flex-1 rounded-lg" />
       </article>
@@ -109,7 +104,7 @@ export function CategorySpendingTrendChart({
   return (
     <article
       aria-labelledby={titleId}
-      className="flex min-h-[360px] flex-col rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
+      className="flex min-h-[360px] flex-col rounded-card border border-warm-200 bg-surface p-5"
     >
       <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -145,7 +140,7 @@ export function CategorySpendingTrendChart({
           Chưa có dữ liệu chi theo danh mục trong 6 tháng gần nhất
         </p>
       ) : (
-        <div className="min-h-0 flex-1">
+        <div className="min-h-0 flex-1" role="img" aria-label="Biểu đồ xu hướng chi tiêu theo danh mục trong sáu tháng">
           <ResponsiveContainer width="100%" height={300}>
             <LineChart
               accessibilityLayer
@@ -170,7 +165,7 @@ export function CategorySpendingTrendChart({
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v: number) => compactAxis.format(v)}
+                tickFormatter={formatCompactNumber}
                 width={56}
               />
               <Tooltip content={<TrendTooltip currency={bundle?.currency ?? "VND"} />} />
@@ -182,7 +177,7 @@ export function CategorySpendingTrendChart({
                 iconSize={8}
                 wrapperStyle={{ fontSize: 11, color: "var(--color-warm-500)" }}
               />
-              {trend.series.map((s) => (
+              {trend.series.map((s, index) => (
                 <Line
                   key={s.key}
                   type="monotone"
@@ -190,6 +185,7 @@ export function CategorySpendingTrendChart({
                   name={s.name}
                   stroke={s.color}
                   strokeWidth={2}
+                  strokeDasharray={index % 3 === 1 ? "7 4" : index % 3 === 2 ? "2 3" : undefined}
                   dot={{ r: 3, fill: s.color, strokeWidth: 0 }}
                   activeDot={{ r: 5 }}
                   isAnimationActive={false}

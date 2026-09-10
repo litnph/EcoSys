@@ -12,7 +12,6 @@ import {
 } from "@/shared/lib/scrollFirstFormError";
 
 import { useCreateTransaction } from "../../hooks/useCreateTransaction";
-import { syncTransactionTags } from "../../utils/syncTransactionTags";
 import { BaseFields } from "./BaseFields";
 import { ConditionalFields } from "./ConditionalFields";
 import { mapFormValuesToCreateBody } from "./mapFormToApi";
@@ -88,12 +87,8 @@ export function TransactionForm({
             setSubmitError("");
             setValidationHint("");
             const body = mapFormValuesToCreateBody(vals, sources);
-            const tagIds = vals.tagIds ?? [];
             try {
-              const created = await createTx.mutateAsync(body);
-              if (tagIds.length > 0) {
-                await syncTransactionTags(created.id, [], tagIds);
-              }
+              await createTx.mutateAsync(body);
               reset(defaultsForTxnForm(vals.type));
               onSucceeded?.();
             } catch (err) {

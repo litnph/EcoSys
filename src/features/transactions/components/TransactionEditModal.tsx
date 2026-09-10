@@ -104,7 +104,6 @@ export function TransactionEditModal({
                 note: vals.note.trim() || null,
                 txnDate: vals.txnDate,
                 categoryId: vals.categoryId || null,
-                monthlyPeriodId: transaction.monthlyPeriodId ?? null,
                 amount: amountPayload,
                 expectedVersion: transaction.version,
               },

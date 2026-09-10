@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -16,7 +15,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
-import { formatCurrency } from "@/shared/lib/formatters";
+import { formatCompactNumber, formatCurrency } from "@/shared/lib/formatters";
 
 import type { MonthlyReport } from "../types";
 import type { CategoryExpenseFilter } from "../utils/categoryBreakdownFilter";
@@ -49,11 +48,6 @@ type TrendTooltipProps = {
   label?: string;
   currency: string;
 };
-
-const compactAxis = new Intl.NumberFormat("vi-VN", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
 
 function TrendTooltip({ active, payload, label, currency }: TrendTooltipProps) {
   if (!active || !payload?.length) return null;
@@ -101,6 +95,9 @@ export function ReportCategorySpendingTrendChart({
 }: ReportCategorySpendingTrendChartProps) {
   const [level, setLevel] = useState<CategoryRollupLevel>("parent");
   const [groupBy, setGroupBy] = useState<ReportTrendGroupBy>("day");
+  const [hiddenSeriesKeys, setHiddenSeriesKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const categoriesQ = useFlatCategories("expense");
 
@@ -119,6 +116,15 @@ export function ReportCategorySpendingTrendChart({
     () => (trend ? toChartRows(trend) : []),
     [trend],
   );
+  const visibleSeries = useMemo(
+    () =>
+      trend?.series.filter((series) => !hiddenSeriesKeys.has(series.key)) ?? [],
+    [hiddenSeriesKeys, trend],
+  );
+
+  useEffect(() => {
+    setHiddenSeriesKeys(new Set());
+  }, [level, report?.metadata?.currency, report?.month, report?.year]);
 
   const chartLoading =
     isLoading || report === undefined || categoriesQ.isLoading;
@@ -149,7 +155,20 @@ export function ReportCategorySpendingTrendChart({
       trend.series.every((s) => (row[s.key] as number) <= 0),
     );
 
-  const periodLabel = `Tháng ${String(report.month).padStart(2, "0")}/${String(report.year)}`;
+  const monthLabel = `Tháng ${String(report.month).padStart(2, "0")}/${String(report.year)}`;
+  const firstDate = trend?.months[0]?.date;
+  const lastDate = trend?.months.at(-1)?.endDate;
+  const reportMonthStart = `${String(report.year).padStart(4, "0")}-${String(report.month).padStart(2, "0")}-01`;
+  const formatRangeDate = (value: string) => {
+    const [rangeYear, rangeMonth, rangeDay] = value.split("-");
+    return `${rangeDay}/${rangeMonth}/${rangeYear}`;
+  };
+  const includesEarlierCardTransactions =
+    Boolean(firstDate) && firstDate! < reportMonthStart;
+  const periodLabel =
+    includesEarlierCardTransactions && firstDate && lastDate
+      ? `${formatRangeDate(firstDate)}–${formatRangeDate(lastDate)}`
+      : monthLabel;
 
   return (
     <article className="flex min-h-[360px] flex-col rounded-lg border border-warm-200 bg-surface p-5 shadow-sm">
@@ -162,6 +181,9 @@ export function ReportCategorySpendingTrendChart({
             {periodLabel} · Xu hướng chi theo{" "}
             {level === "parent" ? "nhóm danh mục cha" : "danh mục con"}
             {groupBy === "day" ? " · theo ngày" : " · theo tuần"}
+            {includesEarlierCardTransactions
+              ? " · đã mở rộng theo ngày giao dịch thẻ thuộc kỳ sao kê"
+              : ""}
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
@@ -196,9 +218,50 @@ export function ReportCategorySpendingTrendChart({
         </div>
       </header>
 
+      {!empty && trend ? (
+        <fieldset className="mb-4 flex max-h-28 flex-wrap gap-2 overflow-y-auto rounded-lg border border-warm-200 bg-warm-50/60 p-2.5">
+          <legend className="sr-only">Danh mục hiển thị trên biểu đồ</legend>
+          {trend.series.map((series) => {
+            const checked = !hiddenSeriesKeys.has(series.key);
+            return (
+              <label
+                key={series.key}
+                className="inline-flex min-h-8 cursor-pointer items-center gap-2 rounded-md border border-warm-200 bg-surface px-2.5 text-xs font-medium text-warm-700 transition hover:border-warm-300"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(event) => {
+                    setHiddenSeriesKeys((current) => {
+                      const next = new Set(current);
+                      if (event.target.checked) next.delete(series.key);
+                      else next.add(series.key);
+                      return next;
+                    });
+                  }}
+                  className="size-4 rounded border-warm-300 accent-accent"
+                />
+                <span
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: series.color }}
+                  aria-hidden
+                />
+                <span className={checked ? undefined : "text-warm-400 line-through"}>
+                  {series.name}
+                </span>
+              </label>
+            );
+          })}
+        </fieldset>
+      ) : null}
+
       {empty ? (
         <p className="flex flex-1 items-center justify-center text-sm text-warm-400">
           {emptyMessage(expenseFilter)}
+        </p>
+      ) : visibleSeries.length === 0 ? (
+        <p className="flex min-h-[300px] flex-1 items-center justify-center text-sm text-warm-400">
+          Chọn ít nhất một danh mục để hiển thị biểu đồ.
         </p>
       ) : (
         <>
@@ -233,19 +296,11 @@ export function ReportCategorySpendingTrendChart({
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v: number) => compactAxis.format(v)}
+                tickFormatter={formatCompactNumber}
                 width={56}
               />
               <Tooltip content={<TrendTooltip currency={report?.metadata?.currency ?? "VND"} />} />
-              <Legend
-                verticalAlign="top"
-                align="right"
-                height={36}
-                iconType="circle"
-                iconSize={8}
-                wrapperStyle={{ fontSize: 11, color: "var(--color-warm-500)" }}
-              />
-              {trend.series.map((s) => (
+              {visibleSeries.map((s) => (
                 <Line
                   key={s.key}
                   type="monotone"
@@ -276,7 +331,7 @@ export function ReportCategorySpendingTrendChart({
               <thead className="bg-warm-50 text-warm-600">
                 <tr>
                   <th scope="col" className="px-3 py-2 font-medium">Mốc thời gian</th>
-                  {trend.series.map((series) => (
+                  {visibleSeries.map((series) => (
                     <th
                       key={series.key}
                       scope="col"
@@ -291,7 +346,7 @@ export function ReportCategorySpendingTrendChart({
                 {chartRows.map((row) => (
                   <tr key={String(row.label)}>
                     <td className="whitespace-nowrap px-3 py-2">{row.label}</td>
-                    {trend.series.map((series) => (
+                    {visibleSeries.map((series) => (
                       <td
                         key={series.key}
                         className="whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums"

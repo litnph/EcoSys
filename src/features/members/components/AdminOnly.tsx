@@ -5,6 +5,7 @@ import { ROUTES } from "@/config/routes";
 import { useIsAdmin } from "@/shared/hooks/useIsAdmin";
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { useEffect } from "react";
+import { ShieldX } from "lucide-react";
 
 export function AdminOnly({ children }: { children: ReactNode }) {
   const isAdmin = useIsAdmin();
@@ -22,7 +23,17 @@ export function AdminOnly({ children }: { children: ReactNode }) {
   }
 
   if (!isAdmin) {
-    return null;
+    return (
+      <div role="status" className="mx-auto mt-10 flex max-w-xl items-start gap-4 rounded-card border border-warning/30 bg-warning/5 p-5">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-button border border-warning/20 text-warning">
+          <ShieldX className="size-5" aria-hidden />
+        </span>
+        <div>
+          <h1 className="text-base font-semibold text-warm-900">Bạn không có quyền mở màn hình này</h1>
+          <p className="mt-1 text-sm leading-6 text-warm-600">Chỉ quản trị viên gia đình có thể quản lý thành viên. EcoSys đang đưa bạn về trang tổng quan.</p>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;

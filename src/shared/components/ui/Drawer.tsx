@@ -70,7 +70,7 @@ export function Drawer({
           initial: { y: "100%" },
           animate: { y: 0 },
           exit: { y: "100%" },
-          transition: { type: "spring" as const, damping: 32, stiffness: 360 },
+          transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const },
         }
       : {};
 
@@ -80,7 +80,7 @@ export function Drawer({
           initial: { x: "100%" },
           animate: { x: 0 },
           exit: { x: "100%" },
-          transition: { type: "spring" as const, damping: 32, stiffness: 360 },
+          transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const },
         }
       : {};
 
@@ -99,7 +99,7 @@ export function Drawer({
                 <MotionOverlay
                   aria-hidden="true"
                   className={cn(
-                    "fixed inset-0 z-[100] bg-warm-900/40 backdrop-blur-sm")}
+                    "fixed inset-0 z-[100] bg-warm-900/55")}
                   role="presentation"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -111,7 +111,7 @@ export function Drawer({
               <Dialog.Content key="drawer-panel" asChild forceMount>
                 <DrawerPanel
                   className={cn(
-                    "fixed z-[101] bg-surface shadow-lg outline-none focus:outline-none",
+                    "fixed z-[101] bg-surface elevation-overlay outline-none focus:outline-none",
                     "flex flex-col overflow-hidden border border-warm-200",
                     effectiveSide === "bottom" &&
                       cn(
@@ -127,7 +127,7 @@ export function Drawer({
                 >
                   <div className="flex shrink-0 items-start justify-between gap-3 border-b border-warm-200 px-5 py-4">
                     <div className="min-w-0 space-y-1 pr-10">
-                      <Dialog.Title className="font-display text-lg font-semibold text-warm-900">
+                      <Dialog.Title className="font-display text-base font-semibold text-warm-900">
                         {title}
                       </Dialog.Title>
                       {description !== undefined && description.length > 0 ? (
@@ -144,7 +144,7 @@ export function Drawer({
                       <button
                         type="button"
                         className={cn(
-                          "absolute right-3 top-4 rounded-button p-1.5 text-warm-600 md:right-5",
+                          "absolute right-3 top-2.5 flex size-10 items-center justify-center rounded-button text-warm-600 md:right-5",
                           "outline-none hover:bg-warm-100 hover:text-warm-900",
                           "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
                           "disabled:pointer-events-none")}
@@ -154,7 +154,7 @@ export function Drawer({
                       </button>
                     </Dialog.Close>
                   </div>
-                  <div className="relative min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                  <div className="scrollbar-stable relative min-h-0 flex-1 overflow-y-auto px-5 py-4">
                     {children}
                   </div>
                 </DrawerPanel>

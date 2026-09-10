@@ -1,5 +1,6 @@
 export { MonthSelector } from "./MonthSelector";
 export { MonthlyReportDetailView } from "./MonthlyReportDetailView";
+export { MonthlyReportFilters } from "./MonthlyReportFilters";
 export { ReportCategoryAllocation } from "./ReportCategoryAllocation";
 export { ReportCategorySpendingTrendChart } from "./ReportCategorySpendingTrendChart";
 export { ReportRecentTransactions } from "./ReportRecentTransactions";
@@ -7,6 +8,7 @@ export { ReportSummaryCards } from "./ReportSummaryCards";
 export { DirectExpensesSection } from "./DirectExpensesSection";
 export { BillingCyclesReportSection } from "./BillingCyclesReportSection";
 export { BillingCycleReportDetailModal } from "./BillingCycleReportDetailModal";
+export { BudgetUtilizationChart } from "./BudgetUtilizationChart";
 export { MonthlyReportListPanel } from "./MonthlyReportListPanel";
 export { CreateMonthlyReportModal } from "./CreateMonthlyReportModal";
 export { MonthlyReportDetailToolbar } from "./MonthlyReportDetailToolbar";

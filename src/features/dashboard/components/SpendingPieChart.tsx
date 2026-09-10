@@ -72,9 +72,9 @@ export function SpendingPieChart({ data, isLoading }: SpendingPieChartProps) {
         </p>
       ) : (
         <div className="flex flex-col gap-8 lg:flex-row lg:items-center">
-          <div className="h-[260px] min-w-0 flex-1">
+          <div className="h-[260px] min-w-0 flex-1" role="img" aria-label="Biểu đồ tỷ trọng chi tiêu theo nhóm; tỷ lệ được liệt kê bên cạnh">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+              <PieChart accessibilityLayer>
                 <Pie
                   data={slices}
                   dataKey="value"
@@ -84,6 +84,7 @@ export function SpendingPieChart({ data, isLoading }: SpendingPieChartProps) {
                   innerRadius={54}
                   outerRadius={94}
                   paddingAngle={2}
+                  isAnimationActive={false}
                 >
                   {slices.map((entry) => (
                     <Cell key={entry.categoryId} fill={entry.color} />

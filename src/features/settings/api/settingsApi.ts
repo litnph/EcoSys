@@ -30,6 +30,7 @@ type BeUserProfileDto = {
   phoneNumber?: string | null;
   dateOfBirth?: string | null;
   avatarUrl?: string | null;
+  monthlyReportDay?: number;
 };
 
 function normalizePreferences(raw: Partial<UserPreferencesDto>): UserPreferencesDto {
@@ -43,6 +44,12 @@ function normalizePreferences(raw: Partial<UserPreferencesDto>): UserPreferences
         ? raw.theme
         : "system",
     firstDayOfWeek: raw.firstDayOfWeek === "sunday" ? "sunday" : "monday",
+    monthlyReportDay:
+      typeof raw.monthlyReportDay === "number"
+      && raw.monthlyReportDay >= 1
+      && raw.monthlyReportDay <= 31
+        ? Math.trunc(raw.monthlyReportDay)
+        : 1,
   };
 }
 
@@ -68,6 +75,7 @@ function mapProfileToPreferences(profile: BeUserProfileDto): UserPreferencesDto 
       profile.theme === "light" || profile.theme === "dark" || profile.theme === "system"
         ? profile.theme
         : "system",
+    monthlyReportDay: profile.monthlyReportDay ?? 1,
   });
 }
 
@@ -87,6 +95,7 @@ async function putProfileDto(payload: {
   timezone: string;
   dateFormat: string;
   theme: string;
+  monthlyReportDay: number;
 }): Promise<BeUserProfileDto> {
   const { data: body } = await apiClient.put<ApiResponse<{ profile: BeUserProfileDto }>>(
     "/user/profile",
@@ -103,6 +112,7 @@ function profilePayloadFromDto(
     timezone: string;
     dateFormat: string;
     theme: string;
+    monthlyReportDay: number;
   }> = {}) {
   return {
     fullName: overrides.fullName ?? profile.fullName,
@@ -113,6 +123,7 @@ function profilePayloadFromDto(
     timezone: overrides.timezone ?? profile.timezone,
     dateFormat: overrides.dateFormat ?? profile.dateFormat,
     theme: overrides.theme ?? profile.theme,
+    monthlyReportDay: overrides.monthlyReportDay ?? profile.monthlyReportDay ?? 1,
   };
 }
 
@@ -170,6 +181,7 @@ export async function patchPreferences(
       timezone: merged.timezone,
       dateFormat: merged.dateFormat,
       theme: merged.theme,
+      monthlyReportDay: merged.monthlyReportDay,
     }),
   });
   return mapProfileToPreferences(updated);

@@ -6,6 +6,7 @@ import { AuthLayout, LocaleLayout } from "@/layouts/LocaleLayout";
 import { DashboardRouteLayout } from "@/layouts/DashboardLayout";
 import { SettingsRouteLayout } from "@/layouts/SettingsLayout";
 import { SkeletonText, SkeletonTitle } from "@/shared/components/ui/Skeleton";
+import { SlowNetworkHint } from "@/shared/components/ui/SlowNetworkHint";
 
 const LoginPage = lazy(() =>
   import("@/pages/LoginPage").then((m) => ({ default: m.LoginPage })),
@@ -30,6 +31,11 @@ const SourceBalanceLedgerPage = lazy(() =>
 );
 const BillingPage = lazy(() =>
   import("@/pages/BillingPage").then((m) => ({ default: m.BillingPage })),
+);
+const BillingCycleDetailPage = lazy(() =>
+  import("@/pages/BillingCycleDetailPage").then((m) => ({
+    default: m.BillingCycleDetailPage,
+  })),
 );
 const InstallmentsPage = lazy(() =>
   import("@/pages/InstallmentsPage").then((m) => ({
@@ -69,6 +75,11 @@ const SettingsPreferencesPage = lazy(() =>
     default: m.SettingsPreferencesPage,
   })),
 );
+const SettingsClassificationRulesPage = lazy(() =>
+  import("@/pages/SettingsClassificationRulesPage").then((m) => ({
+    default: m.SettingsClassificationRulesPage,
+  })),
+);
 const SettingsMembersPage = lazy(() =>
   import("@/pages/SettingsMembersPage").then((m) => ({
     default: m.SettingsMembersPage,
@@ -88,6 +99,7 @@ function DashboardLoading() {
       </div>
       <SkeletonText className="h-[120px] w-full rounded-card" />
       <SkeletonText className="h-[360px] w-full rounded-card" />
+      <SlowNetworkHint />
     </div>
   );
 }
@@ -157,6 +169,14 @@ export function AppRoutes() {
             element={
               <PageSuspense>
                 <BillingPage />
+              </PageSuspense>
+            }
+          />
+          <Route
+            path="billing/:cycleId"
+            element={
+              <PageSuspense>
+                <BillingCycleDetailPage />
               </PageSuspense>
             }
           />
@@ -242,6 +262,14 @@ export function AppRoutes() {
               element={
                 <PageSuspense>
                   <SettingsPreferencesPage />
+                </PageSuspense>
+              }
+            />
+            <Route
+              path="classification"
+              element={
+                <PageSuspense>
+                  <SettingsClassificationRulesPage />
                 </PageSuspense>
               }
             />

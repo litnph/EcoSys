@@ -2,35 +2,17 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   CalendarRange,
-  PiggyBank,
 } from "lucide-react";
 
 import type { KpiMetric } from "@/features/dashboard/utils/buildDashboardKpis";
 
 import type { MonthlyReport } from "../types";
 import { computeReportExpenseBreakdown } from "./reportExpenseBreakdown";
-import { estimatedPreviousSavingsRatePercent } from "./savingsComparison";
-
-function savingsChangePercent(report: MonthlyReport): number | null {
-  if (report.savingsRate === null) return null;
-  const prevSr = estimatedPreviousSavingsRatePercent({
-    totalIncome: report.totalIncome,
-    totalExpense: report.totalExpense,
-    comparison: report.comparisonWithPrevious,
-  });
-  if (prevSr === null || Math.abs(prevSr) < 0.001) return null;
-  return (
-    Math.round(
-      ((report.savingsRate - prevSr) / Math.abs(prevSr)) * 10000,
-    ) / 100
-  );
-}
 
 /** KPI row for monthly report detail (same order as dashboard). */
 export function buildReportKpis(report: MonthlyReport): KpiMetric[] {
   const breakdown = computeReportExpenseBreakdown(report);
   const comp = report.comparisonWithPrevious;
-  const saved = report.totalIncome - report.totalExpense;
 
   const metrics: KpiMetric[] = [
     {
@@ -59,15 +41,6 @@ export function buildReportKpis(report: MonthlyReport): KpiMetric[] {
       positiveChangeIsGood: false,
       icon: CalendarRange,
       iconClassName: "bg-accent/10 text-accent",
-    },
-    {
-      id: "savings",
-      label: "Tiết kiệm tháng này",
-      amount: saved,
-      changePercent: savingsChangePercent(report),
-      positiveChangeIsGood: true,
-      icon: PiggyBank,
-      iconClassName: "bg-info/10 text-info",
     },
   ];
 

@@ -5,6 +5,7 @@ import { CategoryFormModal } from "@/features/categories/components/CategoryForm
 import { CategoryManager } from "@/features/categories/components/CategoryManager";
 import { useDeleteCategory } from "@/features/categories/hooks/useCategoryMutations";
 import type { CategoryKind, FinCategory } from "@/features/categories/types";
+import { CategoryBudgetEditorModal } from "@/features/budgets/components";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
@@ -22,18 +23,17 @@ export function CategoriesPage() {
   const [editing, setEditing] = useState<FinCategory | null>(null);
   const [defaultParentId, setDefaultParentId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FinCategory | null>(null);
+  const [budgetTarget, setBudgetTarget] = useState<FinCategory | null>(null);
   const del = useDeleteCategory();
 
   const activeTab = KIND_TABS.find((tab) => tab.value === kind);
 
   return (
     <div className="w-full">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <PageHeader
-          title="Danh mục"
-          description="Quản lý nhóm và danh mục con — icon, màu sắc và mức độ cần thiết."
-        />
-        <Button
+      <PageHeader
+        title="Danh mục"
+        description="Quản lý cây phân loại, mức độ cần thiết và ngân sách theo danh mục."
+        actions={<Button
           type="button"
           leftIcon={<Plus className="size-4" />}
           className="shrink-0"
@@ -44,8 +44,8 @@ export function CategoriesPage() {
           }}
         >
           Thêm danh mục
-        </Button>
-      </div>
+        </Button>}
+      />
 
       <div className="mt-6 flex flex-wrap gap-2">
         {KIND_TABS.map((tab) => (
@@ -67,7 +67,7 @@ export function CategoriesPage() {
 
       <div
         className={cn(
-          "mt-6 rounded-card border border-warm-200 bg-surface p-4 shadow-sm sm:p-6",
+          "mt-6 rounded-card border border-warm-200 bg-surface p-4 sm:p-6",
         )}
       >
         <CategoryManager
@@ -83,8 +83,17 @@ export function CategoriesPage() {
             setFormOpen(true);
           }}
           onDelete={setDeleteTarget}
+          onConfigureBudget={setBudgetTarget}
         />
       </div>
+
+      {budgetTarget ? (
+        <CategoryBudgetEditorModal
+          category={budgetTarget}
+          isOpen
+          onClose={() => setBudgetTarget(null)}
+        />
+      ) : null}
 
       <CategoryFormModal
         isOpen={formOpen}

@@ -6,6 +6,7 @@ export interface ReportExpenseLine {
   amount: number;
   categoryId: string | null;
   categoryName: string | null;
+  kind: "direct" | "creditCard" | "installment";
 }
 
 export function extractReportExpenseLines(
@@ -19,8 +20,9 @@ export function extractReportExpenseLines(
       lines.push({
         txnDate: item.txnDate,
         amount: item.amount,
-        categoryId: null,
+        categoryId: item.categoryId,
         categoryName: item.categoryName,
+        kind: "direct",
       });
     }
     for (const cycle of report.billingCycles.cycles) {
@@ -28,8 +30,9 @@ export function extractReportExpenseLines(
         lines.push({
           txnDate: txn.txnDate,
           amount: txn.amount,
-          categoryId: null,
+          categoryId: txn.categoryId,
           categoryName: txn.categoryName,
+          kind: "creditCard",
         });
       }
     }
@@ -41,8 +44,9 @@ export function extractReportExpenseLines(
         lines.push({
           txnDate: due.dueDate,
           amount: due.amount,
-          categoryId: null,
+          categoryId: due.categoryId,
           categoryName: due.categoryName,
+          kind: "installment",
         });
       }
     }

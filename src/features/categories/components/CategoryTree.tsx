@@ -71,7 +71,7 @@ function CategoryTreeBranch({ node, depth }: CategoryTreeBranchProps) {
         ) : null}
         {depth > 0 && node.necessityLevel ? (
           <span
-            className="shrink-0 max-w-[9rem] truncate rounded-badge bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-800"
+            className="shrink-0 max-w-[9rem] truncate rounded-badge bg-warm-100 px-1.5 py-0.5 text-[10px] font-medium text-warm-700"
             title={necessityLevelLabel(node.necessityLevel) ?? undefined}
           >
             {necessityLevelLabel(node.necessityLevel)}

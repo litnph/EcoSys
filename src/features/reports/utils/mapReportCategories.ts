@@ -7,7 +7,7 @@ export function mapReportCategoriesToChart(
   items: CategoryBreakdownItem[],
 ): CategoryBreakdown[] {
   return items.map((item, idx) => ({
-    categoryId: item.categoryId ?? `report-cat-${idx}`,
+    categoryId: item.categoryId ?? `report-cat:${item.categoryName}`,
     categoryName: item.categoryName,
     amount: item.amount,
     percentage: item.percentageOfTotalExpense,

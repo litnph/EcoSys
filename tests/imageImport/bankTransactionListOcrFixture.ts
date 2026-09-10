@@ -1,0 +1,63 @@
+import type { ImageOcrResult } from "../../src/features/transactions/imageImport/runImageOcr";
+import type { ImageOcrLine } from "../../src/features/transactions/imageImport/types";
+
+function line(text: string, y0: number, confidence = 90): ImageOcrLine {
+  return { text, confidence, bbox: { x0: 40, y0, x1: 1080, y1: y0 + 36 } };
+}
+
+export const referenceBankListOcr: ImageOcrResult = {
+  text: "",
+  numericText: "",
+  lines: [
+    line("Tài khoản thanh toán", 194),
+    line("06/09/2026", 398, 95),
+    line("MBVCB.15925281465.6249BFTVGLA", 470, 80),
+    line(": - 152,000 VND", 496, 61),
+    line("AH9YN.NGOPHI LIT chuyen tien.C...", 528, 86),
+    line("06/09/2026", 632, 95),
+    line("MBVCB.15925215488.594506.NGO -76.000VND", 704, 67),
+    line("PHI LIT chuyen tien.CT tu 02710010...", 756, 89),
+    line("06/09/2026", 866, 95),
+    line("MBVCB.15918270560.854420.NGO ~-15.000VND", 938, 65),
+    line("PHI LIT chuyen tien.CT tu 02710010...", 990, 90),
+    line("05/09/2026", 1100, 96),
+    line("MELEE 00 Feo - 46,000 VND", 1172, 45),
+    line("PHI LIT chuyen tien.CT tu 02710010...", 1230, 69),
+    line("05/09/2026", 1334, 95),
+    line("MBVCB.15900296904.NGO", 1406, 91),
+    line("-1,500,000 VND", 1432, 89),
+    line("PHI LIT chuyen tien.CT tu 02710...", 1464, 91),
+    line("04/09/2026", 1568, 96),
+    line("Ecom.EW26090458574124.MOMO", 1640, 90),
+    line("+155,000VND", 1665, 90),
+    line(".0565656264.CashOut.55bde40b...", 1698, 90),
+    line("04/09/2026", 1802, 96),
+    line("Ecom.EW26090458550702.MOMO.", 1874, 90),
+    line("-100,000 VND", 1900, 93),
+    line("0565656264.Cashin.1510e5a22db9", 1932, 67),
+    line("04/09/2026", 2036, 96),
+    line("Ecom.EW26090458281759.MOMO.", 2108, 90),
+    line("- 155,000 VND", 2134, 87),
+    line("0565636264.CashIn.a094165685f2", 2166, 66),
+    line("04/09/2026", 2270, 96),
+    line("MBVCB.15885676598.Ngo Phi Lit", 2342, 93),
+    line("- 75,000 VND", 2368, 8),
+    line("chuyen khoan nhanhqua....CTtuO..", 2400, 86),
+    line("03/09/2026", 2504, 96),
+    line("PARTNER.DIRECT_DEBITS_VC", 2576, 90),
+    line("nA INN ANAT 70 CF ZRALOLOTOOO Cn Cam—", 2601, 9),
+    line("+ 43,795 VND", 2601, 56),
+  ],
+  numericLines: [
+    line("-132,000", 496, 0),
+    line("-76.000", 704, 0),
+    line("15.000", 938, 0),
+    line("-46,000", 1172, 0),
+    line("-1,500,000", 1432, 0),
+    line("+135,000", 1665, 0),
+    line("-100,000", 1900, 0),
+    line("-135,000", 2134, 0),
+    line("-75,000", 2368, 0),
+    line("+43,795", 2601, 0),
+  ],
+};

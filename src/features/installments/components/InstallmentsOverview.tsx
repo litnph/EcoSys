@@ -11,7 +11,6 @@ import { formatCurrency } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
 
 import type { InstallmentDashboard } from "../types";
-import { sourceCardTintColor } from "../utils/sourceCardTint";
 
 export interface InstallmentsOverviewProps {
   data: InstallmentDashboard | undefined;
@@ -44,10 +43,10 @@ function StatCard({
   return (
     <div
       className={cn(
-        "flex gap-3 rounded-card border p-4 shadow-sm",
+        "flex gap-3 bg-surface p-4",
         toneClass)}
     >
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-warm-50 ring-1 ring-warm-200/80">
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-button bg-warm-50 ring-1 ring-warm-200">
         <Icon className="size-5 text-warm-600" aria-hidden />
       </div>
       <div className="min-w-0">
@@ -87,10 +86,7 @@ function SourceBreakdownRow({
     100 - overdueShare - thisMonthShare - nextMonthShare);
 
   return (
-    <div
-      className="rounded-lg border border-warm-100 bg-warm-25/40 px-3 py-2.5"
-      style={{ backgroundColor: sourceCardTintColor(source.sourceColor) }}
-    >
+    <div className="border-b border-warm-200 px-1 py-3 last:border-b-0">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 truncate text-sm font-medium text-warm-900">
@@ -123,7 +119,7 @@ function SourceBreakdownRow({
         ) : null}
         {nextMonthShare > 0 ? (
           <div
-            className="h-full bg-amber-400"
+            className="h-full bg-warm-400"
             style={{ width: `${String(nextMonthShare)}%` }}
           />
         ) : null}
@@ -147,7 +143,7 @@ function SourceBreakdownRow({
           </span>
         ) : null}
         {source.nextMonthDueAmount > 0 ? (
-          <span className="text-amber-800">
+          <span className="text-warm-700">
             Tháng sau {formatCurrency(source.nextMonthDueAmount, currency)}
           </span>
         ) : null}
@@ -164,11 +160,11 @@ export function InstallmentsOverview({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-warm-200 bg-warm-200 lg:grid-cols-3 2xl:grid-cols-6">
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <div
               key={String(i)}
-              className="h-[88px] animate-pulse rounded-card border border-warm-200 bg-warm-50"
+              className="h-[104px] animate-pulse bg-warm-50"
             />
           ))}
         </div>
@@ -184,7 +180,7 @@ export function InstallmentsOverview({
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-warm-200 bg-warm-200 lg:grid-cols-3 2xl:grid-cols-6">
         <StatCard
           label="Kế hoạch đang trả"
           value={String(data.activePlanCount)}
@@ -243,7 +239,7 @@ export function InstallmentsOverview({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-5">
-        <section className="rounded-card border border-warm-200 bg-surface p-4 shadow-sm lg:col-span-3">
+        <section className="rounded-card border border-warm-200 bg-surface p-4 lg:col-span-3">
           <h3 className="font-display text-sm font-semibold text-warm-900">
             Theo từng thẻ
           </h3>
@@ -255,7 +251,7 @@ export function InstallmentsOverview({
               Chưa có kế hoạch trả góp
             </p>
           ) : (
-            <div className="mt-4 space-y-2">
+            <div className="mt-3">
               {data.bySource.map((s) => (
                 <SourceBreakdownRow
                   key={s.sourceId}
@@ -267,42 +263,20 @@ export function InstallmentsOverview({
           )}
         </section>
 
-        <section className="rounded-card border border-warm-200 bg-surface p-4 shadow-sm lg:col-span-2">
+        <section className="rounded-card border border-warm-200 bg-surface p-4 lg:col-span-2">
           <h3 className="font-display text-sm font-semibold text-warm-900">
             Tiến độ tổng thể
           </h3>
           <p className="mt-0.5 text-xs text-warm-500">
             Tỷ lệ đã trả trên tổng giá trị các kế hoạch đang active
           </p>
-          <div className="mt-6 flex flex-col items-center">
-            <div
-              className="relative size-28"
-              role="img"
-              aria-label={`Đã trả ${String(data.completionPercent)} phần trăm`}
-            >
-              <svg viewBox="0 0 36 36" className="size-full -rotate-90">
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15.5"
-                  fill="none"
-                  className="stroke-warm-100"
-                  strokeWidth="3"
-                />
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15.5"
-                  fill="none"
-                  className="stroke-success"
-                  strokeWidth="3"
-                  strokeDasharray={`${String(data.completionPercent)} ${String(100 - data.completionPercent)}`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center font-mono text-xl font-bold text-warm-900">
-                {data.completionPercent}%
-              </span>
+          <div className="mt-6">
+            <div className="flex items-end justify-between gap-3">
+              <span className="text-sm font-medium text-warm-600">Đã hoàn thành</span>
+              <span className="font-amount text-2xl font-semibold tabular-nums text-warm-900">{data.completionPercent}%</span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-warm-100" role="progressbar" aria-label="Tiến độ trả góp" aria-valuemin={0} aria-valuemax={100} aria-valuenow={data.completionPercent}>
+              <div className="h-full bg-success" style={{ width: `${String(data.completionPercent)}%` }} />
             </div>
             <dl className="mt-5 w-full space-y-2 text-sm">
               <div className="flex justify-between gap-2">

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { CategoryBreakdown } from "@/features/dashboard/components/CategoryBreakdown";
 import { KPICard, KPICardSkeleton } from "@/features/dashboard/components/KPICard";
-import { MonthlySavingsCard } from "@/features/dashboard/components/MonthlySavingsCard";
+import { useTranslations } from "@/i18n/hooks";
 import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
 
 import type { BillingCycle } from "@/features/billing-cycles/types";
@@ -14,9 +14,15 @@ import {
 } from "../utils/categoryBreakdownFilter";
 import { buildReportKpis } from "../utils/buildReportKpis";
 import { mapReportCategoriesToChart } from "../utils/mapReportCategories";
+import {
+  defaultMonthlyReportFilters,
+  filterMonthlyReport,
+} from "../utils/filterMonthlyReport";
 import { BillingCyclesReportSection } from "./BillingCyclesReportSection";
+import { BudgetUtilizationChart } from "./BudgetUtilizationChart";
 import { CloseMonthSection } from "./CloseMonthSection";
 import { DirectExpensesSection } from "./DirectExpensesSection";
+import { MonthlyReportFilters } from "./MonthlyReportFilters";
 import { ReportCategoryAllocation } from "./ReportCategoryAllocation";
 import { ReportCategorySpendingTrendChart } from "./ReportCategorySpendingTrendChart";
 import { ReportRecentTransactions } from "./ReportRecentTransactions";
@@ -57,8 +63,12 @@ export function MonthlyReportDetailView({
   isCyclesLoading,
   onClosed,
 }: MonthlyReportDetailViewProps) {
+  const t = useTranslations("reports");
   const [expenseFilter, setExpenseFilter] =
     useState<CategoryExpenseFilter>("transactions");
+  const [reportFilters, setReportFilters] = useState(() =>
+    defaultMonthlyReportFilters(),
+  );
   const defaultCurrency =
     report?.metadata?.currency ?? report?.currencyGroups[0]?.currency ?? "";
   const [selectedCurrency, setSelectedCurrency] = useState(defaultCurrency);
@@ -66,6 +76,10 @@ export function MonthlyReportDetailView({
   useEffect(() => {
     setSelectedCurrency(defaultCurrency);
   }, [defaultCurrency, month, year]);
+
+  useEffect(() => {
+    setReportFilters(defaultMonthlyReportFilters());
+  }, [month, selectedCurrency, year]);
 
   const activeReport = useMemo<MonthlyReport | undefined>(() => {
     if (!report || report.currencyGroups.length === 0) return report;
@@ -85,28 +99,32 @@ export function MonthlyReportDetailView({
       comparisonWithPrevious: group.comparisonWithPrevious,
       directExpenses: group.directExpenses,
       billingCycles: group.billingCycles,
+      budgetUtilizations: group.budgetUtilizations,
       metadata: report.metadata
         ? { ...report.metadata, currency: group.currency }
         : null,
     };
   }, [report, selectedCurrency]);
 
+  const filteredReport = useMemo(
+    () =>
+      activeReport
+        ? filterMonthlyReport(activeReport, reportFilters)
+        : undefined,
+    [activeReport, reportFilters],
+  );
+
   const kpis = useMemo(
-    () => (activeReport ? buildReportKpis(activeReport) : undefined),
-    [activeReport],
+    () => (filteredReport ? buildReportKpis(filteredReport) : undefined),
+    [filteredReport],
   );
 
   const breakdownCategories = useMemo(() => {
-    if (!activeReport) return undefined;
+    if (!filteredReport) return undefined;
     return mapReportCategoriesToChart(
-      buildFilteredCategoryBreakdown(activeReport, expenseFilter),
+      buildFilteredCategoryBreakdown(filteredReport, expenseFilter),
     );
-  }, [activeReport, expenseFilter]);
-
-  const periodHint =
-    activeReport !== undefined
-      ? `Tháng ${String(activeReport.month).padStart(2, "0")}/${String(activeReport.year)}`
-      : undefined;
+  }, [filteredReport, expenseFilter]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -120,6 +138,14 @@ export function MonthlyReportDetailView({
             {activeReport.metadata.currency ?? "Không có dữ liệu tiền tệ"} ·{" "}
             {activeReport.metadata.timeZone} · {activeReport.metadata.formulaVersion}
           </span>
+          {activeReport.metadata.reportingPeriodStart && activeReport.metadata.reportingPeriodEnd ? (
+            <span className="font-medium text-warm-700">
+              {t("reportPeriod", {
+                start: activeReport.metadata.reportingPeriodStart,
+                end: activeReport.metadata.reportingPeriodEnd,
+              })}
+            </span>
+          ) : null}
           {report && report.currencyGroups.length > 1 ? (
             <label className="inline-flex items-center gap-2 font-medium text-warm-700">
               Tiền tệ
@@ -139,12 +165,18 @@ export function MonthlyReportDetailView({
         </aside>
       ) : null}
 
+      <MonthlyReportFilters
+        sources={activeReport?.sourceBreakdown ?? []}
+        value={reportFilters}
+        onChange={setReportFilters}
+      />
+
       <section
         aria-label="Chỉ số tháng"
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-warm-200 bg-warm-200 xl:grid-cols-3"
       >
         {isLoading || kpis === undefined
-          ? Array.from({ length: 4 }, (_, i) => (
+          ? Array.from({ length: 3 }, (_, i) => (
               <KPICardSkeleton key={String(i)} />
             ))
           : kpis.map((metric) => (
@@ -152,10 +184,11 @@ export function MonthlyReportDetailView({
             ))}
       </section>
 
+      <div className="report-workbench">
       <section aria-label="Phân bổ chi tiêu">
         <ErrorBoundary fallbackTitle="Không tải được phân bổ chi tiêu">
           <ReportCategoryAllocation
-            report={activeReport}
+            report={filteredReport}
             isLoading={isLoading}
             filter={expenseFilter}
             onFilterChange={setExpenseFilter}
@@ -163,10 +196,20 @@ export function MonthlyReportDetailView({
         </ErrorBoundary>
       </section>
 
-      <section aria-label="Xu hướng chi theo danh mục">
-        <ErrorBoundary fallbackTitle="Không tải được xu hướng chi theo danh mục">
+      <section aria-label={t("budgetChartTitle")}>
+        <ErrorBoundary fallbackTitle={t("budgetChartError")}>
+          <BudgetUtilizationChart
+            items={activeReport?.budgetUtilizations}
+            currency={activeReport?.metadata?.currency ?? "VND"}
+            isLoading={isLoading}
+          />
+        </ErrorBoundary>
+      </section>
+
+      <section aria-label={t("spendingTrendAria")}>
+        <ErrorBoundary fallbackTitle={t("spendingTrendError")}>
           <ReportCategorySpendingTrendChart
-            report={activeReport}
+            report={filteredReport}
             isLoading={isLoading}
             expenseFilter={expenseFilter}
           />
@@ -175,11 +218,11 @@ export function MonthlyReportDetailView({
 
       <section
         aria-label="Tóm tắt"
-        className="grid grid-cols-1 gap-6 md:grid-cols-3"
+        className="grid grid-cols-1 gap-6 md:grid-cols-2"
       >
         <ErrorBoundary fallbackTitle="Không tải được giao dịch">
           <ReportRecentTransactions
-            report={activeReport}
+            report={filteredReport}
             isLoading={isLoading}
             year={year}
             month={month}
@@ -189,21 +232,7 @@ export function MonthlyReportDetailView({
           <CategoryBreakdown
             data={breakdownCategories}
             isLoading={isLoading}
-            currency={activeReport?.metadata?.currency ?? "VND"}
-          />
-        </ErrorBoundary>
-        <ErrorBoundary fallbackTitle="Không tải được tiết kiệm">
-          <MonthlySavingsCard
-            isLoading={isLoading || activeReport === undefined}
-            savingsRate={activeReport?.savingsRate ?? null}
-            savedAmount={
-              activeReport !== undefined
-                ? activeReport.totalIncome - activeReport.totalExpense
-                : 0
-            }
-            incomeAmount={activeReport?.totalIncome ?? 0}
-            currency={activeReport?.metadata?.currency ?? "VND"}
-            periodHint={periodHint}
+            currency={filteredReport?.metadata?.currency ?? "VND"}
           />
         </ErrorBoundary>
       </section>
@@ -215,17 +244,18 @@ export function MonthlyReportDetailView({
         />
         <div className="grid gap-6 xl:grid-cols-2">
           <DirectExpensesSection
-            section={activeReport?.directExpenses}
+            section={filteredReport?.directExpenses}
             isLoading={isLoading}
           />
           <BillingCyclesReportSection
-            section={activeReport?.billingCycles}
+            section={filteredReport?.billingCycles}
             isLoading={isLoading}
           />
         </div>
       </section>
+      </div>
 
-      {activeReport ? (
+      {filteredReport ? (
         <section>
           <ReportSectionHeading
             title="Hoàn tất báo cáo"
@@ -234,7 +264,7 @@ export function MonthlyReportDetailView({
           <CloseMonthSection
             year={year}
             month={month}
-            status={activeReport.status}
+            status={filteredReport.status}
             billingCycles={billingCycles}
             isCyclesLoading={isCyclesLoading}
             onClosed={onClosed}

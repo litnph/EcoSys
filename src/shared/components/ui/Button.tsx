@@ -1,5 +1,4 @@
 import { cn } from "@/shared/lib/utils";
-import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import * as React from "react";
 
@@ -12,21 +11,7 @@ export type ButtonVariant =
 
 export type ButtonSize = "sm" | "md" | "lg";
 
-/** Props that clash with `motion.button` / Framer Motion's DOM typings. */
-type MotionConflictingButtonKeys =
-  | "onDrag"
-  | "onDragStart"
-  | "onDragEnd"
-  | "onAnimationStart"
-  | "onAnimationEnd"
-  | "onAnimationIteration";
-
-type NativeButtonProps = Omit<
-  React.ButtonHTMLAttributes<HTMLButtonElement>,
-  MotionConflictingButtonKeys
->;
-
-export interface ButtonProps extends NativeButtonProps {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   isLoading?: boolean;
@@ -36,13 +21,13 @@ export interface ButtonProps extends NativeButtonProps {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-accent text-accent-foreground hover:bg-accent-dark disabled:hover:bg-accent",
+    "border border-accent bg-accent text-accent-foreground hover:border-accent-dark hover:bg-accent-dark disabled:hover:border-accent disabled:hover:bg-accent",
   secondary:
-    "bg-warm-100 text-warm-900 border border-warm-200 hover:bg-warm-200 disabled:hover:bg-warm-100",
+    "border border-warm-300 bg-surface text-warm-900 hover:border-border-strong hover:bg-warm-100 disabled:hover:border-warm-300 disabled:hover:bg-surface",
   ghost:
-    "text-warm-600 hover:bg-warm-100 hover:text-warm-900 disabled:hover:bg-transparent disabled:hover:text-warm-600",
+    "border border-transparent text-warm-600 hover:bg-warm-100 hover:text-warm-900 disabled:hover:bg-transparent disabled:hover:text-warm-600",
   danger:
-    "bg-danger text-white hover:bg-danger/90 disabled:hover:bg-danger",
+    "border border-danger bg-danger text-white hover:bg-danger/90 disabled:hover:bg-danger",
   link:
     "border-0 bg-transparent px-0 py-0 text-accent shadow-none hover:text-accent-dark disabled:hover:text-accent",
 };
@@ -59,12 +44,12 @@ function sizeClasses(variant: ButtonVariant, size: ButtonSize): string {
     }
   }
   switch (size) {
-    case "sm":
-      return "h-8 gap-1.5 px-3 text-sm";
-    case "lg":
-      return "h-12 gap-2 px-6 text-base";
-    default:
-      return "h-10 gap-1.5 px-4 text-sm";
+      case "sm":
+        return "h-10 gap-1.5 px-3 text-sm";
+      case "lg":
+        return "h-11 gap-2 px-5 text-sm";
+      default:
+        return "h-10 gap-1.5 px-4 text-sm";
   }
 }
 
@@ -97,22 +82,17 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const isDisabled = disabled || isLoading;
 
     return (
-      <motion.button
+      <button
         ref={ref}
         type={props.type ?? "button"}
-        whileHover={
-          variant === "primary" && !isDisabled ? { scale: 1.01 } : undefined
-        }
-        whileTap={!isDisabled ? { scale: 0.97 } : undefined}
-        transition={{ type: "spring", stiffness: 500, damping: 30 }}
         className={cn(
-          "inline-flex items-center justify-center rounded-button font-medium transition-all duration-150",
-          variant !== "link" && "shadow-sm",
+          "inline-flex items-center justify-center rounded-button font-semibold transition-colors duration-150",
+          "outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           variant === "link" && "underline-offset-4 hover:underline",
           variantClasses[variant],
           sizeClasses(variant, size),
           isLoading && "cursor-wait opacity-70",
-          isDisabled && "pointer-events-none",
+          isDisabled && "cursor-not-allowed opacity-50",
           className)}
         disabled={isDisabled}
         aria-busy={ariaBusy ?? (isLoading || undefined)}
@@ -137,7 +117,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {!isLoading && rightIcon && (
           <span className="inline-flex shrink-0">{rightIcon}</span>
         )}
-      </motion.button>
+      </button>
     );
   });
 

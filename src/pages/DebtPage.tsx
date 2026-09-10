@@ -1,7 +1,6 @@
 import * as Tabs from "@radix-ui/react-tabs";
 import { Plus, Wallet } from "lucide-react";
 import * as React from "react";
-import { motion } from "framer-motion";
 
 import {
   DebtPaymentModal,
@@ -23,8 +22,8 @@ import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
+import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 import { cn } from "@/shared/lib/utils";
-import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 
 function paymentSourceOptions(sources: FinSource[] | undefined): FinSource[] {
   return (sources ?? []).filter(
@@ -133,7 +132,9 @@ export function DebtPage() {
       {(
         <>
           <div className="mt-6">
-            {summaryQ.isLoading ? (
+            {summaryQ.isError ? (
+              <AsyncStateError title="Không tải được tổng quan công nợ" onRetry={() => void summaryQ.refetch()} />
+            ) : summaryQ.isLoading ? (
               <SkeletonCard />
             ) : summaryQ.data ? (
               <DebtSummaryBar
@@ -198,21 +199,22 @@ export function DebtPage() {
             </Tabs.Root>
           </div>
 
-          <motion.div
-            className="mt-6 grid gap-4 lg:grid-cols-2"
-            {...listStaggerMotion}
-          >
-            {listQ.isLoading ? (
+          <div className="mt-6 divide-y divide-warm-200 overflow-hidden rounded-card border border-warm-200 bg-surface">
+            {listQ.isError ? (
+              <div className="border-0 p-3">
+                <AsyncStateError title="Không tải được danh sách công nợ" onRetry={() => void listQ.refetch()} />
+              </div>
+            ) : listQ.isLoading ? (
               <>
-                <motion.div {...listStaggerItemMotion}>
-                  <SkeletonCard />
-                </motion.div>
-                <motion.div {...listStaggerItemMotion}>
-                  <SkeletonCard />
-                </motion.div>
+                <div>
+                  <SkeletonCard className="rounded-none border-0" />
+                </div>
+                <div>
+                  <SkeletonCard className="rounded-none border-0" />
+                </div>
               </>
             ) : (listQ.data?.length ?? 0) === 0 ? (
-              <div className="lg:col-span-2">
+              <div>
                 <EmptyState
                   icon={<Wallet aria-hidden className="size-14" />}
                   title="Không có khoản nợ nào"
@@ -229,7 +231,7 @@ export function DebtPage() {
               </div>
             ) : (
               listQ.data?.map((item) => (
-                <motion.div key={item.id} {...listStaggerItemMotion}>
+                <div key={item.id}>
                   <DebtRecordCard
                     item={item}
                     detail={
@@ -247,10 +249,10 @@ export function DebtPage() {
                     onDelete={deleteDebt}
                     isDeleting={deletingId === item.id}
                   />
-                </motion.div>
+                </div>
               ))
             )}
-          </motion.div>
+          </div>
         </>
       )}
 

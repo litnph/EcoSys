@@ -31,7 +31,14 @@ void i18n.use(initReactI18next).init({
   supportedLngs: [...routing.locales],
   ns: Object.keys(viNamespaces),
   defaultNS: "common",
-  interpolation: { escapeValue: false },
+  // Translation files were authored with next-intl-style placeholders
+  // (`{count}`, `{category}`, ...). Keep that syntax when using i18next so
+  // variables are interpolated instead of rendered as literal text.
+  interpolation: {
+    escapeValue: false,
+    prefix: "{",
+    suffix: "}",
+  },
 });
 
 export default i18n;

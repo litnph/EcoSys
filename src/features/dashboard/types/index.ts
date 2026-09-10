@@ -122,6 +122,8 @@ export interface CategorySpendingTrendPoint {
   label: string;
   year: number;
   month: number;
+  date?: string;
+  endDate?: string;
 }
 
 export interface CategorySpendingSeries {

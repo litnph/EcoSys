@@ -14,6 +14,7 @@ import { Link } from "@/i18n/navigation";
 import { ROUTES } from "@/config/routes";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
+import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { formatCurrency } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
@@ -61,12 +62,10 @@ export function SourceBalanceLedgerPage({ sourceId }: SourceBalanceLedgerPagePro
         Nguồn tài chính
       </Link>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <PageHeader
-          title={ledger?.sourceName ?? source?.name ?? "Sổ số dư"}
-          description="Lịch sử biến động số dư theo ngày giao dịch (không gồm báo cáo thu/chi)."
-        />
-        <div className="flex flex-wrap gap-2">
+      <PageHeader
+        title={ledger?.sourceName ?? source?.name ?? "Sổ số dư"}
+        description="Lịch sử biến động số dư theo ngày giao dịch, dùng để truy vết và đối soát."
+        actions={<div className="flex flex-wrap gap-2">
           <Button
             type="button"
             variant="secondary"
@@ -81,35 +80,33 @@ export function SourceBalanceLedgerPage({ sourceId }: SourceBalanceLedgerPagePro
             leftIcon={<RefreshCw className="size-4" aria-hidden />}
             onClick={() => setRecalOpen(true)}
           >
-            reCal
+            Đối soát
           </Button>
-        </div>
-      </div>
+        </div>}
+      />
 
       {ledgerQ.isLoading ? (
         <div className="mt-6">
           <SkeletonCard lines={4} />
         </div>
       ) : ledgerQ.isError ? (
-        <p className="mt-6 rounded-card border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
-          Không tải được sổ số dư.
-        </p>
+        <AsyncStateError title="Không tải được sổ số dư" onRetry={() => void ledgerQ.refetch()} />
       ) : ledger ? (
         <>
-          <dl className="mt-6 grid grid-cols-2 gap-4 rounded-card border border-warm-200 bg-surface p-4 sm:grid-cols-4">
-            <div>
+          <dl className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-card border border-warm-200 bg-warm-200 sm:grid-cols-3">
+            <div className="bg-surface p-4">
               <dt className="text-xs text-warm-500">Số dư hiện tại</dt>
               <dd className="font-mono text-lg font-semibold tabular-nums">
                 {formatCurrency(ledger.storedBalance, currency)}
               </dd>
             </div>
-            <div>
+            <div className="bg-surface p-4">
               <dt className="text-xs text-warm-500">Tính từ sổ</dt>
               <dd className="font-mono text-lg font-semibold tabular-nums">
                 {formatCurrency(ledger.computedBalance, currency)}
               </dd>
             </div>
-            <div>
+            <div className="bg-surface p-4">
               <dt className="text-xs text-warm-500">Chênh lệch</dt>
               <dd
                 className={cn(
@@ -126,8 +123,7 @@ export function SourceBalanceLedgerPage({ sourceId }: SourceBalanceLedgerPagePro
               className="mt-3 rounded-button border border-warning/35 bg-warning/10 px-3 py-2 text-sm text-warm-800"
               role="alert"
             >
-              Số dư lưu và số tính từ sổ không khớp. Dùng「reCal」hoặc「Điều
-              chỉnh」để khớp thực tế.
+              Chênh lệch đang khác 0. Dùng “Đối soát” hoặc “Điều chỉnh” để khớp với số dư thực tế.
             </p>
           ) : null}
 

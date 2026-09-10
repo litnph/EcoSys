@@ -34,7 +34,7 @@ const KINDS: { value: CategoryKind; label: string }[] = [
 ];
 
 const DEFAULT_ICON = CATEGORY_ICON_PRESETS[0] ?? "📁";
-const DEFAULT_COLOR = COLOR_PRESETS[0] ?? "#0891b2";
+const DEFAULT_COLOR = COLOR_PRESETS[0] ?? "#725a3a";
 
 function getDescendantIds(
   flat: FinCategoryFlat[],

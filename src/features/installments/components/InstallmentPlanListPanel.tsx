@@ -1,11 +1,9 @@
 import { CreditCard, Search } from "lucide-react";
-import { motion } from "framer-motion";
 import * as React from "react";
 
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { cn } from "@/shared/lib/utils";
-import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 
 import type {
   InstallmentPlanListItem,
@@ -85,7 +83,7 @@ export function InstallmentPlanListPanel({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-card border border-warm-200 bg-surface p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="flex flex-col gap-3 border-y border-warm-200 bg-warm-25 py-4 sm:flex-row sm:flex-wrap sm:items-end">
         <div className="flex flex-wrap gap-1" role="tablist" aria-label="Trạng thái kế hoạch">
           {(
             [
@@ -153,24 +151,18 @@ export function InstallmentPlanListPanel({
         </p>
       </div>
 
-      <motion.div
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-        {...listStaggerMotion}
-      >
+      <div className="divide-y divide-warm-200 overflow-hidden rounded-card border border-warm-200 bg-surface">
         {isLoading ? (
           <>
-            <motion.div {...listStaggerItemMotion}>
-              <SkeletonCard />
-            </motion.div>
-            <motion.div {...listStaggerItemMotion}>
-              <SkeletonCard />
-            </motion.div>
-            <motion.div {...listStaggerItemMotion}>
-              <SkeletonCard />
-            </motion.div>
+            <div>
+              <SkeletonCard className="rounded-none border-0" />
+            </div>
+            <div>
+              <SkeletonCard className="rounded-none border-0" />
+            </div>
           </>
         ) : filtered.length === 0 ? (
-          <div className="sm:col-span-2 xl:col-span-3">
+          <div>
             <EmptyState
               icon={<CreditCard aria-hidden className="size-14" />}
               title="Không có kế hoạch"
@@ -183,7 +175,7 @@ export function InstallmentPlanListPanel({
           </div>
         ) : (
           filtered.map((item) => (
-            <motion.div key={item.id} {...listStaggerItemMotion}>
+            <div key={item.id}>
               <InstallmentPlanCard
                 listItem={item}
                 currency={pickCurrency(item, sources)}
@@ -192,10 +184,10 @@ export function InstallmentPlanListPanel({
                   item.canDelete ? () => onDelete?.(item.id) : undefined
                 }
               />
-            </motion.div>
+            </div>
           ))
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }

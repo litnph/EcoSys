@@ -33,6 +33,7 @@ export {
 export { EmptyState, type EmptyStateAction, type EmptyStateProps } from "./EmptyState";
 export { Input, type InputProps } from "./Input";
 export { Modal, type ModalProps, type ModalSize } from "./Modal";
+export { SlowNetworkHint } from "./SlowNetworkHint";
 export {
   Skeleton,
   SkeletonAvatar,

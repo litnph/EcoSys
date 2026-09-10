@@ -12,7 +12,7 @@ import {
 
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
-import { formatCurrency } from "@/shared/lib/formatters";
+import { formatCompactNumber, formatCurrency } from "@/shared/lib/formatters";
 import { cardSlideUpMotion } from "@/shared/lib/animations";
 
 import type { DailyPoint } from "../types";
@@ -60,11 +60,6 @@ export function DailyBreakdownChart({
 
   const rows = [...data].sort((a, b) => a.day - b.day);
   const hasFlow = rows.some((d) => d.income !== 0 || d.expense !== 0);
-
-  const compactAxis = new Intl.NumberFormat("vi-VN", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  });
 
   return (
     <motion.article
@@ -130,7 +125,7 @@ export function DailyBreakdownChart({
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v: number) => compactAxis.format(v)}
+                tickFormatter={formatCompactNumber}
                 width={72}
               />
               <Tooltip content={<DtTooltip />} cursor={{ stroke: "var(--color-warm-200)" }} />

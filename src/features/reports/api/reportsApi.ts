@@ -5,6 +5,7 @@ import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 import type {
   Comparison,
   CategoryBreakdownItem,
+  CategoryBudgetUtilization,
   DailyPoint,
   MonthlyPeriodListItem,
   MonthlyPeriodStatus,
@@ -103,6 +104,22 @@ interface MonthlyReportMetadataDto {
   currency?: string | null;
   timeZone: string;
   consolidatedTotalsAvailable?: boolean;
+  reportingPeriodStart?: string | null;
+  reportingPeriodEnd?: string | null;
+  monthlyReportDay?: number;
+}
+
+interface CategoryBudgetUtilizationDto {
+  categoryId: string;
+  categoryName: string;
+  currency: string;
+  spentAmount: number;
+  budgetAmount: number;
+  targetMode?: string;
+  remainingAmount: number;
+  utilizationPercent: number;
+  status: string;
+  warningThresholds?: number[];
 }
 
 interface MonthlyReportDirectExpenseItemDto {
@@ -112,6 +129,8 @@ interface MonthlyReportDirectExpenseItemDto {
   txnDate: string;
   description: string;
   categoryName?: string | null;
+  categoryId?: string | null;
+  sourceId: string;
   sourceName: string;
 }
 
@@ -127,6 +146,7 @@ interface MonthlyReportBillingCycleTxnItemDto {
   txnDate: string;
   description: string;
   categoryName?: string | null;
+  categoryId?: string | null;
 }
 
 interface MonthlyReportBillingCycleInstallmentDueDto {
@@ -134,6 +154,7 @@ interface MonthlyReportBillingCycleInstallmentDueDto {
   planId: string;
   planDescription: string;
   categoryName?: string | null;
+  categoryId?: string | null;
   installmentNumber: number;
   totalInstallments: number;
   dueDate: string;
@@ -173,6 +194,7 @@ interface MonthlyReportCurrencyGroupDto {
   comparisonWithPreviousMonth: MonthOverMonthComparisonDto | null;
   directExpenses: MonthlyReportDirectExpenseSectionDto | null;
   billingCycles: MonthlyReportBillingCyclesSectionDto | null;
+  budgetUtilizations?: CategoryBudgetUtilizationDto[] | null;
 }
 
 interface ReportEnvelope {
@@ -187,6 +209,7 @@ interface ReportEnvelope {
     billingCycles: MonthlyReportBillingCyclesSectionDto | null;
     metadata?: MonthlyReportMetadataDto | null;
     currencyGroups?: MonthlyReportCurrencyGroupDto[] | null;
+    budgetUtilizations?: CategoryBudgetUtilizationDto[] | null;
   };
 }
 
@@ -286,8 +309,35 @@ function mapDirectExpenseItem(
     txnDate: row.txnDate,
     description: row.description?.trim()?.length ? row.description : "—",
     categoryName: row.categoryName?.trim()?.length ? row.categoryName : null,
+    categoryId: row.categoryId ?? null,
+    sourceId: row.sourceId,
     sourceName: row.sourceName?.trim()?.length ? row.sourceName : "—",
   };
+}
+
+function mapBudgetUtilizations(
+  rows: CategoryBudgetUtilizationDto[] | null | undefined,
+): CategoryBudgetUtilization[] {
+  return (rows ?? []).map((row) => ({
+    categoryId: row.categoryId,
+    categoryName: row.categoryName,
+    currency: row.currency,
+    spentAmount: Number(row.spentAmount),
+    budgetAmount: Number(row.budgetAmount),
+    targetMode: row.targetMode === "minimum" ? "minimum" : "maximum",
+    remainingAmount: Number(row.remainingAmount),
+    utilizationPercent: Number(row.utilizationPercent),
+    status:
+      row.status === "nearLimit"
+      || row.status === "reached"
+      || row.status === "exceeded"
+      || row.status === "belowTarget"
+      || row.status === "targetAchieved"
+      || row.status === "targetExceeded"
+        ? row.status
+        : "withinBudget",
+    warningThresholds: (row.warningThresholds ?? []).map(Number),
+  }));
 }
 
 function mapDirectExpenses(
@@ -329,6 +379,7 @@ function mapBillingCycleInstallmentDue(
     planId: row.planId,
     planDescription: row.planDescription?.trim()?.length ? row.planDescription : "Trả góp",
     categoryName: row.categoryName?.trim()?.length ? row.categoryName : null,
+    categoryId: row.categoryId ?? null,
     installmentNumber: row.installmentNumber,
     totalInstallments: row.totalInstallments,
     dueDate: row.dueDate,
@@ -361,6 +412,7 @@ function mapBillingCycleItem(
       txnDate: txn.txnDate,
       description: txn.description?.trim()?.length ? txn.description : "—",
       categoryName: txn.categoryName?.trim()?.length ? txn.categoryName : null,
+      categoryId: txn.categoryId ?? null,
     })),
     installmentDues: (row.installmentDues ?? []).map(mapBillingCycleInstallmentDue),
   };
@@ -414,6 +466,7 @@ function mapCurrencyGroup(
     comparisonWithPrevious: mapComparison(dto.comparisonWithPreviousMonth),
     directExpenses: mapDirectExpenses(dto.directExpenses),
     billingCycles: mapBillingCycles(dto.billingCycles, dto.currency),
+    budgetUtilizations: mapBudgetUtilizations(dto.budgetUtilizations),
   };
 }
 
@@ -466,9 +519,13 @@ export async function getMonthlyReport(
           timeZone: reportSlice.metadata.timeZone,
           consolidatedTotalsAvailable:
             reportSlice.metadata.consolidatedTotalsAvailable ?? true,
+          reportingPeriodStart: reportSlice.metadata.reportingPeriodStart ?? null,
+          reportingPeriodEnd: reportSlice.metadata.reportingPeriodEnd ?? null,
+          monthlyReportDay: Number(reportSlice.metadata.monthlyReportDay ?? 1),
         }
       : null,
     currencyGroups,
+    budgetUtilizations: mapBudgetUtilizations(reportSlice.budgetUtilizations),
   };
 }
 

@@ -1,34 +1,30 @@
 import * as Tabs from "@radix-ui/react-tabs";
 import { CreditCard, PlusCircle } from "lucide-react";
-import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  AddCycleTransactionModal,
   CreateCycleModal,
   BillingCycleCard,
-  BillingCycleDetail,
   CloseCycleModal,
   DeleteCycleModal,
   PayCycleModal,
 } from "@/features/billing-cycles/components";
 import {
-  useBillingCycleDetail,
   useBillingCycles,
   useRefreshCycle,
 } from "@/features/billing-cycles/hooks";
 import type { BillingCycle } from "@/features/billing-cycles/types";
-import { TransactionDetailDrawer } from "@/features/transactions/components/TransactionDetailDrawer";
-import type { Transaction } from "@/features/transactions/types";
 import { useSources } from "@/features/sources/hooks";
 import type { FinSource } from "@/features/sources/types";
+import { ROUTES } from "@/config/routes";
+import { useRouter } from "@/i18n/navigation";
 
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
+import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 import { cn } from "@/shared/lib/utils";
-import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 
 const tabListClass =
   "flex gap-1 overflow-x-auto rounded-button border border-warm-200 bg-warm-50 p-1 text-sm";
@@ -39,7 +35,8 @@ const tabTriggerClass = cn(
   "data-[state=inactive]:text-warm-500 hover:text-warm-800");
 
 export function BillingPage() {
-  const { data: sources, isLoading: sourcesLoading } = useSources();
+  const router = useRouter();
+  const { data: sources, isLoading: sourcesLoading, isError: sourcesError, refetch: refetchSources } = useSources();
 
   const creditCards = useMemo(
     () => (sources ?? []).filter((s) => s.type === "creditCard"),
@@ -68,17 +65,10 @@ export function BillingPage() {
 
   const refreshM = useRefreshCycle();
 
-  const [detailId, setDetailId] = useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
   const [closeTarget, setCloseTarget] = useState<BillingCycle | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BillingCycle | null>(null);
   const [payTarget, setPayTarget] = useState<BillingCycle | null>(null);
-  const [addTxnOpen, setAddTxnOpen] = useState(false);
   const [createCycleOpen, setCreateCycleOpen] = useState(false);
-  const [txnDrawerId, setTxnDrawerId] = useState<string | null>(null);
-  const [txnPreview, setTxnPreview] = useState<Transaction | null>(null);
-
-  const detailQ = useBillingCycleDetail(detailId, detailOpen);
 
   const paymentSourcesForPay = useMemo(() => {
     if (!sources || !payTarget) return [];
@@ -95,23 +85,7 @@ export function BillingPage() {
   }, [payTarget, sources, activeCard]);
 
   const openCycleDetail = (c: BillingCycle) => {
-    setDetailId(c.id);
-    setDetailOpen(true);
-  };
-
-  const closeCycleDetail = () => {
-    setDetailOpen(false);
-    setDetailId(null);
-  };
-
-  const openTxnFromCycle = (tx: Transaction) => {
-    setTxnPreview(tx);
-    setTxnDrawerId(tx.id);
-  };
-
-  const closeTxnDrawer = () => {
-    setTxnDrawerId(null);
-    setTxnPreview(null);
+    router.push(ROUTES.dashboard.billingDetail(c.id));
   };
 
   const handleRefreshCycle = (cycle: BillingCycle) => {
@@ -125,14 +99,16 @@ export function BillingPage() {
         description="Theo dõi kỳ hoạch toán, đóng sao kê và thanh toán cho từng thẻ tín dụng."
       />
 
-      {sourcesLoading ? (
+      {sourcesError ? (
+        <AsyncStateError title="Không tải được danh sách thẻ" onRetry={() => void refetchSources()} />
+      ) : sourcesLoading ? (
         <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
           {[0, 1, 2].map((i) => (
             <SkeletonCard key={`sk-${String(i)}`} lines={3} />
           ))}
         </div>
       ) : creditCards.length === 0 ? (
-        <div className="mt-8 rounded-card border border-warm-200 bg-surface shadow-sm">
+        <div className="mt-6 rounded-card border border-warm-200 bg-surface">
           <EmptyState
             icon={<CreditCard aria-hidden />}
             title="Chưa có thẻ tín dụng"
@@ -177,21 +153,16 @@ export function BillingPage() {
                   </div>
 
                   {cyclesQ.isLoading ? (
-                    <motion.div
-                      className="grid grid-cols-1 gap-4 md:grid-cols-2"
-                      {...listStaggerMotion}
-                    >
-                      <motion.div {...listStaggerItemMotion}>
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                      <div>
                         <SkeletonCard lines={3} />
-                      </motion.div>
-                      <motion.div {...listStaggerItemMotion}>
+                      </div>
+                      <div>
                         <SkeletonCard lines={3} />
-                      </motion.div>
-                    </motion.div>
+                      </div>
+                    </div>
                   ) : cyclesQ.isError ? (
-                    <p className="rounded-lg border border-danger/25 bg-danger/5 px-4 py-3 text-sm text-danger">
-                      Không tải được danh sách kỳ. Vui lòng thử lại.
-                    </p>
+                    <AsyncStateError title="Không tải được danh sách kỳ sao kê" onRetry={() => void cyclesQ.refetch()} />
                   ) : sortedCycles.length === 0 ? (
                     <EmptyState
                       icon={<CreditCard aria-hidden />}
@@ -199,12 +170,9 @@ export function BillingPage() {
                       description='Nhấn "Tạo kỳ sao kê" để mở kỳ hoạch toán mới cho thẻ này.'
                     />
                   ) : (
-                    <motion.div
-                      className="grid grid-cols-1 gap-4 md:grid-cols-2"
-                      {...listStaggerMotion}
-                    >
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                       {sortedCycles.map((c) => (
-                        <motion.div key={c.id} {...listStaggerItemMotion}>
+                        <div key={c.id}>
                           <BillingCycleCard
                             cycle={c}
                             currency={card.currency}
@@ -217,9 +185,9 @@ export function BillingPage() {
                             }
                             onDelete={setDeleteTarget}
                           />
-                        </motion.div>
+                        </div>
                       ))}
-                    </motion.div>
+                    </div>
                   )}
                 </section>
               ) : null}
@@ -228,29 +196,6 @@ export function BillingPage() {
         </Tabs.Root>
       )}
 
-      <BillingCycleDetail
-        cycleId={detailId}
-        currency={activeCard?.currency ?? "VND"}
-        isOpen={detailOpen}
-        onClose={closeCycleDetail}
-        onOpenTransaction={openTxnFromCycle}
-        onRefresh={
-          detailId
-            ? () => {
-                refreshM.mutate(detailId);
-              }
-            : undefined
-        }
-        isRefreshing={
-          refreshM.isPending && detailId != null && refreshM.variables === detailId
-        }
-        onAddTransaction={
-          detailQ.data?.cycle.status === "open"
-            ? () => setAddTxnOpen(true)
-            : undefined
-        }
-      />
-
       <CreateCycleModal
         card={activeCard ?? null}
         existingCycles={sortedCycles}
@@ -258,19 +203,10 @@ export function BillingPage() {
         onClose={() => setCreateCycleOpen(false)}
       />
 
-      <AddCycleTransactionModal
-        cycle={detailQ.data?.cycle ?? null}
-        isOpen={addTxnOpen}
-        onClose={() => setAddTxnOpen(false)}
-      />
-
       <DeleteCycleModal
         cycle={deleteTarget}
         isOpen={deleteTarget != null}
         onClose={() => setDeleteTarget(null)}
-        onDeleted={() => {
-          if (deleteTarget?.id === detailId) closeCycleDetail();
-        }}
       />
 
       <CloseCycleModal
@@ -285,13 +221,6 @@ export function BillingPage() {
         currency={payCurrency}
         isOpen={payTarget != null}
         onClose={() => setPayTarget(null)}
-      />
-
-      <TransactionDetailDrawer
-        transactionId={txnDrawerId}
-        isOpen={txnDrawerId != null}
-        onClose={closeTxnDrawer}
-        listPreview={txnPreview}
       />
     </div>
   );

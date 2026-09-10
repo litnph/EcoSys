@@ -14,15 +14,14 @@ import type { FinSource } from "@/features/sources/types";
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 import { Modal } from "@/shared/components/ui/Modal";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
-import { listStaggerItemMotion, listStaggerMotion } from "@/shared/lib/animations";
 import { useCallback, useState } from "react";
-import { motion } from "framer-motion";
 
 export function SourcesPage() {
   const router = useRouter();
-  const { data: sources, isLoading, isError } = useSources();
+  const { data: sources, isLoading, isError, refetch } = useSources();
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
@@ -53,19 +52,17 @@ export function SourcesPage() {
 
   return (
     <div className="w-full">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <PageHeader
-          title="Nguồn tài chính"
-          description="Quản lý ví, tài khoản và thẻ trong không gian tài chính."
-        />
-        <div className="flex shrink-0 flex-wrap gap-2">
+      <PageHeader
+        title="Nguồn tài chính"
+        description="Quản lý ví, tài khoản và thẻ trong cùng một sổ tài chính gia đình."
+        actions={<div className="flex shrink-0 flex-wrap gap-2">
           <Button
             type="button"
             variant="secondary"
             leftIcon={<RefreshCw className="size-4" aria-hidden />}
             onClick={() => setRecalOpen(true)}
           >
-            reCal
+            Đối soát
           </Button>
           <Button
             type="button"
@@ -75,21 +72,23 @@ export function SourcesPage() {
           >
             Thêm nguồn
           </Button>
-        </div>
-      </div>
+        </div>}
+      />
 
       {isError ? (
-        <div className="mt-8 rounded-card border border-danger/30 bg-danger/5 p-6 text-sm text-danger">
-          Không tải được danh sách nguồn. Kiểm tra kết nối API và quyền truy cập.
-        </div>
+        <AsyncStateError
+          title="Không tải được danh sách nguồn"
+          description="Kiểm tra kết nối API và quyền truy cập, sau đó thử lại."
+          onRetry={() => void refetch()}
+        />
       ) : isLoading ? (
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-6 divide-y divide-warm-200 overflow-hidden rounded-card border border-warm-200 bg-surface">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <SkeletonCard key={`sk-${String(i)}`} lines={2} />
+            <SkeletonCard key={`sk-${String(i)}`} lines={2} className="rounded-none border-0 p-4" />
           ))}
         </div>
       ) : sources && sources.length === 0 ? (
-        <div className="mt-8 rounded-card border border-warm-200 bg-surface shadow-sm">
+        <div className="mt-6 rounded-card border border-warm-200 bg-surface">
           <EmptyState
             icon={<Wallet aria-hidden />}
             title="Chưa có nguồn tài chính"
@@ -98,12 +97,9 @@ export function SourcesPage() {
           />
         </div>
       ) : (
-        <motion.div
-          {...listStaggerMotion}
-          className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
-        >
+        <div className="mt-6 divide-y divide-warm-200 overflow-hidden rounded-card border border-warm-200 bg-surface">
           {sources?.map((s) => (
-            <motion.div key={s.id} {...listStaggerItemMotion} className="h-full">
+            <div key={s.id}>
               <SourceCard
                 source={s}
                 onEdit={openEdit}
@@ -111,9 +107,9 @@ export function SourcesPage() {
                 onViewLedger={(src) =>
                   router.push(ROUTES.dashboard.sourceLedger(src.id))}
               />
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       )}
 
       <Modal

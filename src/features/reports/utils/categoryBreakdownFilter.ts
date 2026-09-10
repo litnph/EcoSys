@@ -18,27 +18,40 @@ export function buildFilteredCategoryBreakdown(
     return report.categoryBreakdown;
   }
 
-  const map = new Map<string, { amount: number; count: number }>();
+  const map = new Map<
+    string,
+    { categoryId: string | null; categoryName: string; amount: number; count: number }
+  >();
 
-  const add = (categoryName: string | null | undefined, amount: number) => {
+  const add = (
+    categoryId: string | null,
+    categoryName: string | null | undefined,
+    amount: number,
+  ) => {
     const name = categoryLabel(categoryName);
-    const cur = map.get(name) ?? { amount: 0, count: 0 };
-    map.set(name, { amount: cur.amount + amount, count: cur.count + 1 });
+    const key = categoryId ?? `name:${name}`;
+    const cur = map.get(key) ?? {
+      categoryId,
+      categoryName: name,
+      amount: 0,
+      count: 0,
+    };
+    map.set(key, { ...cur, amount: cur.amount + amount, count: cur.count + 1 });
   };
 
   if (filter === "transactions") {
     for (const item of report.directExpenses.items) {
-      add(item.categoryName, item.amount);
+      add(item.categoryId, item.categoryName, item.amount);
     }
     for (const cycle of report.billingCycles.cycles) {
       for (const txn of cycle.transactions) {
-        add(txn.categoryName, txn.amount);
+        add(txn.categoryId, txn.categoryName, txn.amount);
       }
     }
   } else {
     for (const cycle of report.billingCycles.cycles) {
       for (const due of cycle.installmentDues) {
-        add(due.categoryName, due.amount);
+        add(due.categoryId, due.categoryName, due.amount);
       }
     }
   }
@@ -46,9 +59,9 @@ export function buildFilteredCategoryBreakdown(
   const total = [...map.values()].reduce((sum, row) => sum + row.amount, 0);
 
   return [...map.entries()]
-    .map(([categoryName, row]) => ({
-      categoryId: null,
-      categoryName,
+    .map(([, row]) => ({
+      categoryId: row.categoryId,
+      categoryName: row.categoryName,
       amount: row.amount,
       transactionCount: row.count,
       percentageOfTotalExpense:

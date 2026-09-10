@@ -30,7 +30,7 @@ export function CreditLimitBar({
       ) : null}
       {installmentPct > 0 ? (
         <div
-          className="h-full bg-amber-400 transition-all"
+          className="h-full bg-warm-400 transition-all"
           style={{ width: `${String(installmentPct)}%` }}
         />
       ) : null}
@@ -96,7 +96,7 @@ export function CreditLimitLegend({
         value={spentValue}
       />
       <LegendRow
-        colorClass="bg-amber-400"
+        colorClass="bg-warm-400"
         label={installmentLabel}
         value={installmentValue}
       />

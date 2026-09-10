@@ -16,16 +16,16 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantClasses: Record<BadgeVariant, string> = {
-  default: "bg-warm-100 text-warm-900 ring-1 ring-warm-200",
-  success: "bg-success/15 text-success ring-1 ring-success/25",
-  danger: "bg-danger/15 text-danger ring-1 ring-danger/25",
-  warning: "bg-warning/15 text-warning ring-1 ring-warning/25",
-  info: "bg-info/15 text-info ring-1 ring-info/25",
+  default: "border-warm-200 bg-warm-100 text-warm-800 before:bg-warm-400",
+  success: "border-success/30 bg-success/10 text-success before:bg-success",
+  danger: "border-danger/30 bg-danger/10 text-danger before:bg-danger",
+  warning: "border-warning/30 bg-warning/10 text-warning before:bg-warning",
+  info: "border-info/30 bg-info/10 text-info before:bg-info",
 };
 
 const sizeClasses: Record<BadgeSize, string> = {
-  sm: "rounded-badge px-2 py-0.5 text-xs font-medium",
-  md: "rounded-badge px-2.5 py-1 text-sm font-medium",
+  sm: "rounded-badge px-2 py-0.5 text-xs font-semibold",
+  md: "rounded-badge px-2.5 py-1 text-sm font-semibold",
 };
 
 export function Badge({
@@ -37,11 +37,12 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap font-medium tabular-nums",
+        "inline-flex items-center justify-center gap-1.5 whitespace-nowrap border font-medium tabular-nums before:size-1.5 before:shrink-0 before:rounded-full",
         variantClasses[variant],
         sizeClasses[size],
         className)}
       {...props}
+      data-variant={variant}
     />
   );
 }

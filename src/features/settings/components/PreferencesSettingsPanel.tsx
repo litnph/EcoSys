@@ -20,12 +20,13 @@ import {
 } from "../utils/clientPreferences";
 import { usePatchPreferences, usePreferencesQuery } from "../hooks/useSettingsQueries";
 import { TimezoneSelect } from "./TimezoneSelect";
+import { buildReportingPeriodPreview } from "../utils/reportingPeriodPreview";
 
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 
 const fieldsetClass =
-  "rounded-card border border-warm-200 bg-warm-25/80 p-4 md:p-5";
+  "border-b border-warm-200 py-5 first:pt-0 last:border-b-0 last:pb-0";
 
 function RadioRow({
   name,
@@ -67,6 +68,7 @@ const defaultPreferences: UserPreferencesDto = {
   timeFormat: "24h",
   theme: "system",
   firstDayOfWeek: "monday",
+  monthlyReportDay: 1,
   ...readClientPreferences(),
 };
 
@@ -100,6 +102,7 @@ export function PreferencesSettingsPanel() {
           timezone: local.timezone,
           dateFormat: local.dateFormat,
           theme: local.theme,
+          monthlyReportDay: local.monthlyReportDay,
         },
         {
           onSuccess: () => {
@@ -114,6 +117,7 @@ export function PreferencesSettingsPanel() {
     local.timezone,
     local.dateFormat,
     local.theme,
+    local.monthlyReportDay,
     patch,
   ]);
 
@@ -143,6 +147,8 @@ export function PreferencesSettingsPanel() {
     });
   };
 
+  const periodPreview = buildReportingPeriodPreview(local.monthlyReportDay, locale);
+
   if (prefsQuery.isLoading && !prefsQuery.data) {
     return <SkeletonCard lines={6} className="p-8" />;
   }
@@ -152,18 +158,17 @@ export function PreferencesSettingsPanel() {
       {prefsQuery.isError ? (
         <AsyncStateError
           title={t("loadError")}
-          description="Các giá trị cục bộ vẫn được giữ nguyên."
           onRetry={() => void prefsQuery.refetch()}
         />
       ) : null}
 
-      <section className="rounded-card border border-warm-200 bg-surface p-4 shadow-sm md:p-6">
+      <section className="rounded-card border border-warm-200 bg-surface p-4 md:p-6">
         <h2 className="font-display text-lg font-semibold text-warm-900">
           {t("preferencesTitle")}
         </h2>
         <p className="mt-1 text-sm text-warm-600">{t("preferencesHint")}</p>
 
-        <div className="mt-8 space-y-6">
+        <div className="mt-7">
           <div className={fieldsetClass}>
             <label htmlFor="preference-language" className="text-sm font-medium text-warm-900">
               {t("language")}
@@ -184,6 +189,41 @@ export function PreferencesSettingsPanel() {
               <option value="vi">{t("langVi")}</option>
               <option value="en">{t("langEn")}</option>
             </select>
+          </div>
+
+          <div className={fieldsetClass}>
+            <label
+              htmlFor="preference-monthly-report-day"
+              className="text-sm font-medium text-warm-900"
+            >
+              {t("monthlyReportDay")}
+            </label>
+            <p id="monthly-report-day-help" className="mt-1 text-sm text-warm-600">
+              {t("monthlyReportDayHelp")}
+            </p>
+            <select
+              id="preference-monthly-report-day"
+              aria-describedby="monthly-report-day-help monthly-report-day-preview"
+              value={local.monthlyReportDay}
+              disabled={patch.isPending}
+              onChange={(event) => bump({ monthlyReportDay: Number(event.target.value) })}
+              className="mt-3 h-10 w-full max-w-xs rounded-input border border-warm-200 bg-surface px-3 text-sm text-warm-900 outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25"
+            >
+              {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
+                <option key={day} value={day}>{day}</option>
+              ))}
+            </select>
+            <p
+              id="monthly-report-day-preview"
+              className="mt-3 text-sm font-medium text-warm-800"
+            >
+              {t("monthlyReportDayPreview", {
+                month: periodPreview.month,
+                year: periodPreview.year,
+                start: periodPreview.start,
+                end: periodPreview.end,
+              })}
+            </p>
           </div>
 
           <div className={fieldsetClass}>
@@ -259,6 +299,15 @@ export function PreferencesSettingsPanel() {
             </div>
           </fieldset>
         </div>
+        <p className="mt-5 text-sm text-warm-600" aria-live="polite">
+          {patch.isPending
+            ? t("savingPreferences")
+            : patch.isError
+              ? t("preferencesSaveError")
+              : patch.isSuccess
+                ? t("preferencesSaved")
+                : null}
+        </p>
       </section>
     </div>
   );

@@ -58,6 +58,8 @@ export interface MonthlyReportDirectExpenseItem {
   txnDate: string;
   description: string;
   categoryName: string | null;
+  categoryId: string | null;
+  sourceId: string;
   sourceName: string;
 }
 
@@ -75,6 +77,7 @@ export interface MonthlyReportBillingCycleTxnItem {
   txnDate: string;
   description: string;
   categoryName: string | null;
+  categoryId: string | null;
 }
 
 export type MonthlyReportInstallmentPayStatus =
@@ -88,6 +91,7 @@ export interface MonthlyReportBillingCycleInstallmentDue {
   planId: string;
   planDescription: string;
   categoryName: string | null;
+  categoryId: string | null;
   installmentNumber: number;
   totalInstallments: number;
   dueDate: string;
@@ -125,6 +129,33 @@ export interface MonthlyReportMetadata {
   currency: string | null;
   timeZone: string;
   consolidatedTotalsAvailable: boolean;
+  reportingPeriodStart: string | null;
+  reportingPeriodEnd: string | null;
+  monthlyReportDay: number;
+}
+
+export type BudgetTargetMode = "maximum" | "minimum";
+
+export type BudgetUtilizationStatus =
+  | "withinBudget"
+  | "nearLimit"
+  | "reached"
+  | "exceeded"
+  | "belowTarget"
+  | "targetAchieved"
+  | "targetExceeded";
+
+export interface CategoryBudgetUtilization {
+  categoryId: string;
+  categoryName: string;
+  currency: string;
+  spentAmount: number;
+  budgetAmount: number;
+  targetMode: BudgetTargetMode;
+  remainingAmount: number;
+  utilizationPercent: number;
+  status: BudgetUtilizationStatus;
+  warningThresholds: number[];
 }
 
 export interface MonthlyReportCurrencyGroup {
@@ -139,6 +170,7 @@ export interface MonthlyReportCurrencyGroup {
   comparisonWithPrevious: Comparison;
   directExpenses: MonthlyReportDirectExpenseSection;
   billingCycles: MonthlyReportBillingCyclesSection;
+  budgetUtilizations: CategoryBudgetUtilization[];
 }
 
 export interface MonthlyReport {
@@ -157,5 +189,6 @@ export interface MonthlyReport {
   billingCycles: MonthlyReportBillingCyclesSection;
   metadata: MonthlyReportMetadata | null;
   currencyGroups: MonthlyReportCurrencyGroup[];
+  budgetUtilizations: CategoryBudgetUtilization[];
   lastRefreshedAt?: string | null;
 }

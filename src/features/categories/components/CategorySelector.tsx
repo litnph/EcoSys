@@ -1,6 +1,6 @@
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { ChevronDown, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 
 import { cn } from "@/shared/lib/utils";
 
@@ -50,6 +50,7 @@ export interface CategorySelectorProps {
   error?: string;
   disabled?: boolean;
   className?: string;
+  ariaLabel?: string;
 }
 
 function OptionLabel({ cat }: { cat: FinCategory }) {
@@ -77,7 +78,9 @@ export function CategorySelector({
   error,
   disabled,
   className,
+  ariaLabel = "Danh mục",
 }: CategorySelectorProps) {
+  const errorId = useId();
   const { data, isPending, isError } = useCategories(kind);
   const roots = useMemo(
     () => (data ?? []).filter((row) => row.kind === kind),
@@ -115,7 +118,7 @@ export function CategorySelector({
         disabled={disableControl}
       >
         <SelectPrimitive.Trigger
-          aria-label="Danh mục"
+          aria-label={ariaLabel}
           className={cn(
             "flex h-10 w-full items-center justify-between gap-2 rounded-button border bg-warm-50 px-3 text-left text-sm text-warm-900 transition-colors",
             "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
@@ -124,7 +127,7 @@ export function CategorySelector({
               ? "border-danger focus:border-danger focus:ring-danger/30"
               : "border-warm-200")}
           aria-invalid={error ? true : undefined}
-          aria-describedby={error ? "category-selector-error" : undefined}
+          aria-describedby={error ? errorId : undefined}
         >
           <span className="min-w-0 flex-1 truncate">
             {selected ? (
@@ -231,7 +234,7 @@ export function CategorySelector({
       </SelectPrimitive.Root>
       {error ? (
         <p
-          id="category-selector-error"
+          id={errorId}
           className="mt-1 text-sm text-danger"
           role="alert"
         >

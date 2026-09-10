@@ -1,12 +1,12 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ChevronRight, Menu } from "lucide-react";
+import { CalendarRange, ChevronRight, Menu } from "lucide-react";
 import { AvatarImage } from "@/shared/components/ui/AvatarImage";
 import { useEffect, useState } from "react";
 import { useTranslations } from "@/i18n/hooks";
 
 import { ROUTES } from "@/config/routes";
 import { TOKEN_KEY } from "@/config/constants";
-import { Link, usePathname } from "@/i18n/navigation";
+import { Link, useLocale, usePathname } from "@/i18n/navigation";
 import { buildDashboardBreadcrumbs } from "@/shared/lib/dashboard-breadcrumb";
 import {
   initialsFromNameOrEmail,
@@ -14,6 +14,8 @@ import {
 } from "@/shared/lib/jwt-display";
 import { getLocalStorageItem, logout } from "@/shared/lib/auth-session";
 import { cn } from "@/shared/lib/utils";
+import { NotificationMenu } from "@/features/notifications/components";
+import { CommandMenu } from "./CommandMenu";
 
 export type TopNavUser = {
   name: string;
@@ -23,6 +25,7 @@ export type TopNavUser = {
 
 export type TopNavProps = {
   sidebarCollapsed: boolean;
+  mobileMenuOpen?: boolean;
   user?: TopNavUser;
   bannerInsetPx?: number;
   onMenuClick?: () => void;
@@ -30,13 +33,34 @@ export type TopNavProps = {
 
 export function TopNav({
   sidebarCollapsed,
+  mobileMenuOpen = false,
   user: userProp,
   bannerInsetPx = 0,
   onMenuClick,
 }: TopNavProps) {
   const pathname = usePathname();
+  const locale = useLocale();
   const tNav = useTranslations("nav");
   const crumbs = buildDashboardBreadcrumbs(pathname);
+  const crumbKeyByHref: Record<string, Parameters<typeof tNav>[0]> = {
+    [ROUTES.dashboard.home]: "dashboard",
+    [ROUTES.dashboard.transactions]: "transactions",
+    [ROUTES.dashboard.sources]: "sources",
+    [ROUTES.dashboard.billing]: "billing",
+    [ROUTES.dashboard.installments]: "installments",
+    [ROUTES.dashboard.debt]: "debt",
+    [ROUTES.dashboard.reports]: "reports",
+    [ROUTES.dashboard.categories]: "categories",
+    [ROUTES.dashboard.savings]: "savings",
+    [ROUTES.dashboard.investments]: "investments",
+    [ROUTES.dashboard.tags]: "tags",
+    [ROUTES.dashboard.profile]: "profile",
+    [ROUTES.dashboard.settings]: "settings",
+    [ROUTES.dashboard.settingsProfile]: "profile",
+    [ROUTES.dashboard.settingsPreferences]: "preferences",
+    [ROUTES.dashboard.settingsClassification]: "classification",
+    [ROUTES.dashboard.settingsMembers]: "members",
+  };
 
   const [name, setName] = useState(() => userProp?.name ?? "User");
   const [email, setEmail] = useState(() => userProp?.email ?? "");
@@ -58,14 +82,19 @@ export function TopNav({
   }, [userProp]);
 
   const initials = initialsFromNameOrEmail(name, email);
+  const currentPeriod = new Intl.DateTimeFormat(
+    locale === "vi" ? "vi-VN" : "en-US",
+    { month: "long", year: "numeric" },
+  ).format(new Date());
 
   return (
     <header
+      id="dashboard-top-nav"
       style={{ top: bannerInsetPx }}
       className={cn(
-        "fixed right-0 z-40 flex h-14 items-center gap-2 border-b border-warm-200 bg-warm-25/80 px-4 backdrop-blur transition-[left] duration-200 ease-out md:gap-3 md:px-6",
+        "fixed right-0 z-40 flex h-16 items-center gap-2 border-b border-warm-200 bg-surface px-4 transition-[left] duration-200 ease-out motion-reduce:transition-none md:gap-3 md:px-5",
         "left-0",
-        sidebarCollapsed ? "md:left-16" : "md:left-[240px]")}
+        sidebarCollapsed ? "md:left-[76px]" : "md:left-[256px]")}
     >
       {onMenuClick ? (
         <button
@@ -76,6 +105,8 @@ export function TopNav({
             "outline-none hover:bg-warm-100 hover:text-warm-900",
             "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2")}
           aria-label={tNav("openMenu")}
+          aria-controls="dashboard-sidebar"
+          aria-expanded={mobileMenuOpen}
         >
           <Menu className="size-5" aria-hidden />
         </button>
@@ -87,7 +118,13 @@ export function TopNav({
       >
         <ol className="flex min-w-0 flex-wrap items-center gap-1 text-sm text-warm-600">
           {crumbs.map((crumb, i) => (
-            <li key={`${crumb.href}-${i}`} className="flex items-center gap-1">
+            <li
+              key={`${crumb.href}-${i}`}
+              className={cn(
+                "items-center gap-1",
+                crumb.isCurrent ? "flex" : "hidden sm:flex",
+              )}
+            >
               {i > 0 ? (
                 <ChevronRight
                   className="size-4 shrink-0 text-warm-400"
@@ -96,14 +133,14 @@ export function TopNav({
               ) : null}
               {crumb.isCurrent ? (
                 <span className="truncate font-medium text-warm-900">
-                  {crumb.label}
+                  {crumbKeyByHref[crumb.href] ? tNav(crumbKeyByHref[crumb.href]) : crumb.label}
                 </span>
               ) : (
                 <Link
                   href={crumb.href}
                   className="truncate transition-colors hover:text-warm-900"
                 >
-                  {crumb.label}
+                  {crumbKeyByHref[crumb.href] ? tNav(crumbKeyByHref[crumb.href]) : crumb.label}
                 </Link>
               )}
             </li>
@@ -112,6 +149,12 @@ export function TopNav({
       </nav>
 
       <div className="flex shrink-0 items-center justify-end gap-2">
+        <div className="hidden items-center gap-2 border-l border-warm-200 pl-4 text-xs text-warm-600 xl:flex">
+          <CalendarRange className="size-4 text-accent" aria-hidden />
+          <span><span className="font-semibold text-warm-800">{tNav("currentPeriod")}:</span> {currentPeriod}</span>
+        </div>
+        <CommandMenu />
+        <NotificationMenu />
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <button
@@ -119,7 +162,7 @@ export function TopNav({
               className={cn(
                 "flex items-center gap-2 rounded-full outline-none",
                 "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2")}
-              aria-label="Account menu"
+              aria-label={tNav("accountMenu")}
             >
               {avatarUrl ? (
                 <AvatarImage
@@ -141,7 +184,7 @@ export function TopNav({
               align="end"
               sideOffset={8}
               className={cn(
-                "z-[200] min-w-[220px] rounded-card border border-warm-200 bg-surface p-1 shadow-lg outline-none")}
+                "z-[200] min-w-[240px] rounded-card border border-warm-200 bg-surface p-1 elevation-menu outline-none")}
             >
               <div className="px-2 py-2">
                 <p className="truncate text-sm font-semibold text-warm-900">
@@ -159,7 +202,7 @@ export function TopNav({
                     "flex cursor-pointer select-none rounded-md px-2 py-2 text-sm text-warm-800 outline-none",
                     "hover:bg-warm-100 focus:bg-warm-100")}
                 >
-                  Profile
+                  {tNav("profile")}
                 </Link>
               </DropdownMenu.Item>
               <DropdownMenu.Item asChild>
@@ -169,7 +212,7 @@ export function TopNav({
                     "flex cursor-pointer select-none rounded-md px-2 py-2 text-sm text-warm-800 outline-none",
                     "hover:bg-warm-100 focus:bg-warm-100")}
                 >
-                  Settings
+                  {tNav("settings")}
                 </Link>
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="my-1 h-px bg-warm-200" />
@@ -182,7 +225,7 @@ export function TopNav({
                   logout();
                 }}
               >
-                Logout
+                {tNav("logout")}
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>

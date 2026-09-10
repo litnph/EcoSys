@@ -86,22 +86,22 @@ export function MonthlyReportListPanel({
             }}
           />
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <ul className="divide-y divide-warm-200 overflow-hidden rounded-card border border-warm-200 bg-surface">
             {items.map((item) => (
               <li key={`${item.year}-${item.month}`}>
                 <button
                   type="button"
                   className={cn(
-                    "flex h-full w-full flex-col gap-3 rounded-card border border-warm-200 bg-surface p-4 text-left shadow-sm transition",
-                    "hover:border-accent/40 hover:bg-warm-25/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                    "grid min-h-20 w-full gap-3 p-4 text-left transition sm:grid-cols-[minmax(9rem,0.65fr)_minmax(0,1.6fr)_auto] sm:items-center",
+                    "hover:bg-warm-25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
                   )}
                   onClick={() => onOpen(item)}
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 sm:block">
                     <h2 className="font-display text-base font-semibold text-warm-900">
                       {monthLabel(item.year, item.month)}
                     </h2>
-                    {statusBadge(item.status)}
+                    <span className="sm:mt-1 sm:block">{statusBadge(item.status)}</span>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-xs">
@@ -130,7 +130,7 @@ export function MonthlyReportListPanel({
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-warm-500">
+                  <p className="text-[11px] text-warm-500 sm:text-right">
                     {item.lastRefreshedAt
                       ? `Cập nhật ${formatRelativeTime(item.lastRefreshedAt)}`
                       : `Tạo ${formatRelativeTime(item.reportCreatedAt)}`}

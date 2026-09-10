@@ -1,6 +1,7 @@
 import { CreditCard, Eye } from "lucide-react";
-import { useState } from "react";
 
+import { ROUTES } from "@/config/routes";
+import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/shared/components/ui/Button";
 import { formatCurrency } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
@@ -10,8 +11,6 @@ import type {
   MonthlyReportBillingCycleStatus,
   MonthlyReportBillingCyclesSection,
 } from "../types";
-
-import { BillingCycleReportDetailModal } from "./BillingCycleReportDetailModal";
 
 export interface BillingCyclesReportSectionProps {
   section: MonthlyReportBillingCyclesSection | undefined;
@@ -115,8 +114,7 @@ export function BillingCyclesReportSection({
   isLoading,
   className,
 }: BillingCyclesReportSectionProps) {
-  const [detailCycle, setDetailCycle] =
-    useState<MonthlyReportBillingCycleItem | null>(null);
+  const router = useRouter();
 
   if (isLoading) {
     return (
@@ -153,7 +151,6 @@ export function BillingCyclesReportSection({
   );
 
   return (
-    <>
       <section
         className={cn(
           "rounded-card border border-warm-200 bg-surface shadow-sm",
@@ -202,18 +199,13 @@ export function BillingCyclesReportSection({
               <CycleBlock
                 key={cycle.id}
                 cycle={cycle}
-                onViewDetail={setDetailCycle}
+                onViewDetail={(selected) => {
+                  router.push(ROUTES.dashboard.billingDetail(selected.id));
+                }}
               />
             ))}
           </div>
         )}
       </section>
-
-      <BillingCycleReportDetailModal
-        cycle={detailCycle}
-        isOpen={detailCycle !== null}
-        onClose={() => setDetailCycle(null)}
-      />
-    </>
   );
 }

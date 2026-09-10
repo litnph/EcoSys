@@ -26,7 +26,7 @@ export function Skeleton({
 }: SkeletonProps) {
   return (
     <div
-      className={cn("animate-pulse rounded bg-warm-200", className)}
+      className={cn("animate-pulse rounded bg-warm-200/80 motion-reduce:animate-none", className)}
       style={{ ...styleFromDim(width, height), ...style }}
       {...props}
     />
@@ -67,7 +67,7 @@ export function SkeletonCard({
   return (
     <div
       className={cn(
-        "flex w-full flex-col gap-3 rounded-card border border-warm-200 bg-surface p-4 shadow-sm",
+        "flex w-full flex-col gap-3 rounded-card border border-warm-200 bg-surface p-4",
         className)}
     >
       {showHeader && (

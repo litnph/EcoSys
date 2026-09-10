@@ -21,7 +21,7 @@ export const DataTableScrollRegion = React.forwardRef<
       aria-label={label}
       tabIndex={0}
       className={cn(
-        "overflow-x-auto overscroll-x-contain focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
+        "scrollbar-stable overflow-x-auto overscroll-x-contain focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
         className,
       )}
       {...props}

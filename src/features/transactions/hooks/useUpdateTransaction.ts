@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
+import { invalidateBudgetAwareness } from "@/features/budgets/lib/invalidateBudgetAwareness";
 
 import {
   updateTransaction,
@@ -31,6 +32,7 @@ export function useUpdateTransaction() {
       await qc.invalidateQueries({ queryKey: sourceKeys.all });
       await qc.invalidateQueries({ queryKey: debtKeys.all });
       invalidateDashboard(qc);
+      await invalidateBudgetAwareness(qc);
       addToast({ type: "success", title: "Đã cập nhật giao dịch" });
     },
     onError: (e: Error) => {

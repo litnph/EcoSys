@@ -12,7 +12,7 @@ const MotionOverlay = React.forwardRef<HTMLDivElement, HTMLMotionProps<"div">>(
         ref={ref}
         {...props}
         className={cn(
-          "fixed inset-0 z-[100] bg-warm-900/40 backdrop-blur-sm",
+          "fixed inset-0 z-[100] bg-warm-900/55",
           className)}
         style={style}
       />
@@ -111,17 +111,17 @@ export function Modal({
                     className={cn(
                       "pointer-events-auto flex w-full flex-col",
                       sizeClass[size],
-                      "rounded-card border border-warm-200 bg-surface shadow-lg",
-                      "max-h-[min(90vh,700px)]",
+                      "rounded-card border border-warm-300 bg-surface elevation-overlay",
+                      "max-h-[min(92dvh,760px)]",
                       contentClassName)}
-                    initial={{ opacity: 0, scale: 0.96 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.96 }}
-                    transition={{ type: "spring", damping: 28, stiffness: 320 }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <div className="relative flex shrink-0 items-start justify-between gap-3 border-b border-warm-200 px-6 py-4">
+                    <div className="relative flex shrink-0 items-start justify-between gap-3 border-b border-warm-200 px-5 py-4 sm:px-6">
                       <div className="min-w-0 space-y-1 pr-10">
-                        <Dialog.Title className="font-display text-lg font-semibold text-warm-900">
+                        <Dialog.Title className="font-display text-base font-semibold text-warm-900">
                           {title}
                         </Dialog.Title>
                         {description !== undefined && description.length > 0 ? (
@@ -138,7 +138,7 @@ export function Modal({
                         <button
                           type="button"
                           className={cn(
-                            "absolute right-4 top-4 rounded-button p-1.5 text-warm-600",
+                            "absolute right-3 top-2.5 flex size-10 items-center justify-center rounded-button text-warm-600 sm:right-4",
                             "outline-none hover:bg-warm-100 hover:text-warm-900",
                             "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
                             "disabled:pointer-events-none")}
@@ -150,7 +150,7 @@ export function Modal({
                     </div>
                     <div
                       className={cn(
-                        "relative min-h-0 flex-1 overflow-y-auto px-6 py-4",
+                        "scrollbar-stable relative min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6",
                         bodyClassName,
                       )}
                     >

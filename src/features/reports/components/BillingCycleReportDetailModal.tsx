@@ -221,7 +221,7 @@ export function BillingCycleReportDetailModal({
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h4 className="text-sm font-semibold text-warm-800">
-              Giao dịch trả sau
+              Giao dịch trả sau trong kỳ sao kê
             </h4>
             <span className="text-xs tabular-nums text-warm-500">
               {cycle.transactions.length} dòng · {formatCurrency(txnTotal, cycle.currency)}
@@ -233,7 +233,7 @@ export function BillingCycleReportDetailModal({
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h4 className="text-sm font-semibold text-warm-800">
-              Trả góp phải thanh toán
+              Các giao dịch trả góp trong kỳ sao kê
             </h4>
             <span className="text-xs tabular-nums text-warm-500">
               {cycle.installmentDues.length} kỳ · {formatCurrency(installmentTotal, cycle.currency)}

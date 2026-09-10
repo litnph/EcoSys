@@ -1,0 +1,28 @@
+
+> personal-finance-fe@0.1.0 dev
+> vite --host 127.0.0.1
+
+[2m20:10:12[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because lockfile has changed
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m246[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m3000[22m/[39m
+[2m20:14:17[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/shared/components/layouts/TopNav.tsx, /src/styles/globals.css[22m
+[2m20:14:17[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/vi.json[22m
+[2m20:14:17[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/SourcesPage.tsx, /src/styles/globals.css[22m
+[2m20:14:17[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/settings/components/PreferencesSettingsPanel.tsx, /src/styles/globals.css[22m
+[2m20:14:17[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/en.json[22m
+[2m20:24:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/shared/components/layouts/TopNav.tsx, /src/styles/globals.css[22m
+[2m20:24:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/vi.json[22m
+[2m20:24:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/SourcesPage.tsx, /src/styles/globals.css[22m
+[2m20:24:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/sources/components/SourceCard.tsx, /src/styles/globals.css[22m
+[2m20:24:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/i18n/en.json[22m
+[2m20:25:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/DebtPage.tsx, /src/styles/globals.css[22m
+[2m20:25:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/debt/components/DebtRecordCard.tsx, /src/styles/globals.css[22m
+[2m20:25:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/installments/components/InstallmentPlanListPanel.tsx, /src/styles/globals.css[22m
+[2m20:25:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/installments/components/InstallmentPlanCard.tsx, /src/styles/globals.css[22m
+[2m20:25:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/installments/components/InstallmentsOverview.tsx, /src/styles/globals.css[22m
+[2m20:25:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/installments/components/InstallmentsOverview.tsx, /src/styles/globals.css[22m
+[2m20:26:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/reports/components/MonthlyReportDetailView.tsx, /src/styles/globals.css[22m
+[2m20:26:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m20:26:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m

@@ -39,7 +39,7 @@ export const fadeIn: Variants = {
 };
 
 export const slideUp: Variants = {
-  initial: { opacity: 0, y: 16 },
+  initial: { opacity: 0, y: 8 },
   animate: {
     opacity: 1,
     y: 0,
@@ -47,7 +47,7 @@ export const slideUp: Variants = {
   },
   exit: {
     opacity: 0,
-    y: 12,
+    y: 8,
     transition: exitTransition,
   },
 };
@@ -60,7 +60,7 @@ export const cardSlideUpMotion = {
 } as const;
 
 export const slideDown: Variants = {
-  initial: { opacity: 0, y: -16 },
+  initial: { opacity: 0, y: -8 },
   animate: {
     opacity: 1,
     y: 0,
@@ -68,7 +68,7 @@ export const slideDown: Variants = {
   },
   exit: {
     opacity: 0,
-    y: -12,
+    y: -8,
     transition: exitTransition,
   },
 };
@@ -102,15 +102,15 @@ export const slideRight: Variants = {
 };
 
 export const scaleIn: Variants = {
-  initial: { opacity: 0, scale: 0.96 },
+  initial: { opacity: 0, y: 8 },
   animate: {
     opacity: 1,
-    scale: 1,
+    y: 0,
     transition,
   },
   exit: {
     opacity: 0,
-    scale: 0.98,
+    y: 8,
     transition: exitTransition,
   },
 };
@@ -166,10 +166,7 @@ export const cardHoverMotion: Pick<
   HTMLMotionProps<"div">,
   "whileHover" | "transition"
 > = {
-  whileHover: {
-    y: -2,
-    boxShadow: "0 8px 24px rgba(44,36,22,0.12)",
-  },
+  whileHover: undefined,
   transition: { duration: duration.fast },
 };
 

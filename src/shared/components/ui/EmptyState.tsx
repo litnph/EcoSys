@@ -28,21 +28,21 @@ export function EmptyState({
     <div
       role="region"
       className={cn(
-        "mx-auto flex max-w-lg flex-col items-center justify-center text-center px-4 py-10",
+        "mx-auto flex max-w-lg flex-col items-center justify-center px-4 py-12 text-center",
         className)}
     >
-      <div className="mb-4 inline-flex shrink-0 text-warm-300 [&>svg]:size-14">
+      <div className="mb-4 inline-flex size-11 shrink-0 items-center justify-center rounded-button border border-warm-200 bg-warm-50 text-warm-500 [&>svg]:size-5">
         {icon}
       </div>
-      <h2 className="font-display text-lg font-semibold text-warm-700">
+      <h2 className="font-display text-base font-semibold text-warm-900">
         {title}
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-warm-400">{description}</p>
+      <p className="mt-1.5 text-sm leading-6 text-warm-500">{description}</p>
       {action !== undefined ? (
         <Button
           type="button"
           variant="primary"
-          className="mt-8"
+          className="mt-5"
           onClick={action.onClick}
         >
           {action.label}

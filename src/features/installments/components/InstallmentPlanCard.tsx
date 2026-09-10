@@ -1,15 +1,12 @@
 import { Trash2 } from "lucide-react";
-import { motion } from "framer-motion";
 
 import { sourceTypeIcon } from "@/features/dashboard/utils/financeDisplay";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { cn } from "@/shared/lib/utils";
-import { cardHoverMotion } from "@/shared/lib/animations";
 import { formatCurrency } from "@/shared/lib/formatters";
 
 import type { InstallmentPlanListItem, InstallmentStatus } from "../types";
-import { sourceCardTintColor } from "../utils/sourceCardTint";
 
 function statusBadgeClasses(status: InstallmentStatus): string {
   switch (status) {
@@ -68,28 +65,16 @@ export function InstallmentPlanCard({
   const pct =
     total > 0 ? Math.min(100, Math.round((paid / total) * 1000) / 10) : 0;
 
-  const tint = sourceCardTintColor(listItem.sourceColor);
   const iconChar = listItem.sourceIcon?.trim();
   const FallbackIcon = sourceTypeIcon("creditCard");
 
   return (
-    <motion.article
-      {...cardHoverMotion}
-      role="button"
-      tabIndex={0}
-      onClick={onOpenDetail}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpenDetail();
-        }
-      }}
+    <article
       className={cn(
-        "flex cursor-pointer flex-col gap-2 rounded-card border border-warm-200/80 p-3 shadow-sm transition outline-none",
-        "hover:border-warm-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-accent")}
-      style={{ backgroundColor: tint }}
+        "flex flex-col gap-3 bg-surface p-4 transition-colors",
+        "hover:bg-warm-25")}
     >
-      <div className="flex items-start justify-between gap-2">
+      <button type="button" className="flex min-h-10 items-start justify-between gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent" onClick={onOpenDetail}>
         <div className="flex min-w-0 flex-1 items-start gap-2.5">
           <span
             className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface/80 text-base ring-1 ring-warm-200/60"
@@ -129,7 +114,7 @@ export function InstallmentPlanCard({
         >
           {statusLabel(listItem.status)}
         </Badge>
-      </div>
+      </button>
 
       <div className="flex items-center gap-2">
         <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-warm-100/80">
@@ -160,6 +145,6 @@ export function InstallmentPlanCard({
           </Button>
         ) : null}
       </div>
-    </motion.article>
+    </article>
   );
 }

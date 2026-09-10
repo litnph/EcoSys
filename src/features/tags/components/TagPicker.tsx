@@ -1,4 +1,5 @@
 import { useTags } from "@/features/tags/hooks/useTags";
+import { useTranslations } from "@/i18n/hooks";
 import { cn } from "@/shared/lib/utils";
 
 export interface TagPickerProps {
@@ -6,6 +7,7 @@ export interface TagPickerProps {
   onChange: (tagIds: string[]) => void;
   disabled?: boolean;
   className?: string;
+  label?: string;
 }
 
 export function TagPicker({
@@ -13,8 +15,10 @@ export function TagPicker({
   onChange,
   disabled,
   className,
+  label,
 }: TagPickerProps) {
-  const { data: tags, isLoading } = useTags();
+  const t = useTranslations("tagPicker");
+  const { data: tags, isLoading, isError, refetch } = useTags();
   const selected = new Set(value);
 
   const toggle = (id: string) => {
@@ -27,19 +31,30 @@ export function TagPicker({
   };
 
   if (isLoading) {
-    return <p className="text-sm text-warm-500">Đang tải thẻ…</p>;
+    return <p className="text-sm text-warm-500" aria-live="polite">{t("loading")}</p>;
+  }
+
+  if (isError) {
+    return (
+      <p className="text-sm text-danger" role="alert">
+        {t("loadError")} {" "}
+        <button type="button" className="font-medium underline underline-offset-2" onClick={() => void refetch()}>
+          {t("retry")}
+        </button>
+      </p>
+    );
   }
 
   if (!tags?.length) {
     return (
       <p className="text-sm text-warm-500">
-        Chưa có thẻ nào. Tạo thẻ trong mục Thẻ trước khi gán cho giao dịch.
+        {t("empty")}
       </p>
     );
   }
 
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
+    <div role="group" aria-label={label ?? t("label")} className={cn("flex flex-wrap gap-2", className)}>
       {tags.map((tag) => {
         const active = selected.has(tag.id);
         return (
@@ -48,6 +63,7 @@ export function TagPicker({
             type="button"
             disabled={disabled}
             onClick={() => toggle(tag.id)}
+            aria-pressed={active}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition",
               active

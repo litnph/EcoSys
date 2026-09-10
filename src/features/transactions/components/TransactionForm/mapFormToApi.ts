@@ -44,6 +44,7 @@ export function mapFormValuesToCreateBody(
     txnDate: v.txnDate.trim(),
     description: v.description?.trim() ?? "",
     note: cleanNote(v.note),
+    tagIds: v.tagIds ?? [],
   };
 
   switch (v.type) {

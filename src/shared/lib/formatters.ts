@@ -6,6 +6,16 @@ import {
 import { enUS, vi } from "date-fns/locale";
 import { LOCALE_KEY } from "@/config/constants";
 
+function getIntlLocale(): "vi-VN" | "en-US" {
+  if (typeof window === "undefined") return "vi-VN";
+  try {
+    const stored = window.localStorage.getItem(LOCALE_KEY) ?? "vi";
+    return stored.startsWith("en") ? "en-US" : "vi-VN";
+  } catch {
+    return "vi-VN";
+  }
+}
+
 function getDateFnsLocale(): Locale {
   if (typeof window === "undefined") {
     return vi;
@@ -19,16 +29,12 @@ function getDateFnsLocale(): Locale {
 }
 
 export function formatCurrency(amount: number, currency = "VND"): string {
-  if (currency === "VND") {
-    const formatted = new Intl.NumberFormat("vi-VN", {
-      maximumFractionDigits: 0,
-    }).format(amount);
-    return `${formatted} ₫`;
-  }
-  return new Intl.NumberFormat("vi-VN", {
+  return new Intl.NumberFormat(getIntlLocale(), {
     style: "currency",
     currency,
-    maximumFractionDigits: 2,
+    currencyDisplay: "narrowSymbol",
+    minimumFractionDigits: currency === "VND" ? 0 : undefined,
+    maximumFractionDigits: currency === "VND" ? 0 : 2,
   }).format(amount);
 }
 
@@ -52,12 +58,22 @@ export function formatRelativeTime(date: string | Date): string {
 }
 
 export function formatNumber(num: number): string {
-  return new Intl.NumberFormat("vi-VN").format(num);
+  return new Intl.NumberFormat(getIntlLocale()).format(num);
 }
 
 export function formatPercentage(
   num: number,
   decimals = 1): string {
-  const fixed = num.toFixed(decimals);
-  return `${fixed}%`;
+  const formatted = new Intl.NumberFormat(getIntlLocale(), {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(num);
+  return `${formatted}%`;
+}
+
+export function formatCompactNumber(num: number): string {
+  return new Intl.NumberFormat(getIntlLocale(), {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(num);
 }

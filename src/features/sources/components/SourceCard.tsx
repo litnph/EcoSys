@@ -1,12 +1,10 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { motion } from "framer-motion";
 import { MoreVertical } from "lucide-react";
 import * as React from "react";
 
 import { sourceTypeIcon } from "@/features/dashboard/utils/financeDisplay";
 import { Badge } from "@/shared/components/ui/Badge";
 import { formatCurrency } from "@/shared/lib/formatters";
-import { cardHoverMotion } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import type { FinSource } from "../types";
@@ -18,24 +16,6 @@ import {
 import { sourceTypeLabelVi } from "../utils/sourceLabels";
 
 import { CreditLimitBar, CreditLimitLegend } from "./CreditLimitBar";
-
-function hexToRgba(hex: string, alpha: number): string {
-  const h = hex.trim().replace("#", "");
-  if (h.length !== 6 || alpha < 0 || alpha > 1) {
-    return `rgba(0,0,0,${String(alpha)})`;
-  }
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${String(r)},${String(g)},${String(b)},${String(alpha)})`;
-}
-
-function cardTintColor(source: FinSource): string {
-  if (source.color && /^#[0-9a-fA-F]{6}$/.test(source.color)) {
-    return hexToRgba(source.color, 0.1);
-  }
-  return "rgba(0,0,0,0.03)";
-}
 
 export type SourceCardProps = {
   source: FinSource;
@@ -72,29 +52,27 @@ function SourceCardInner({ source, onEdit, onDelete, onViewLedger }: SourceCardP
     supportsBalanceLedger(source.type) && typeof onViewLedger === "function";
 
   return (
-    <motion.article
-      layout
-      {...cardHoverMotion}
+    <article
       className={cn(
-        "group flex h-full flex-col rounded-card border border-warm-200 p-5 shadow-sm",
-        "transition-shadow duration-200 hover:shadow-md")}
-      style={{ backgroundColor: cardTintColor(source) }}
+        "group grid min-h-28 gap-4 bg-surface p-4 transition-colors duration-150 hover:bg-warm-25",
+        "md:grid-cols-[minmax(14rem,0.9fr)_minmax(18rem,1.1fr)] md:items-center")}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-3">
           <span
-            className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-surface text-2xl shadow-sm ring-1 ring-warm-200/80"
+            className="flex size-10 shrink-0 items-center justify-center rounded-button bg-warm-50 text-xl text-warm-700 ring-1 ring-warm-200"
             aria-hidden
           >
             {iconChar && iconChar.length > 0 ? (
               <span className="leading-none">{iconChar}</span>
             ) : (
-              <TypeIcon className="size-6 text-warm-600" />
+              <TypeIcon className="size-5" />
             )}
           </span>
           <div className="min-w-0">
-            <h3 className="truncate font-display text-base font-semibold text-warm-900">
-              {source.name}
+            <h3 className="flex items-center gap-2 truncate font-display text-base font-semibold text-warm-900">
+              {source.color ? <span className="size-2 shrink-0 rounded-sm" style={{ backgroundColor: source.color }} aria-hidden /> : null}
+              <span className="truncate">{source.name}</span>
             </h3>
             <Badge size="sm" className="mt-1.5">
               {sourceTypeLabelVi(source.type)}
@@ -153,7 +131,7 @@ function SourceCardInner({ source, onEdit, onDelete, onViewLedger }: SourceCardP
       </div>
 
       {isCard && creditBreakdown ? (
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3 md:border-l md:border-warm-200 md:pl-4">
           <CreditLimitLegend
             spentLabel="Đã dùng"
             spentValue={formatCurrency(
@@ -183,13 +161,13 @@ function SourceCardInner({ source, onEdit, onDelete, onViewLedger }: SourceCardP
           ) : null}
         </div>
       ) : isCard ? (
-        <div className="mt-4 space-y-1">
+        <div className="space-y-1 md:border-l md:border-warm-200 md:pl-4">
           <p className="text-xs font-medium text-warm-500">Dư nợ</p>
           <p className="font-mono text-xl font-semibold tabular-nums text-warm-900">
             {formatCurrency(Math.max(0, source.balance), source.currency)}
           </p>
           {(source.installmentRemainingAmount ?? 0) > 0 ? (
-            <p className="text-xs text-amber-800">
+            <p className="text-xs text-warm-700">
               Trả góp còn lại:{" "}
               <span className="font-mono font-medium">
                 {formatCurrency(
@@ -200,14 +178,14 @@ function SourceCardInner({ source, onEdit, onDelete, onViewLedger }: SourceCardP
           ) : null}
         </div>
       ) : (
-        <div className="mt-4">
+        <div className="md:border-l md:border-warm-200 md:pl-4">
           <p className="text-xs font-medium text-warm-500">Số dư khả dụng</p>
           <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-success">
             {formatCurrency(availableBalance, source.currency)}
           </p>
         </div>
       )}
-    </motion.article>
+    </article>
   );
 }
 

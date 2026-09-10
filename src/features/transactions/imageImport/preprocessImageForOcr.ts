@@ -1,5 +1,12 @@
 /** Upscale + tăng tương phản để OCR nhận số (đặc biệt 3/5) chính xác hơn trên ảnh chụp màn hình. */
-export async function preprocessImageForOcr(file: File | Blob): Promise<Blob> {
+export interface PreprocessedOcrImage {
+  image: Blob;
+  scale: number;
+}
+
+export async function preprocessImageForOcr(
+  file: File | Blob,
+): Promise<PreprocessedOcrImage> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.max(2, Math.min(3, 2400 / Math.max(bitmap.width, 1)));
 
@@ -8,7 +15,12 @@ export async function preprocessImageForOcr(file: File | Blob): Promise<Blob> {
   canvas.height = Math.round(bitmap.height * scale);
 
   const ctx = canvas.getContext("2d");
-  if (!ctx) return file instanceof File ? file : new File([file], "ocr.png");
+  if (!ctx) {
+    return {
+      image: file instanceof File ? file : new File([file], "ocr.png"),
+      scale: 1,
+    };
+  }
 
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
@@ -62,7 +74,7 @@ export async function preprocessImageForOcr(file: File | Blob): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
-        if (blob) resolve(blob);
+        if (blob) resolve({ image: blob, scale });
         else reject(new Error("Không xử lý được ảnh."));
       },
       "image/png",

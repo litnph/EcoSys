@@ -11,7 +11,7 @@ import { Sidebar } from "./Sidebar";
 import type { TopNavUser } from "./TopNav";
 import { TopNav } from "./TopNav";
 
-const TOP_NAV_HEIGHT_PX = 56;
+const TOP_NAV_HEIGHT_PX = 64;
 const OFFLINE_BANNER_HEIGHT_PX = 40;
 
 export type DashboardLayoutProps = {
@@ -45,17 +45,6 @@ export function DashboardLayout({
   }, [isMdUp]);
 
   useEffect(() => {
-    if (!mobileSidebarOpen) return;
-    function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") {
-        setMobileSidebarOpen(false);
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mobileSidebarOpen]);
-
-  useEffect(() => {
     function handleOnline(): void {
       setOffline(false);
       void queryClient.refetchQueries({ type: "active" });
@@ -75,7 +64,7 @@ export function DashboardLayout({
   const mainPaddingTopPx = TOP_NAV_HEIGHT_PX + bannerInsetPx;
 
   const sidebarWidth =
-    !isMdUp ? "0px" : sidebarCollapsed ? "4rem" : "240px";
+    !isMdUp ? "0px" : sidebarCollapsed ? "76px" : "256px";
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -87,7 +76,7 @@ export function DashboardLayout({
   }, [sidebarWidth]);
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-warm-50">
+    <div className="min-h-screen min-h-[100dvh] bg-background">
       <a
         href="#dashboard-main"
         className={cn(
@@ -120,6 +109,7 @@ export function DashboardLayout({
       <ErrorBoundary fallbackTitle="Không tải được thanh điều hướng">
         <TopNav
           sidebarCollapsed={sidebarCollapsed}
+          mobileMenuOpen={mobileSidebarOpen}
           user={user}
           bannerInsetPx={bannerInsetPx}
           onMenuClick={openMobileSidebar}
@@ -131,11 +121,13 @@ export function DashboardLayout({
         tabIndex={-1}
         style={{ paddingTop: mainPaddingTopPx }}
         className={cn(
-          "min-h-screen min-h-[100dvh] bg-warm-50 px-4 transition-[margin] duration-200 ease-out md:px-6",
-          sidebarCollapsed ? "md:ml-16" : "md:ml-[240px]")}
+          "min-h-screen min-h-[100dvh] bg-background px-4 transition-[margin] duration-200 ease-out motion-reduce:transition-none sm:px-5 lg:px-8",
+          sidebarCollapsed ? "md:ml-[76px]" : "md:ml-[256px]")}
       >
         <ErrorBoundary fallbackTitle="Không tải được nội dung trang">
-          <PageTransition>{children}</PageTransition>
+          <div className="mx-auto w-full max-w-[1600px] py-5 lg:py-7">
+            <PageTransition>{children}</PageTransition>
+          </div>
         </ErrorBoundary>
       </main>
     </div>

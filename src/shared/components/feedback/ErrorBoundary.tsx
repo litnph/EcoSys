@@ -35,8 +35,8 @@ export class ErrorBoundary extends Component<
   render(): ReactNode {
     if (this.state.error) {
       return (
-        <div className="rounded-card border border-danger/25 bg-danger/5 p-6 text-center shadow-sm">
-          <p className="font-medium text-danger">
+        <div className="rounded-card border border-danger/25 bg-danger/5 p-5 text-left">
+          <p className="font-semibold text-danger">
             {this.props.fallbackTitle ?? "Đã có lỗi hiển thị"}
           </p>
           <p className="mt-2 text-sm text-warm-600">

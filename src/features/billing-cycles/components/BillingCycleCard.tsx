@@ -1,10 +1,8 @@
 import { RefreshCw, Trash2 } from "lucide-react";
-import { motion } from "framer-motion";
 
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
-import { cardHoverMotion } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import type { BillingCycle, BillingCycleStatus } from "../types";
@@ -92,10 +90,9 @@ export function BillingCycleCard({
   const canDelete = cycle.status === "open" && cycle.paidAmount <= 0;
 
   return (
-    <motion.article
-      {...cardHoverMotion}
+    <article
       className={cn(
-        "flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-4 shadow-sm transition hover:border-warm-300")}
+        "flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-4 transition-colors hover:border-warm-300")}
     >
       <button
         type="button"
@@ -213,6 +210,6 @@ export function BillingCycleCard({
           </Button>
         ) : null}
       </div>
-    </motion.article>
+    </article>
   );
 }

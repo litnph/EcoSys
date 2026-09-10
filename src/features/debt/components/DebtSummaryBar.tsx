@@ -1,5 +1,6 @@
 import { AnimatedAmount } from "@/shared/components/ui/AnimatedAmount";
 import { cn } from "@/shared/lib/utils";
+import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
 export interface DebtSummaryBarProps {
   borrowedRemaining: number;
@@ -21,21 +22,25 @@ export function DebtSummaryBar({
   return (
     <section
       className={cn(
-        "grid gap-4 rounded-card border border-warm-200 bg-surface p-4 shadow-sm sm:grid-cols-2 sm:p-6",
+        "grid gap-px overflow-hidden rounded-card border border-warm-200 bg-warm-200 sm:grid-cols-2",
         className)}
     >
-      <div>
-        <p className="text-sm font-medium text-danger">Tôi đang nợ</p>
-        <p className="mt-1 font-mono text-2xl font-semibold tabular-nums text-danger sm:text-3xl">
+      <div className="bg-surface p-4 sm:p-5">
+        <p className="flex items-center gap-2 text-sm font-semibold text-danger">
+          <ArrowUpRight className="size-4" aria-hidden /> Tôi đang nợ
+        </p>
+        <p className="mt-2 font-amount text-2xl font-semibold tabular-nums text-warm-900 sm:text-3xl">
           <AnimatedAmount value={borrowedRemaining} currency={currency} />
         </p>
         <p className="mt-1 text-xs text-warm-600">
           {borrowedActiveCount} khoản đang hoạt động
         </p>
       </div>
-      <div>
-        <p className="text-sm font-medium text-success">Người khác nợ tôi</p>
-        <p className="mt-1 font-mono text-2xl font-semibold tabular-nums text-success sm:text-3xl">
+      <div className="bg-surface p-4 sm:p-5">
+        <p className="flex items-center gap-2 text-sm font-semibold text-success">
+          <ArrowDownLeft className="size-4" aria-hidden /> Người khác nợ tôi
+        </p>
+        <p className="mt-2 font-amount text-2xl font-semibold tabular-nums text-warm-900 sm:text-3xl">
           <AnimatedAmount value={lentRemaining} currency={currency} />
         </p>
         <p className="mt-1 text-xs text-warm-600">

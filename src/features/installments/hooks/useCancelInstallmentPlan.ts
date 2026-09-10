@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { invalidateBudgetAwareness } from "@/features/budgets/lib/invalidateBudgetAwareness";
 import { useToastStore } from "@/shared/stores/toastStore";
 import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
@@ -19,6 +20,7 @@ export function useCancelInstallmentPlan() {
     }) => cancelInstallmentPlan(id, reason, expectedVersion),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: installmentKeys.all });
+      void invalidateBudgetAwareness(qc);
       invalidateDashboard(qc);
       addToast({ type: "success", title: "Đã hủy kế hoạch trả góp" });
     },

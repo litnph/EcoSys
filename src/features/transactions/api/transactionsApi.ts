@@ -389,7 +389,6 @@ export interface CreateTransactionBody {
   txnDate: string;
   description?: string | null;
   note?: string | null;
-  monthlyPeriodId?: string | null;
   toSourceId?: string | null;
   personName?: string | null;
   personContact?: string | null;
@@ -398,6 +397,7 @@ export interface CreateTransactionBody {
   splits?: CreateSplitItemBody[] | null;
   clientRequestId?: string | null;
   expectedAggregateVersion?: number | null;
+  tagIds?: string[] | null;
 }
 
 interface CreateTransactionEnvelope {
@@ -468,7 +468,6 @@ export type UpdateTransactionPayload = {
   txnDate: string;
   description: string;
   note?: string | null;
-  monthlyPeriodId?: string | null;
   amount?: number | null;
   expectedVersion?: number | null;
 };
@@ -483,7 +482,6 @@ export async function updateTransaction(
       txnDate: payload.txnDate,
       description: payload.description,
       note: payload.note ?? null,
-      monthlyPeriodId: payload.monthlyPeriodId ?? null,
       amount: toApiWholeAmountOrNull(payload.amount),
       expectedVersion: payload.expectedVersion ?? null,
     });

@@ -57,14 +57,14 @@ export function Dashboard() {
 
   return (
     <div className="w-full font-sans">
-      <PageHeader title={t("title")} description={t("description")} />
-
-      {currencyGroups.length > 1 ? (
-        <div className="mb-4 flex justify-end">
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={currencyGroups.length > 1 ? (
           <label className="inline-flex items-center gap-2 text-sm font-medium text-warm-700">
             Tiền tệ
             <select
-              className="min-h-10 rounded-md border border-warm-300 bg-surface px-3 text-warm-900"
+              className="min-h-10 rounded-input border border-warm-300 bg-surface px-3 text-sm text-warm-900 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               value={selectedCurrency}
               onChange={(event) => setSelectedCurrency(event.target.value)}
             >
@@ -75,8 +75,8 @@ export function Dashboard() {
               ))}
             </select>
           </label>
-        </div>
-      ) : null}
+        ) : undefined}
+      />
 
       {metricsQ.isError ? (
         <AsyncStateError
@@ -86,7 +86,7 @@ export function Dashboard() {
       ) : (
         <section
           aria-label="Chỉ số tài chính"
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6"
+          className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-warm-200 bg-warm-200 lg:grid-cols-3 2xl:grid-cols-6"
         >
           {kpiLoading
             ? Array.from({ length: 6 }, (_, i) => (
@@ -98,36 +98,32 @@ export function Dashboard() {
         </section>
       )}
 
-      <section aria-label="Thu chi" className="mt-6">
-        <ErrorBoundary fallbackTitle="Không tải được xu hướng thu chi">
-          {trendQ.isError ? (
-            <AsyncStateError
-              title="Không tải được xu hướng thu chi"
-              onRetry={() => void trendQ.refetch()}
-            />
-          ) : (
-            <SpendingChart data={trendQ.data} isLoading={trendQ.isLoading} />
-          )}
-        </ErrorBoundary>
-      </section>
+      <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-2">
+        <section aria-label="Thu chi" className="min-w-0">
+          <ErrorBoundary fallbackTitle="Không tải được xu hướng thu chi">
+            {trendQ.isError ? (
+              <AsyncStateError title="Không tải được xu hướng thu chi" onRetry={() => void trendQ.refetch()} />
+            ) : (
+              <SpendingChart data={trendQ.data} isLoading={trendQ.isLoading} />
+            )}
+          </ErrorBoundary>
+        </section>
 
-      <section aria-label="Chi theo danh mục" className="mt-6">
-        <ErrorBoundary fallbackTitle="Không tải được chi theo danh mục">
-          {categoryTrendQ.isError ? (
-            <AsyncStateError
-              title="Không tải được chi theo danh mục"
-              onRetry={() => void categoryTrendQ.refetch()}
-            />
-          ) : (
-            <CategorySpendingTrendChart
-              bundle={categoryTrendQ.data}
-              isLoading={categoryTrendQ.isLoading}
-              level={categoryLevel}
-              onLevelChange={setCategoryLevel}
-            />
-          )}
-        </ErrorBoundary>
-      </section>
+        <section aria-label="Chi theo danh mục" className="min-w-0">
+          <ErrorBoundary fallbackTitle="Không tải được chi theo danh mục">
+            {categoryTrendQ.isError ? (
+              <AsyncStateError title="Không tải được chi theo danh mục" onRetry={() => void categoryTrendQ.refetch()} />
+            ) : (
+              <CategorySpendingTrendChart
+                bundle={categoryTrendQ.data}
+                isLoading={categoryTrendQ.isLoading}
+                level={categoryLevel}
+                onLevelChange={setCategoryLevel}
+              />
+            )}
+          </ErrorBoundary>
+        </section>
+      </div>
     </div>
   );
 }

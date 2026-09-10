@@ -11,7 +11,7 @@ import {
 
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
-import { formatCurrency } from "@/shared/lib/formatters";
+import { formatCompactNumber, formatCurrency } from "@/shared/lib/formatters";
 
 import type { MonthlyTrendPoint } from "../types";
 
@@ -32,7 +32,7 @@ function TrendTooltip({ active, payload }: TrendTooltipProps) {
   if (!active || !row) return null;
 
   return (
-    <div className="rounded-lg border border-warm-200 bg-surface px-3 py-2 shadow-md">
+    <div className="rounded-button border border-warm-200 bg-surface px-3 py-2 elevation-menu">
       <p className="mb-1.5 text-xs font-medium text-warm-500">{row.label}</p>
       <p className="font-mono text-sm text-success">
         Thu · {formatCurrency(row.income, row.currency)}
@@ -44,16 +44,11 @@ function TrendTooltip({ active, payload }: TrendTooltipProps) {
   );
 }
 
-const compactAxis = new Intl.NumberFormat("vi-VN", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-
 export function SpendingChart({ data, isLoading }: SpendingChartProps) {
   const titleId = "dashboard-income-expense-trend-title";
   if (isLoading || data === undefined) {
     return (
-      <article className="flex h-full min-h-[320px] flex-col rounded-lg border border-warm-200 bg-surface p-5 shadow-sm">
+      <article className="flex h-full min-h-[320px] flex-col rounded-card border border-warm-200 bg-surface p-5">
         <SkeletonText className="mb-2 h-5 w-56" />
         <SkeletonText className="mb-5 h-4 w-40" />
         <SkeletonText className="min-h-[260px] flex-1 rounded-lg" />
@@ -71,7 +66,7 @@ export function SpendingChart({ data, isLoading }: SpendingChartProps) {
   return (
     <article
       aria-labelledby={titleId}
-      className="flex h-full min-h-[320px] flex-col rounded-card border border-warm-200 bg-surface p-5 shadow-sm"
+      className="flex h-full min-h-[320px] flex-col rounded-card border border-warm-200 bg-surface p-5"
     >
       <header className="mb-5">
         <h3
@@ -89,7 +84,7 @@ export function SpendingChart({ data, isLoading }: SpendingChartProps) {
           Chưa có dữ liệu xu hướng
         </p>
       ) : (
-        <div className="min-h-0 flex-1">
+        <div className="min-h-0 flex-1" role="img" aria-label="Biểu đồ đường so sánh thu nhập và chi tiêu trong sáu tháng gần nhất">
           <ResponsiveContainer width="100%" height={260}>
             <LineChart
               accessibilityLayer
@@ -114,7 +109,7 @@ export function SpendingChart({ data, isLoading }: SpendingChartProps) {
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v: number) => compactAxis.format(v)}
+                tickFormatter={formatCompactNumber}
                 width={56}
               />
               <Tooltip content={<TrendTooltip />} />
@@ -142,6 +137,7 @@ export function SpendingChart({ data, isLoading }: SpendingChartProps) {
                 name="Chi tiêu"
                 stroke="var(--color-danger)"
                 strokeWidth={2}
+                strokeDasharray="7 4"
                 dot={{ r: 3, fill: "var(--color-danger)", strokeWidth: 0 }}
                 activeDot={{ r: 5 }}
                 isAnimationActive={false}

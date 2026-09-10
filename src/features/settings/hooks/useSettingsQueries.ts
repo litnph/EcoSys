@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { useTranslations } from "@/i18n/hooks";
 
 import { useAuthStore } from "@/features/auth/stores/authStore";
+import { invalidateBudgetAwareness } from "@/features/budgets/lib/invalidateBudgetAwareness";
+import { reportKeys } from "@/features/reports/api/reportKeys";
 import { useToastStore } from "@/shared/stores/toastStore";
 import {
   normalizeAppLocale,
@@ -42,6 +45,7 @@ export function usePatchPreferences() {
   const qc = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations("settings");
   const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
@@ -49,6 +53,10 @@ export function usePatchPreferences() {
     onSuccess: async (_next, vars) => {
       await qc.invalidateQueries({ queryKey: [...settingsKeys.root, "preferences"] });
       await qc.invalidateQueries({ queryKey: settingsKeys.profile() });
+      if (vars.monthlyReportDay !== undefined) {
+        await invalidateBudgetAwareness(qc);
+        await qc.invalidateQueries({ queryKey: reportKeys.all });
+      }
       const lang = normalizeAppLocale(vars.languageCode);
       setPreferredLocale(lang);
       const seg = typeof window !== "undefined"
@@ -61,7 +69,7 @@ export function usePatchPreferences() {
     onError: (e: Error) => {
       addToast({
         type: "error",
-        title: "Không lưu được tùy chọn",
+        title: t("preferencesSaveError"),
         message: e.message,
       });
     },

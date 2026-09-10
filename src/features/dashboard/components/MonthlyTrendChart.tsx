@@ -10,7 +10,7 @@ import {
 } from "recharts";
 
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
-import { formatCurrency } from "@/shared/lib/formatters";
+import { formatCompactNumber, formatCurrency } from "@/shared/lib/formatters";
 import { cardSlideUpMotion } from "@/shared/lib/animations";
 
 import type { MonthlyTrendPoint } from "../types";
@@ -67,11 +67,6 @@ export function MonthlyTrendChart({
     label: `${String(d.month).padStart(2, "0")}/${String(d.year)}`,
   }));
 
-  const compactAxis = new Intl.NumberFormat("vi-VN", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  });
-
   return (
     <motion.article
       {...cardSlideUpMotion}
@@ -83,24 +78,19 @@ export function MonthlyTrendChart({
         </h3>
         <div className="flex flex-wrap gap-3 text-xs text-warm-500">
           <span className="inline-flex items-center gap-2">
-            <span
-              className="size-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: "var(--color-success)" }}
-            />
+            <span className="h-0.5 w-4 shrink-0 bg-success" aria-hidden />
             Thu
           </span>
           <span className="inline-flex items-center gap-2">
-            <span
-              className="size-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: "var(--color-danger)" }}
-            />
+            <span className="w-4 shrink-0 border-t-2 border-dashed border-danger" aria-hidden />
             Chi
           </span>
         </div>
       </header>
-      <div className="h-[260px] w-full">
+      <div className="h-[260px] w-full" role="img" aria-label="Biểu đồ đường thu nhập và chi tiêu theo tháng; đường chi tiêu dùng nét đứt">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
+            accessibilityLayer
             data={merged}
             margin={{ top: 6, bottom: 0, left: -12, right: 8 }}
           >
@@ -123,7 +113,7 @@ export function MonthlyTrendChart({
               fontSize={11}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(v: number) => compactAxis.format(v)}
+              tickFormatter={formatCompactNumber}
               width={72}
               tickMargin={4}
             />
@@ -155,6 +145,7 @@ export function MonthlyTrendChart({
               name="Chi"
               stroke="var(--color-danger)"
               strokeWidth={2.5}
+              strokeDasharray="6 4"
               dot={false}
               activeDot={{
                 r: 4,

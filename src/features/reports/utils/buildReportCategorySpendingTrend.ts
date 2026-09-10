@@ -16,65 +16,60 @@ import { extractReportExpenseLines } from "./extractReportExpenseLines";
 
 export type ReportTrendGroupBy = "day" | "week";
 
-const MAX_SERIES = 6;
+const DAY_MS = 86_400_000;
 
 interface PeriodDef {
   label: string;
-  matchDay: (day: number) => boolean;
+  start: number;
+  end: number;
 }
 
-function lastDayOfMonth(year: number, month: number): number {
-  return new Date(year, month, 0).getDate();
+function parseIsoDay(value: string): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
+  if (!match) return null;
+  const timestamp = Date.UTC(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+  );
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function toIsoDay(timestamp: number): string {
+  return new Date(timestamp).toISOString().slice(0, 10);
+}
+
+function dayMonthLabel(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${String(date.getUTCDate()).padStart(2, "0")}/${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 function buildPeriods(
-  year: number,
-  month: number,
+  start: number,
+  end: number,
   groupBy: ReportTrendGroupBy,
 ): PeriodDef[] {
-  const last = lastDayOfMonth(year, month);
-
+  const periods: PeriodDef[] = [];
   if (groupBy === "day") {
-    return Array.from({ length: last }, (_, i) => {
-      const day = i + 1;
-      return {
-        label: String(day).padStart(2, "0"),
-        matchDay: (d) => d === day,
-      };
-    });
+    for (let cursor = start; cursor <= end; cursor += DAY_MS) {
+      periods.push({
+        label: dayMonthLabel(cursor),
+        start: cursor,
+        end: cursor,
+      });
+    }
+    return periods;
   }
 
-  const periods: PeriodDef[] = [];
-  let start = 1;
-  let weekNum = 1;
-  while (start <= last) {
-    const end = Math.min(start + 6, last);
-    const rangeStart = start;
-    const rangeEnd = end;
+  for (let cursor = start; cursor <= end; cursor += 7 * DAY_MS) {
+    const periodEnd = Math.min(cursor + 6 * DAY_MS, end);
     periods.push({
-      label: `Tuần ${weekNum} (${String(rangeStart).padStart(2, "0")}–${String(rangeEnd).padStart(2, "0")})`,
-      matchDay: (d) => d >= rangeStart && d <= rangeEnd,
+      label: `${dayMonthLabel(cursor)}–${dayMonthLabel(periodEnd)}`,
+      start: cursor,
+      end: periodEnd,
     });
-    start = end + 1;
-    weekNum += 1;
   }
   return periods;
-}
-
-function parseExpenseDay(
-  txnDate: string,
-  year: number,
-  month: number,
-): number | null {
-  const normalized = txnDate.trim();
-  if (!normalized) return null;
-  const iso = normalized.includes("T")
-    ? normalized
-    : `${normalized}T12:00:00`;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  if (d.getFullYear() !== year || d.getMonth() + 1 !== month) return null;
-  return d.getDate();
 }
 
 export function buildReportCategorySpendingTrend(
@@ -85,28 +80,43 @@ export function buildReportCategorySpendingTrend(
   level: CategoryRollupLevel,
 ): CategorySpendingTrend {
   const { year, month } = report;
-  const periodDefs = buildPeriods(year, month, groupBy);
+  const lines = extractReportExpenseLines(report, filter);
+  const monthStart = Date.UTC(year, month - 1, 1);
+  const monthEnd = Date.UTC(year, month, 0);
+  const creditCardDates = lines
+    .filter((line) => line.kind === "creditCard")
+    .map((line) => parseIsoDay(line.txnDate))
+    .filter((value): value is number => value !== null);
+  const rangeStart = Math.min(monthStart, ...creditCardDates);
+  const rangeEnd = Math.max(monthEnd, ...creditCardDates);
+  const periodDefs = buildPeriods(rangeStart, rangeEnd, groupBy);
   const periodCount = periodDefs.length;
 
-  const months: CategorySpendingTrendPoint[] = periodDefs.map((p) => ({
-    label: p.label,
-    year,
-    month,
-  }));
+  const months: CategorySpendingTrendPoint[] = periodDefs.map((period) => {
+    const date = new Date(period.start);
+    return {
+      label: period.label,
+      year: date.getUTCFullYear(),
+      month: date.getUTCMonth() + 1,
+      date: toIsoDay(period.start),
+      endDate: toIsoDay(period.end),
+    };
+  });
 
-  const expenseCats = categories.filter((c) => c.kind === "expense");
-  const categoryMap = new Map(expenseCats.map((c) => [c.id, c]));
-  const nameIndex = buildCategoryNameIndex(expenseCats);
-  const lines = extractReportExpenseLines(report, filter);
-
+  const expenseCategories = categories.filter((category) => category.kind === "expense");
+  const categoryMap = new Map(
+    expenseCategories.map((category) => [category.id, category]),
+  );
+  const nameIndex = buildCategoryNameIndex(expenseCategories);
   const totals = new Map<string, { name: string; amounts: number[] }>();
 
   for (const line of lines) {
-    const day = parseExpenseDay(line.txnDate, year, month);
-    if (day === null) continue;
-
-    const periodIdx = periodDefs.findIndex((p) => p.matchDay(day));
-    if (periodIdx < 0) continue;
+    const timestamp = parseIsoDay(line.txnDate);
+    if (timestamp === null) continue;
+    const periodIndex = periodDefs.findIndex(
+      (period) => timestamp >= period.start && timestamp <= period.end,
+    );
+    if (periodIndex < 0) continue;
 
     const bucket = bucketCategoryForLevel(
       line.categoryId,
@@ -115,53 +125,30 @@ export function buildReportCategorySpendingTrend(
       categoryMap,
       nameIndex,
     );
-
-    if (!totals.has(bucket.key)) {
-      totals.set(bucket.key, {
-        name: bucket.name,
-        amounts: Array.from({ length: periodCount }, () => 0),
-      });
-    }
-    const row = totals.get(bucket.key)!;
-    if (row.name === "—" && bucket.name !== "—") {
-      row.name = bucket.name;
-    }
-    row.amounts[periodIdx] = (row.amounts[periodIdx] ?? 0) + line.amount;
+    const current = totals.get(bucket.key) ?? {
+      name: bucket.name,
+      amounts: Array.from({ length: periodCount }, () => 0),
+    };
+    current.amounts[periodIndex] =
+      (current.amounts[periodIndex] ?? 0) + line.amount;
+    totals.set(bucket.key, current);
   }
 
-  const ranked = [...totals.entries()]
+  const series = [...totals.entries()]
     .map(([key, row]) => ({
       key,
       name: row.name,
-      total: row.amounts.reduce((s, v) => s + v, 0),
+      total: row.amounts.reduce((sum, value) => sum + value, 0),
       amounts: row.amounts,
     }))
     .filter((row) => row.total > 0)
-    .sort((a, b) => b.total - a.total);
-
-  const top = ranked.slice(0, MAX_SERIES);
-  const rest = ranked.slice(MAX_SERIES);
-
-  const series = top.map((row, idx) => ({
-    key: row.key,
-    name: row.name,
-    color: warmPaletteColor(idx),
-    amounts: row.amounts,
-  }));
-
-  if (rest.length > 0) {
-    const otherAmounts = Array.from({ length: periodCount }, (_, periodIdx) =>
-      rest.reduce((sum, row) => sum + (row.amounts[periodIdx] ?? 0), 0),
-    );
-    if (otherAmounts.some((v) => v > 0)) {
-      series.push({
-        key: "__other__",
-        name: "Khác",
-        color: warmPaletteColor(series.length),
-        amounts: otherAmounts,
-      });
-    }
-  }
+    .sort((a, b) => b.total - a.total)
+    .map((row, index) => ({
+      key: row.key,
+      name: row.name,
+      color: warmPaletteColor(index),
+      amounts: row.amounts,
+    }));
 
   return { months, series };
 }

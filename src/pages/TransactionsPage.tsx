@@ -29,6 +29,7 @@ import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { Button } from "@/shared/components/ui/Button";
+import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 function TransactionsPageInner() {
   const t = useTranslations("transaction");
   const [searchParams] = useSearchParams();
@@ -142,14 +143,13 @@ function TransactionsPageInner() {
   const deleteMutation = useDeleteTransaction();
 
   return (
-    <div className="flex h-[calc(100dvh-56px-2rem)] w-full flex-col overflow-hidden">
-      <div className="flex shrink-0 flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
+    <div className="flex h-[calc(100dvh-64px-2.5rem)] w-full flex-col overflow-hidden lg:h-[calc(100dvh-64px-3.5rem)]">
+      <div className="shrink-0">
         <PageHeader
           title={t("pageTitle")}
           description={t("pageDescription")}
           className="mb-0"
-        />
-        <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row md:w-auto md:flex-wrap">
+          actions={<div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row md:w-auto md:flex-wrap">
           <Button
             type="button"
             variant="secondary"
@@ -176,7 +176,8 @@ function TransactionsPageInner() {
           >
             {t("newTransaction")}
           </Button>
-        </div>
+          </div>}
+        />
       </div>
 
       <>
@@ -197,9 +198,7 @@ function TransactionsPageInner() {
           ) : null}
 
           {txQuery.isError ? (
-            <div className="mt-4 shrink-0 rounded-card border border-danger/30 bg-danger/5 p-6 text-sm text-danger">
-              {t("loadListError")}
-            </div>
+            <AsyncStateError className="mt-4 shrink-0" title={t("loadListError")} onRetry={() => void txQuery.refetch()} />
           ) : (
             <ErrorBoundary fallbackTitle="Không tải được danh sách giao dịch">
               <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden">

@@ -1,8 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
-
 import { formatNumber } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
-import { formErrorMessage } from "@/shared/lib/animations";
 import * as React from "react";
 
 export interface CurrencyInputProps {
@@ -24,9 +21,7 @@ function formatDisplay(amount: number, currency: string): string {
   if (currency === "VND") {
     return formatNumber(Math.round(amount));
   }
-  return new Intl.NumberFormat("vi-VN", {
-    maximumFractionDigits: 2,
-  }).format(amount);
+  return formatNumber(amount);
 }
 
 function parseInput(raw: string, currency: string): number {
@@ -66,7 +61,6 @@ export function CurrencyInput({
   const errorId = `${inputId}-error`;
   const inputRef = React.useRef<HTMLInputElement>(null);
   const focusedRef = React.useRef(false);
-  const [focused, setFocused] = React.useState(false);
 
   const syncFromProp = React.useCallback(() => {
     const el = inputRef.current;
@@ -80,7 +74,6 @@ export function CurrencyInput({
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     focusedRef.current = true;
-    setFocused(true);
     const el = e.currentTarget;
     const raw =
       value === 0 && el.value === ""
@@ -93,7 +86,6 @@ export function CurrencyInput({
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     focusedRef.current = false;
-    setFocused(false);
     const parsed = parseInput(e.currentTarget.value, currency);
     onChange(parsed);
     e.currentTarget.value = formatDisplay(parsed, currency);
@@ -113,24 +105,12 @@ export function CurrencyInput({
       {label ? (
         <label
           htmlFor={inputId}
-          className="mb-1 block text-sm font-medium text-warm-700"
+          className="mb-1.5 block text-[13px] font-semibold text-warm-700"
         >
           {label}
         </label>
       ) : null}
       <div className="relative">
-        <motion.span
-          aria-hidden
-          className={cn(
-            "pointer-events-none absolute inset-0 z-0 rounded-button ring-2",
-            error ? "ring-danger/35" : "ring-accent/35")}
-          initial={false}
-          animate={{
-            scale: focused ? 1 : 0.92,
-            opacity: focused ? 1 : 0,
-          }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        />
         <input
           ref={inputRef}
           id={inputId}
@@ -148,29 +128,22 @@ export function CurrencyInput({
           onBlur={handleBlur}
           onInput={handleInput}
           className={cn(
-            "relative z-[1] h-10 w-full rounded-button border bg-warm-50 px-3 font-mono text-warm-900 transition-colors placeholder:text-warm-400",
-            "focus:border-accent focus:outline-none focus:ring-0",
+            "relative z-[1] h-11 w-full rounded-input border bg-surface px-3 font-mono text-sm text-warm-900 transition-colors placeholder:text-warm-400",
+            "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-warm-100 disabled:text-warm-500",
             error
               ? "border-danger focus:border-danger"
               : "border-warm-200")}
         />
       </div>
-      <AnimatePresence mode="wait">
-        {error ? (
-          <motion.p
-            key={error}
+      {error ? (
+          <p
             id={errorId}
             role="alert"
-            variants={formErrorMessage}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className="mt-1 text-sm text-danger"
+            className="mt-1.5 text-[13px] leading-5 text-danger"
           >
             {error}
-          </motion.p>
+          </p>
         ) : null}
-      </AnimatePresence>
     </div>
   );
 }

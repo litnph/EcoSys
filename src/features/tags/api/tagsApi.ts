@@ -25,7 +25,7 @@ async function unwrap<T>(getter: Promise<{ data: ApiEnvelope<T> }>): Promise<T> 
 function mapTag(row: Record<string, unknown>): Tag {
   return {
     id: String(row.id),    name: String(row.name),
-    color: String(row.color ?? "#6366f1"),
+    color: String(row.color ?? "#725a3a"),
     usageCount: Number(row.usageCount ?? 0),
   };
 }

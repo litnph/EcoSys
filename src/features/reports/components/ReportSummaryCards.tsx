@@ -1,13 +1,7 @@
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
-import { motion } from "framer-motion";
 import { useMemo, type ReactNode } from "react";
 
 import { formatCurrency, formatPercentage } from "@/shared/lib/formatters";
-import {
-  cardHoverMotion,
-  listStaggerItemMotion,
-  listStaggerMotion,
-} from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import type { MonthlyReport } from "../types";
@@ -87,10 +81,10 @@ function ExpenseMetric({
   return (
     <div
       className={cn(
-        "flex flex-col gap-1 rounded-xl border px-4 py-3",
+        "flex flex-col gap-1 bg-surface px-4 py-3",
         emphasis
-          ? "border-danger/25 bg-danger/5"
-          : "border-warm-200 bg-surface",
+          ? "bg-danger/5"
+          : "bg-surface",
       )}
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-warm-500">
@@ -122,11 +116,7 @@ function SecondaryMetric({
   footer: ReactNode;
 }) {
   return (
-    <motion.article
-      {...listStaggerItemMotion}
-      {...cardHoverMotion}
-      className="flex flex-col gap-2 rounded-card border border-warm-200 bg-surface px-4 py-3 shadow-sm"
-    >
+    <article className="flex flex-col gap-2 bg-surface px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-warm-500">
         {title}
       </p>
@@ -134,7 +124,7 @@ function SecondaryMetric({
         {value}
       </p>
       <div className="min-h-[1rem]">{footer}</div>
-    </motion.article>
+    </article>
   );
 }
 
@@ -184,8 +174,8 @@ export function ReportSummaryCards({ report, className }: ReportSummaryCardsProp
       : 0;
 
   return (
-    <motion.div {...listStaggerMotion} className={cn("space-y-4", className)}>
-      <section className="rounded-card border border-warm-200 bg-surface p-4 shadow-sm sm:p-5">
+    <div className={cn("space-y-4", className)}>
+      <section className="rounded-card border border-warm-200 bg-surface p-4 sm:p-5">
         <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="font-display text-base font-semibold text-warm-900">
@@ -198,7 +188,7 @@ export function ReportSummaryCards({ report, className }: ReportSummaryCardsProp
           </div>
         </header>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-px overflow-hidden rounded-card border border-warm-200 bg-warm-200 md:grid-cols-3">
           <ExpenseMetric
             label="Chi tiêu"
             hint={`Trực tiếp ${formatCurrency(breakdown.directAmount)} · Thẻ ${formatCurrency(breakdown.cardSpendAmount)}`}
@@ -244,7 +234,7 @@ export function ReportSummaryCards({ report, className }: ReportSummaryCardsProp
         ) : null}
       </section>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-px overflow-hidden rounded-card border border-warm-200 bg-warm-200 sm:grid-cols-3">
         <SecondaryMetric
           title="Thu nhập"
           valueClass="text-success"
@@ -268,6 +258,6 @@ export function ReportSummaryCards({ report, className }: ReportSummaryCardsProp
           footer={<MomTrend polarity="higherBetter" pct={savingsPctDelta} />}
         />
       </div>
-    </motion.div>
+    </div>
   );
 }

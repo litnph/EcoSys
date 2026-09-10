@@ -9,6 +9,7 @@ export const ROUTES = {
     sources: "/sources",
     sourceLedger: (id: string) => `/sources/${id}/ledger` as const,
     billing: "/billing",
+    billingDetail: (id: string) => `/billing/${id}` as const,
     installments: "/installments",
     debt: "/debt",
     reports: "/reports",
@@ -19,6 +20,7 @@ export const ROUTES = {
     settings: "/settings",
     settingsProfile: "/settings/profile",
     settingsPreferences: "/settings/preferences",
+    settingsClassification: "/settings/classification",
     settingsMembers: "/settings/members",
   },
 } as const;

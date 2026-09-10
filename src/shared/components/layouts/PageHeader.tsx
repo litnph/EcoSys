@@ -18,15 +18,15 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "mb-6 flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between",
+        "mb-6 flex flex-col items-stretch gap-4 border-b border-warm-200 pb-5 sm:flex-row sm:items-end sm:justify-between",
         className)}
     >
       <div className="min-w-0">
-        <h1 className="font-display text-2xl font-semibold text-warm-900">
+        <h1 className="font-display text-[1.625rem] font-semibold leading-tight tracking-[-0.025em] text-warm-900 sm:text-[1.75rem]">
           {title}
         </h1>
         {description !== undefined && description.length > 0 ? (
-          <p className="mt-1 max-w-3xl text-sm leading-relaxed text-warm-500">
+          <p className="mt-1.5 max-w-3xl text-sm leading-6 text-warm-500">
             {description}
           </p>
         ) : null}

@@ -73,7 +73,7 @@ function TransactionItemInner({
   );
 
   const source = sourceMap?.get(tx.sourceId);
-  const sourceColor = source?.color ?? "#2563eb";
+  const sourceColor = source?.color ?? "#71717a";
   const sourceLabel = source?.name ?? tx.sourceName ?? "—";
 
   const amountText = React.useMemo(() => {

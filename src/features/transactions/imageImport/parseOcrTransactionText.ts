@@ -4,6 +4,8 @@ import { newDraftId } from "./types";
 
 const DATE_IN_LINE =
   /(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(\d{2,4})/;
+const SHORT_DATE_LINE =
+  /^\s*(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*$/;
 
 const SKIP_LINE =
   /lịch\s*sử|thẻ\s*tín\s*dụng|tìm\s*kiếm|transaction\s*history|credit\s*card|giao\s*dịch\s*thanh\s*toán|purchase|card\s*no|số\s*thẻ|so\s*the/i;
@@ -57,11 +59,11 @@ function formatIsoDate(day: string, month: string, yearRaw: string): string | nu
     !Number.isFinite(monthNum) ||
     !Number.isFinite(year) ||
     dayNum < 1 ||
-    dayNum > 31 ||
     monthNum < 1 ||
     monthNum > 12 ||
     year < 2000 ||
-    year > 2100
+    year > 2100 ||
+    dayNum > new Date(Date.UTC(year, monthNum, 0)).getUTCDate()
   ) {
     return null;
   }
@@ -69,10 +71,43 @@ function formatIsoDate(day: string, month: string, yearRaw: string): string | nu
   return `${String(year)}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 }
 
-function extractDateFromLine(line: string): string | null {
+function financeDateParts(referenceDate: Date): {
+  year: number;
+  month: number;
+  day: number;
+} {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(referenceDate);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value ?? 0);
+  return { year: value("year"), month: value("month"), day: value("day") };
+}
+
+function inferYearForShortDate(day: string, month: string, referenceDate: Date): string {
+  const current = financeDateParts(referenceDate);
+  const dayNum = Number(day);
+  const monthNum = Number(month);
+  const isAfterReference = monthNum > current.month
+    || (monthNum === current.month && dayNum > current.day);
+  return String(isAfterReference ? current.year - 1 : current.year);
+}
+
+function extractDateFromLine(line: string, referenceDate: Date): string | null {
   const normalized = normalizeOcrDigits(line);
   const m = normalized.match(DATE_IN_LINE);
-  if (!m) return null;
+  if (!m) {
+    const short = normalized.match(SHORT_DATE_LINE);
+    if (!short) return null;
+    return formatIsoDate(
+      short[1],
+      short[2],
+      inferYearForShortDate(short[1], short[2], referenceDate),
+    );
+  }
 
   const rest = normalized
     .slice((m.index ?? 0) + m[0].length)
@@ -153,9 +188,9 @@ function shouldUseAsNote(line: string): boolean {
   return SKIP_LINE.test(line) && line.length > 8;
 }
 
-function isLikelyMerchantLine(line: string): boolean {
+function isLikelyMerchantLine(line: string, referenceDate: Date): boolean {
   if (!line || SKIP_LINE.test(line)) return false;
-  if (extractDateFromLine(line)) return false;
+  if (extractDateFromLine(line, referenceDate)) return false;
   if (parseAmountOnlyLine(line)) return false;
   if (parseTxnLine(line)) return false;
   return line.length >= 2;
@@ -168,10 +203,10 @@ type NumericTransaction = {
   isRefund: boolean;
 };
 
-function findDateMarkers(lines: string[]): DateMarker[] {
+function findDateMarkers(lines: string[], referenceDate: Date): DateMarker[] {
   const markers: DateMarker[] = [];
   for (let i = 0; i < lines.length; i++) {
-    const date = extractDateFromLine(lines[i]);
+    const date = extractDateFromLine(lines[i], referenceDate);
     if (date) markers.push({ index: i, date });
   }
   return markers;
@@ -191,21 +226,25 @@ function resolveDateForLine(
   return resolved;
 }
 
-function extractNumericTransactions(text: string): NumericTransaction[] {
+function extractNumericTransactions(text: string, referenceDate: Date): NumericTransaction[] {
   const lines = text
     .split(/\r?\n/)
     .map(normalizeOcrLine)
     .filter((line) => line.length > 0);
+  const hasDateMarkers = findDateMarkers(lines, referenceDate).length > 0;
   const transactions: NumericTransaction[] = [];
   let txnDate: string | null = null;
 
   for (const line of lines) {
-    const date = extractDateFromLine(line);
+    const date = extractDateFromLine(line, referenceDate);
     if (date) {
       txnDate = date;
       continue;
     }
-    if (!txnDate) continue;
+    // Ảnh lịch sử giao dịch có thể không hiển thị ngày (ví dụ ảnh chỉ chụp
+    // phần giữa danh sách). Vẫn giữ lượt OCR số để đối chiếu số tiền; chỉ bỏ
+    // các dòng đứng trước ngày đầu tiên khi ảnh thực sự có tiêu đề ngày.
+    if (!txnDate && hasDateMarkers) continue;
 
     const match = line.match(SIGNED_AMOUNT_TAIL);
     if (!match) continue;
@@ -214,7 +253,7 @@ function extractNumericTransactions(text: string): NumericTransaction[] {
     if (amount === null) continue;
 
     const sign = match[1].replace(/−|–|~/g, "-");
-    transactions.push({ txnDate, amount, isRefund: sign === "+" });
+    transactions.push({ txnDate: txnDate ?? "", amount, isRefund: sign === "+" });
   }
 
   return transactions;
@@ -234,10 +273,14 @@ function formatOcrAmount(amount: number): string {
  * merchant của lượt OCR ngôn ngữ. Việc ghép theo thứ tự phù hợp với danh sách
  * giao dịch dọc và tránh lỗi 30/31 → 50/51 hoặc 43.000 → 45.000.
  */
-function reconcileWithNumericOcr(text: string, numericText?: string): string {
+function reconcileWithNumericOcr(
+  text: string,
+  numericText: string | undefined,
+  referenceDate: Date,
+): string {
   if (!numericText) return text;
 
-  const numericTransactions = extractNumericTransactions(numericText);
+  const numericTransactions = extractNumericTransactions(numericText, referenceDate);
   if (numericTransactions.length === 0) return text;
 
   const textLines = text.split(/\r?\n/);
@@ -255,7 +298,7 @@ function reconcileWithNumericOcr(text: string, numericText?: string): string {
 
     // Bỏ cả ngày hợp lệ lẫn ngày OCR sai; ngày đáng tin cậy sẽ được chèn ngay
     // trước giao dịch tương ứng từ lượt OCR số.
-    if (DATE_IN_LINE.test(normalizeOcrDigits(line))) continue;
+    if (extractDateFromLine(line, referenceDate)) continue;
 
     const amountMatch = line.match(SIGNED_AMOUNT_TAIL);
     const numericTransaction = numericTransactions[numericIndex];
@@ -264,7 +307,10 @@ function reconcileWithNumericOcr(text: string, numericText?: string): string {
       continue;
     }
 
-    if (numericTransaction.txnDate !== lastInjectedDate) {
+    if (
+      numericTransaction.txnDate &&
+      numericTransaction.txnDate !== lastInjectedDate
+    ) {
       reconciledLines.push(formatDisplayDate(numericTransaction.txnDate));
       lastInjectedDate = numericTransaction.txnDate;
     }
@@ -296,8 +342,11 @@ function pushDraft(
     description,
     amount,
     note,
+    direction: "expense",
     isRefund,
     categoryId: "",
+    tagIds: [],
+    reviewFields: [],
     selected: !isRefund,
   });
 }
@@ -337,26 +386,32 @@ export function parseOcrTransactionText(
   text: string,
   imageId = "",
   numericText?: string,
+  referenceDate = new Date(),
 ): ImageImportDraft[] {
-  const lines = reconcileWithNumericOcr(text, numericText)
+  const lines = reconcileWithNumericOcr(text, numericText, referenceDate)
     .split(/\r?\n/)
     .map(normalizeOcrLine)
     .filter((l) => l.length > 0);
 
-  const dateMarkers = findDateMarkers(lines);
+  const dateMarkers = findDateMarkers(lines, referenceDate);
+  const hasDateMarkers = dateMarkers.length > 0;
   const drafts: ImageImportDraft[] = [];
   let pendingMerchant: string | undefined;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    if (extractDateFromLine(line)) {
+    if (extractDateFromLine(line, referenceDate)) {
       pendingMerchant = undefined;
       continue;
     }
 
-    const txnDate = resolveDateForLine(i, dateMarkers);
-    if (!txnDate) continue;
+    const resolvedDate = resolveDateForLine(i, dateMarkers);
+    // Không ép ảnh phải có ngày. Khi hoàn toàn không có tiêu đề ngày, merchant
+    // và số tiền vẫn được nhập vào bản nháp với ngày trống để người dùng bổ sung.
+    // Nếu ảnh có ngày, các dòng trước tiêu đề ngày đầu tiên vẫn bị bỏ qua.
+    if (!resolvedDate && hasDateMarkers) continue;
+    const txnDate = resolvedDate ?? "";
 
     const inlineTxn = parseTxnLine(line);
     if (inlineTxn) {
@@ -402,7 +457,7 @@ export function parseOcrTransactionText(
       continue;
     }
 
-    if (isLikelyMerchantLine(line)) {
+    if (isLikelyMerchantLine(line, referenceDate)) {
       pendingMerchant = cleanMerchantDescription(line);
     }
   }

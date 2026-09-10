@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useToastStore } from "@/shared/stores/toastStore";
+import { invalidateBudgetAwareness } from "@/features/budgets/lib/invalidateBudgetAwareness";
 
 import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
@@ -17,6 +18,7 @@ export function useDeleteCycle() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: billingCycleKeys.all });
       invalidateDashboard(queryClient);
+      void invalidateBudgetAwareness(queryClient);
       addToast({
         type: "success",
         title: "Đã xóa kỳ sao kê",

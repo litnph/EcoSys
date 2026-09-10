@@ -72,7 +72,7 @@ export function LoginForm() {
         rightIcon={
           <button
             type="button"
-            className="rounded p-1 text-warm-600 outline-none hover:bg-warm-100 hover:text-warm-900 focus-visible:ring-2 focus-visible:ring-accent/40"
+            className="flex size-10 items-center justify-center rounded-button text-warm-600 outline-none hover:bg-warm-100 hover:text-warm-900 focus-visible:ring-2 focus-visible:ring-accent"
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? tAuth("hidePassword") : tAuth("showPassword")}
           >
@@ -86,7 +86,7 @@ export function LoginForm() {
         {...register("password")}
       />
 
-      <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-warm-700">
+      <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 text-sm text-warm-700">
         <input
           type="checkbox"
           className="size-4 rounded border-warm-300 text-accent focus:ring-accent"

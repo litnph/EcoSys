@@ -7,10 +7,12 @@ import {
   Pencil,
   Search,
   Trash2,
+  WalletCards,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMemo, useState, useEffect, type ReactNode } from "react";
 
+import { useTranslations } from "@/i18n/hooks";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Input } from "@/shared/components/ui/Input";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
@@ -125,6 +127,7 @@ interface CategoryGroupCardProps {
   onEdit: (category: FinCategory) => void;
   onAddChild: (category: FinCategory) => void;
   onDelete: (category: FinCategory) => void;
+  onConfigureBudget: (category: FinCategory) => void;
 }
 
 function CategoryGroupCard({
@@ -134,7 +137,9 @@ function CategoryGroupCard({
   onEdit,
   onAddChild,
   onDelete,
+  onConfigureBudget,
 }: CategoryGroupCardProps) {
+  const tBudgets = useTranslations("budgets");
   const [open, setOpen] = useState(defaultOpen || searchActive);
   const children = group.children ?? [];
   const isOpen = searchActive || open;
@@ -169,6 +174,13 @@ function CategoryGroupCard({
                   >
                     <FolderPlus className="size-4" />
                   </ActionButton>
+                  <ActionButton
+                    label={tBudgets("configure", { category: group.name })}
+                    tone="accent"
+                    onClick={() => onConfigureBudget(group)}
+                  >
+                    <WalletCards className="size-4" />
+                  </ActionButton>
                   <ActionButton label="Sửa" onClick={() => onEdit(group)}>
                     <Pencil className="size-4" />
                   </ActionButton>
@@ -183,13 +195,22 @@ function CategoryGroupCard({
                   ) : null}
                 </>
               ) : (
-                <span
-                  className="inline-flex items-center gap-1 rounded-badge bg-white/70 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-warm-500"
-                  title="Danh mục hệ thống"
-                >
-                  <Lock className="size-3" aria-hidden />
-                  Hệ thống
-                </span>
+                <>
+                  <ActionButton
+                    label={tBudgets("configure", { category: group.name })}
+                    tone="accent"
+                    onClick={() => onConfigureBudget(group)}
+                  >
+                    <WalletCards className="size-4" />
+                  </ActionButton>
+                  <span
+                    className="inline-flex items-center gap-1 rounded-badge bg-white/70 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-warm-500"
+                    title="Danh mục hệ thống"
+                  >
+                    <Lock className="size-3" aria-hidden />
+                    Hệ thống
+                  </span>
+                </>
               )}
             </div>
           </div>
@@ -242,22 +263,31 @@ function CategoryGroupCard({
                   title={necessityLevelLabel(child.necessityLevel) ?? undefined}
                 />
               ) : null}
-              {!child.isSystem ? (
-                <div className="flex shrink-0 items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
-                  <ActionButton label="Sửa" onClick={() => onEdit(child)}>
-                    <Pencil className="size-3.5" />
-                  </ActionButton>
-                  {!child.isDefault ? (
-                    <ActionButton
-                      label="Xóa"
-                      tone="danger"
-                      onClick={() => onDelete(child)}
-                    >
-                      <Trash2 className="size-3.5" />
+              <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
+                <ActionButton
+                  label={tBudgets("configure", { category: child.name })}
+                  tone="accent"
+                  onClick={() => onConfigureBudget(child)}
+                >
+                  <WalletCards className="size-3.5" />
+                </ActionButton>
+                {!child.isSystem ? (
+                  <>
+                    <ActionButton label="Sửa" onClick={() => onEdit(child)}>
+                      <Pencil className="size-3.5" />
                     </ActionButton>
-                  ) : null}
-                </div>
-              ) : null}
+                    {!child.isDefault ? (
+                      <ActionButton
+                        label="Xóa"
+                        tone="danger"
+                        onClick={() => onDelete(child)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </ActionButton>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
             </li>
           ))}
         </ul>
@@ -274,16 +304,18 @@ function ActionButton({
 }: {
   children: ReactNode;
   label: string;
-  tone?: "default" | "danger";
+  tone?: "default" | "danger" | "accent";
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       className={cn(
-        "rounded-md p-1.5 transition-colors",
+        "rounded-md p-1.5 transition-colors active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30",
         tone === "danger"
-          ? "text-warm-500 hover:bg-rose-50 hover:text-danger"
+          ? "text-warm-500 hover:bg-warm-100 hover:text-danger"
+          : tone === "accent"
+            ? "text-accent hover:bg-accent/10 hover:text-accent-dark"
           : "text-warm-500 hover:bg-white/70 hover:text-warm-800",
       )}
       aria-label={label}
@@ -300,6 +332,7 @@ export interface CategoryManagerProps {
   onEdit: (category: FinCategory) => void;
   onAddChild: (category: FinCategory) => void;
   onDelete: (category: FinCategory) => void;
+  onConfigureBudget: (category: FinCategory) => void;
 }
 
 export function CategoryManager({
@@ -307,6 +340,7 @@ export function CategoryManager({
   onEdit,
   onAddChild,
   onDelete,
+  onConfigureBudget,
 }: CategoryManagerProps) {
   const { data, isPending, isError } = useCategories(kind);
   const [search, setSearch] = useState("");
@@ -350,6 +384,7 @@ export function CategoryManager({
         onEdit={onEdit}
         onAddChild={onAddChild}
         onDelete={onDelete}
+        onConfigureBudget={onConfigureBudget}
       />
     </motion.div>
   );

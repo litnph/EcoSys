@@ -1,5 +1,4 @@
 import { CheckCircle2, ChevronDown, Trash2 } from "lucide-react";
-import { motion } from "framer-motion";
 import * as React from "react";
 
 import type { DebtRecord, DebtRecordListItem } from "../types";
@@ -7,7 +6,6 @@ import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
-import { cardHoverMotion } from "@/shared/lib/animations";
 import { cn } from "@/shared/lib/utils";
 
 import { DebtTransactionHistory } from "./DebtTransactionHistory";
@@ -88,11 +86,10 @@ function DebtRecordCardInner({
   }, [onDelete, item.id]);
 
   return (
-    <motion.article
-      {...cardHoverMotion}
+    <article
       className={cn(
-        "flex flex-col gap-4 rounded-card border border-warm-200 bg-surface p-4 shadow-sm transition",
-        isExpanded ? "ring-1 ring-accent/20" : "hover:border-warm-300")}
+        "flex flex-col gap-4 bg-surface p-4 transition-colors",
+        isExpanded ? "bg-accent-light/35" : "hover:bg-warm-25")}
     >
       <div className="flex flex-wrap items-start gap-3">
         <div
@@ -229,7 +226,7 @@ function DebtRecordCardInner({
           )}
         </div>
       ) : null}
-    </motion.article>
+    </article>
   );
 }
 

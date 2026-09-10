@@ -26,6 +26,7 @@ import type { FinSource } from "@/features/sources/types";
 
 import { PageHeader } from "@/shared/components/layouts/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
+import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
 import { cn } from "@/shared/lib/utils";
 
 type MainTab = "overview" | "schedule" | "plans";
@@ -114,20 +115,18 @@ export function InstallmentsPage() {
 
   return (
     <div className="w-full pb-8">
-      <div className="flex flex-row items-end justify-between gap-4">
-        <PageHeader
-          title="Trả góp"
-          description="Kế hoạch trả góp từ giao dịch quẹt thẻ, lịch từng kỳ và thanh toán."
-        />
-        <Button
+      <PageHeader
+        title="Trả góp"
+        description="Kế hoạch trả góp từ giao dịch quẹt thẻ, lịch từng kỳ và thanh toán."
+        actions={<Button
           type="button"
           className="shrink-0"
           leftIcon={<Plus className="size-4" aria-hidden />}
           onClick={() => setCreateOpen(true)}
         >
           Tạo kế hoạch
-        </Button>
-      </div>
+        </Button>}
+      />
 
       <Tabs.Root
         className="mt-6"
@@ -150,24 +149,25 @@ export function InstallmentsPage() {
         </Tabs.List>
 
         <Tabs.Content value="overview" className="mt-6 outline-none">
-          <InstallmentsOverview
-            data={dashboardQ.data}
-            currency={defaultCurrency}
-            isLoading={dashboardQ.isLoading}
-          />
+          {dashboardQ.isError ? (
+            <AsyncStateError title="Không tải được tổng quan trả góp" onRetry={() => void dashboardQ.refetch()} />
+          ) : (
+            <InstallmentsOverview data={dashboardQ.data} currency={defaultCurrency} isLoading={dashboardQ.isLoading} />
+          )}
         </Tabs.Content>
 
         <Tabs.Content value="schedule" className="mt-6 outline-none">
-          <InstallmentSchedulePanel
-            data={dashboardQ.data}
-            currency={defaultCurrency}
-            isLoading={dashboardQ.isLoading}
-            onOpenPlan={handleOpenDetail}
-          />
+          {dashboardQ.isError ? (
+            <AsyncStateError title="Không tải được lịch trả góp" onRetry={() => void dashboardQ.refetch()} />
+          ) : (
+            <InstallmentSchedulePanel data={dashboardQ.data} currency={defaultCurrency} isLoading={dashboardQ.isLoading} onOpenPlan={handleOpenDetail} />
+          )}
         </Tabs.Content>
 
         <Tabs.Content value="plans" className="mt-6 outline-none">
-          <InstallmentPlanListPanel
+          {listQ.isError ? (
+            <AsyncStateError title="Không tải được danh sách kế hoạch" onRetry={() => void listQ.refetch()} />
+          ) : <InstallmentPlanListPanel
             items={listQ.data}
             sources={sources}
             status={planStatus}
@@ -175,7 +175,7 @@ export function InstallmentsPage() {
             isLoading={listQ.isLoading}
             onOpenDetail={handleOpenDetail}
             onDelete={handleDeleteFromCard}
-          />
+          />}
         </Tabs.Content>
       </Tabs.Root>
 

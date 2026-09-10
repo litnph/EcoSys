@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { invalidateBudgetAwareness } from "@/features/budgets/lib/invalidateBudgetAwareness";
 import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { sourceKeys } from "@/features/sources/api/sourceKeys";
 import { transactionKeys } from "@/features/transactions/api/transactionKeys";
@@ -21,6 +22,7 @@ export function useCreateInstallmentPlan() {
       void qc.invalidateQueries({ queryKey: installmentKeys.all });
       void qc.invalidateQueries({ queryKey: transactionKeys.lists() });
       void qc.invalidateQueries({ queryKey: sourceKeys.all });
+      void invalidateBudgetAwareness(qc);
       invalidateDashboard(qc);
       addToast({
         type: "success",

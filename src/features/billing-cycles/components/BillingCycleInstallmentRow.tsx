@@ -50,7 +50,7 @@ export function BillingCycleInstallmentRow({
           <p className="min-w-0 truncate text-sm font-semibold text-warm-900">
             {label}
           </p>
-          <span className="shrink-0 rounded-md bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium text-violet-800">
+          <span className="shrink-0 rounded-md bg-warm-100 px-1.5 py-0.5 text-[10px] font-medium text-warm-700">
             Trả góp
           </span>
           <span

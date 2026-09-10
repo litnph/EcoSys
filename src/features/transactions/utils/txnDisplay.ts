@@ -117,7 +117,7 @@ export function txnAmountPresentation(
   }
 
   if (opts?.hasInstallmentPlan || opts?.isInstallmentPayment) {
-    className = "text-amber-600";
+    className = "text-warm-600";
   }
 
   return { sign, className };
@@ -158,9 +158,9 @@ export function txnStatusBadgeClasses(status: TxnStatus): string {
     case "new":
       return "bg-accent/10 text-accent-emphasis ring-1 ring-accent/25";
     case "transferredToInstallment":
-      return "bg-amber-100 text-amber-900 ring-1 ring-amber-200";
+      return "bg-warm-100 text-warm-900 ring-1 ring-warm-300";
     case "statemented":
-      return "bg-sky-100 text-sky-900 ring-1 ring-sky-200";
+      return "bg-warm-50 text-warm-700 ring-1 ring-warm-300";
     case "completed":
       return "bg-success/10 text-success ring-1 ring-success/20";
     case "cancelled":

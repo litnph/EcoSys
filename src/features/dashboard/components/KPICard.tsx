@@ -23,13 +23,13 @@ export function KPICardSkeleton({ className }: KPICardSkeletonProps) {
   return (
     <article
       className={cn(
-        "rounded-lg border border-warm-200 bg-surface p-5 shadow-sm",
+        "min-h-28 bg-surface p-3.5 sm:min-h-32 sm:p-4",
         className,
       )}
     >
-      <SkeletonText className="h-10 w-10 rounded-lg" />
-      <SkeletonText className="mt-4 h-3 w-24" />
-      <SkeletonText className="mt-2 h-8 w-36" />
+      <SkeletonText className="h-4 w-28" />
+      <SkeletonText className="mt-4 h-3 w-20 sm:mt-5 sm:w-24" />
+      <SkeletonText className="mt-2 h-7 w-28 sm:h-8 sm:w-36" />
     </article>
   );
 }
@@ -47,20 +47,16 @@ export function KPICard({ metric }: KPICardProps) {
   const TrendIcon = isPositiveChange ? TrendingUp : TrendingDown;
 
   return (
-    <article className="rounded-lg border border-warm-200 bg-surface p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div
-          className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-lg",
-            metric.iconClassName,
-          )}
-        >
-          <Icon className="size-5" strokeWidth={1.75} aria-hidden />
-        </div>
+    <article className="min-h-28 bg-surface p-3.5 sm:min-h-32 sm:p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="flex min-w-0 items-center gap-2 text-xs font-semibold text-warm-600">
+          <Icon className={cn("size-4 shrink-0", metric.iconClassName.replace(/bg-\S+/g, ""))} strokeWidth={1.8} aria-hidden />
+          <span>{metric.label}</span>
+        </p>
         {hasChange ? (
           <span
             className={cn(
-              "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium tabular-nums",
+              "inline-flex items-center gap-1 text-xs font-semibold tabular-nums",
               changeIsGood
                 ? "bg-success/10 text-success"
                 : "bg-danger/10 text-danger",
@@ -73,13 +69,10 @@ export function KPICard({ metric }: KPICardProps) {
           <span className="text-xs text-warm-400">—</span>
         )}
       </div>
-      <p className="mt-4 text-xs font-medium uppercase tracking-wide text-warm-500">
-        {metric.label}
-      </p>
-      <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-warm-900">
+      <p className="mt-4 break-words font-amount text-lg font-semibold tabular-nums text-warm-900 sm:mt-5 sm:text-xl">
         {formatCurrency(metric.amount, metric.currency)}
       </p>
-      <p className="mt-1 text-xs text-warm-400">So với tháng trước</p>
+      <p className="mt-1.5 text-[11px] font-medium text-warm-500">So với tháng trước</p>
     </article>
   );
 }

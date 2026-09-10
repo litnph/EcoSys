@@ -6,6 +6,7 @@ import { FormProvider, useForm, type Resolver } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 
 import type { FinSource } from "@/features/sources/types";
+import { invalidateBudgetAwareness } from "@/features/budgets/lib/invalidateBudgetAwareness";
 import { useSources } from "@/features/sources/hooks";
 import { debtKeys } from "@/features/debt/api/debtKeys";
 import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
@@ -26,7 +27,6 @@ import {
   previewTransactionImport,
 } from "../../api/transactionsApi";
 import { transactionKeys } from "../../api/transactionKeys";
-import { syncTransactionTags } from "../../utils/syncTransactionTags";
 import { BaseFields } from "./BaseFields";
 import { ConditionalFields } from "./ConditionalFields";
 import { mapFormValuesToCreateBody } from "./mapFormToApi";
@@ -296,7 +296,6 @@ export function BulkTransactionForm({
             }
 
             setBusy(true);
-            const tagIds = vals.tagIds ?? [];
             try {
               const items = rows.map((row) => ({
                 ...mapFormValuesToCreateBody(
@@ -310,13 +309,6 @@ export function BulkTransactionForm({
                 throw new Error(failed?.message ?? "Dữ liệu nhập không hợp lệ.");
               }
               const result = await commitTransactionImport(items);
-              if (tagIds.length > 0) {
-                await Promise.all(
-                  result.rows
-                    .filter((row) => row.success && row.transactionId)
-                    .map((row) => syncTransactionTags(row.transactionId!, [], tagIds)),
-                );
-              }
               await Promise.all([
                 queryClient.invalidateQueries({ queryKey: transactionKeys.lists() }),
                 queryClient.invalidateQueries({ queryKey: transactionKeys.all }),
@@ -324,6 +316,7 @@ export function BulkTransactionForm({
                 queryClient.invalidateQueries({ queryKey: sourceKeys.lists() }),
               ]);
               invalidateDashboard(queryClient);
+              await invalidateBudgetAwareness(queryClient);
               addToast({
                 type: "success",
                 title: `Đã tạo ${String(result.createdCount)} giao dịch`,

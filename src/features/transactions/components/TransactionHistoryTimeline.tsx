@@ -24,10 +24,10 @@ function changeTypeLabel(t: HistoryChangeType): string {
 
 function changeTypeBadgeClass(t: HistoryChangeType): string {
   const m: Record<HistoryChangeType, string> = {
-    created: "border-emerald-200 bg-emerald-50 text-emerald-900",
-    updated: "border-sky-200 bg-sky-50 text-sky-900",
+    created: "border-warm-300 bg-warm-50 text-warm-900",
+    updated: "border-warm-300 bg-warm-100 text-warm-900",
     deleted: "border-danger/40 bg-danger/10 text-danger",
-    restored: "border-violet-200 bg-violet-50 text-violet-900",
+    restored: "border-accent/30 bg-accent/10 text-accent",
     cancelled: "border-warm-300 bg-warm-100 text-warm-800",
   };
   return m[t] ?? "border-warm-200 bg-warm-50 text-warm-800";

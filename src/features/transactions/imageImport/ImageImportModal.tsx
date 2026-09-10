@@ -1,19 +1,24 @@
-import { format } from "date-fns";
 import { ChevronDown, ImagePlus, Loader2, Plus, ScanLine, Trash2, X } from "lucide-react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import type { TFunction } from "i18next";
 
 import { CategorySelector } from "@/features/categories/components/CategorySelector";
+import { matchTransactionContents } from "@/features/settings/api/classificationRulesApi";
+import { TagPicker } from "@/features/tags/components/TagPicker";
+import { invalidateBudgetAwareness } from "@/features/budgets/lib/invalidateBudgetAwareness";
 import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { debtKeys } from "@/features/debt/api/debtKeys";
 import { sourceKeys } from "@/features/sources/api/sourceKeys";
 import { useSources } from "@/features/sources/hooks";
 import type { FinSource } from "@/features/sources/types";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
+import { useTranslations } from "@/i18n/hooks";
 import { Button } from "@/shared/components/ui/Button";
 import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
 import { Modal } from "@/shared/components/ui/Modal";
+import { useIsMdUp } from "@/shared/hooks/useMediaQuery";
 import { formatNumber } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
 import { useToastStore } from "@/shared/stores/toastStore";
@@ -24,9 +29,15 @@ import {
 } from "../api/transactionsApi";
 import { transactionKeys } from "../api/transactionKeys";
 import { resolveExpenseApiType } from "../components/TransactionForm/resolveExpenseApiType";
-import { parseOcrTransactionText } from "./parseOcrTransactionText";
+import { applyClassificationMatches } from "./autoCategorizeDrafts";
+import { parseImageImportOcr } from "./parseImageImportOcr";
 import { runImageOcr } from "./runImageOcr";
-import type { ImageImportDraft, ImageImportImage } from "./types";
+import type {
+  ImageImportDraft,
+  ImageImportImage,
+  ImageImportKind,
+  ImageImportReviewField,
+} from "./types";
 import { newDraftId, newImageId } from "./types";
 
 export interface ImageImportModalProps {
@@ -41,6 +52,41 @@ type ScanProgress = {
   totalImages: number;
   ocrProgress: number;
 };
+
+const IMAGE_IMPORT_KIND_OPTIONS: Array<{
+  value: ImageImportKind;
+  labelKey: "statementKind" | "bankListKind";
+  descriptionKey: "statementKindHelp" | "bankListKindHelp";
+}> = [
+  {
+    value: "statement",
+    labelKey: "statementKind",
+    descriptionKey: "statementKindHelp",
+  },
+  {
+    value: "bank_transaction_list",
+    labelKey: "bankListKind",
+    descriptionKey: "bankListKindHelp",
+  },
+];
+
+function formatReviewFields(
+  fields: ImageImportReviewField[],
+  t: TFunction<"imageImport">,
+): string {
+  return fields.map((field) => {
+    switch (field) {
+      case "txnDate":
+        return t("date");
+      case "description":
+        return t("description");
+      case "amount":
+        return t("amount");
+      case "direction":
+        return t("direction");
+    }
+  }).join(", ");
+}
 
 function formatAmountDisplay(amount: number, currency: string): string {
   if (amount === 0) return "";
@@ -66,12 +112,17 @@ function createEmptyDraft(imageId: string, txnDate?: string): ImageImportDraft {
   return {
     id: newDraftId(),
     imageId,
-    txnDate: txnDate ?? format(new Date(), "yyyy-MM-dd"),
+    txnDate: txnDate ?? "",
     description: "",
     amount: 0,
     note: "",
+    direction: "expense",
     isRefund: false,
     categoryId: "",
+    tagIds: [],
+    reviewFields: txnDate
+      ? ["description", "amount"]
+      : ["txnDate", "description", "amount"],
     selected: true,
   };
 }
@@ -134,11 +185,15 @@ function SourcePicker({
 }
 
 export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
-  const { data: sources = [] } = useSources();
+  const t = useTranslations("imageImport");
+  const sourcesQuery = useSources();
+  const sources = sourcesQuery.data ?? [];
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
+  const isMdUp = useIsMdUp();
 
   const [step, setStep] = useState<Step>("upload");
+  const [importKind, setImportKind] = useState<ImageImportKind>("statement");
   const [sourceId, setSourceId] = useState("");
   const [images, setImages] = useState<ImageImportImage[]>([]);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
@@ -151,6 +206,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [groupDateValues, setGroupDateValues] = useState<Record<string, string>>({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagesRef = useRef(images);
@@ -174,6 +230,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
         return [];
       });
       setStep("upload");
+      setImportKind("statement");
       setSourceId("");
       setSelectedImageId(null);
       setDrafts([]);
@@ -185,6 +242,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       setSubmitting(false);
       setSubmitError("");
       setCollapsedGroups(new Set());
+      setGroupDateValues({});
     }
   }, [isOpen, revokeAllPreviews]);
 
@@ -233,6 +291,10 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       setScanError("Chọn hoặc tải ít nhất một ảnh lên.");
       return;
     }
+    if (importKind === "bank_transaction_list" && currency !== "VND") {
+      setScanError(t("bankListVndOnly"));
+      return;
+    }
 
     setScanning(true);
     setScanError("");
@@ -255,7 +317,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
           ocrProgress: 0,
         });
 
-        const { text, numericText } = await runImageOcr(img.file, (progress) => {
+        const ocrResult = await runImageOcr(img.file, (progress) => {
           setScanProgress({
             imageIndex: i + 1,
             totalImages: images.length,
@@ -263,7 +325,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
           });
         });
 
-        const parsed = parseOcrTransactionText(text, img.id, numericText);
+        const parsed = parseImageImportOcr(ocrResult, img.id, importKind);
         if (parsed.length === 0) {
           warnings.push(
             `Ảnh ${String(i + 1)}: không nhận diện được giao dịch — thêm dòng trống để nhập thủ công.`,
@@ -281,7 +343,21 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
         allDrafts.push(createEmptyDraft(images[0].id));
       }
 
-      setDrafts(allDrafts);
+      try {
+        const classifiableDrafts = allDrafts.filter(
+          (draft) => !draft.isRefund && draft.direction === "expense",
+        );
+        const matches = classifiableDrafts.length > 0
+          ? await matchTransactionContents(classifiableDrafts.map((draft) => ({
+              key: draft.id,
+              content: draft.description.slice(0, 512) || null,
+            })))
+          : [];
+        setDrafts(applyClassificationMatches(allDrafts, matches));
+      } catch {
+        setDrafts(allDrafts);
+        warnings.push(t("classificationUnavailable"));
+      }
       setScanWarnings(warnings);
       setSelectedImageId(images[0]?.id ?? null);
       setStep("review");
@@ -295,17 +371,58 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
     }
   }
 
-  function updateDraft(id: string, patch: Partial<ImageImportDraft>) {
+  const updateDraft = useCallback((id: string, patch: Partial<ImageImportDraft>) => {
     setDrafts((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, ...patch } : d)),
+      prev.map((draft) => {
+        if (draft.id !== id) return draft;
+        const editedFields = Object.keys(patch).filter(
+          (field): field is ImageImportReviewField =>
+            field === "txnDate" ||
+            field === "description" ||
+            field === "amount" ||
+            field === "direction",
+        );
+        return {
+          ...draft,
+          ...patch,
+          reviewFields: draft.reviewFields.filter(
+            (field) => !editedFields.includes(field),
+          ),
+        };
+      }),
     );
-  }
+  }, []);
 
-  function removeDraft(id: string) {
+  const removeDraft = useCallback((id: string) => {
     setDrafts((prev) =>
       prev.length <= 1 ? prev : prev.filter((d) => d.id !== id),
     );
-  }
+  }, []);
+
+  const applyDateToUndatedDrafts = useCallback(
+    (imageId: string, txnDate: string) => {
+      if (!txnDate) return;
+      setDrafts((prev) =>
+        prev.map((draft) =>
+          draft.imageId === imageId && !draft.txnDate
+            ? {
+                ...draft,
+                txnDate,
+                reviewFields: draft.reviewFields.filter(
+                  (field) => field !== "txnDate",
+                ),
+              }
+            : draft,
+        ),
+      );
+      setGroupDateValues((prev) => {
+        const next = { ...prev };
+        delete next[imageId];
+        return next;
+      });
+    },
+    [],
+  );
 
   function addDraftRow() {
     const targetImageId =
@@ -320,7 +437,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       ...prev,
       createEmptyDraft(
         targetImageId,
-        lastInGroup?.txnDate ?? format(new Date(), "yyyy-MM-dd"),
+        lastInGroup?.txnDate,
       ),
     ]);
   }
@@ -329,7 +446,9 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
     if (!categoryId.trim()) return;
     setDrafts((prev) =>
       prev.map((d) =>
-        d.selected && !d.isRefund ? { ...d, categoryId } : d,
+        d.selected && !d.isRefund && d.direction === "expense"
+          ? { ...d, categoryId }
+          : d,
       ),
     );
   }
@@ -405,21 +524,29 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
         setSubmitError(`Dòng ${String(i + 1)}: nhập mô tả.`);
         return;
       }
+      if (!row.categoryId.trim() && !(row.direction === "expense" && categoryId.trim())) {
+        setSubmitError(t("rowCategoryRequired", { row: i + 1 }));
+        return;
+      }
     }
 
     setSubmitting(true);
     setSubmitError("");
     try {
-      const txnType = resolveExpenseApiType(sourceId, sources);
       const items = selected.map((row) => ({
           clientRequestId: row.id,
-          type: txnType,
+          type: row.direction === "income"
+            ? "income" as const
+            : resolveExpenseApiType(sourceId, sources),
           amount: row.amount,
           sourceId,
-          categoryId: row.categoryId.trim() || categoryId.trim() || null,
+          categoryId: row.categoryId.trim()
+            || (row.direction === "expense" ? categoryId.trim() : "")
+            || null,
           txnDate: row.txnDate,
           description: row.description.trim(),
           note: row.note.trim() || null,
+          tagIds: row.tagIds,
       }));
       const preview = await previewTransactionImport(items);
       if (!preview.isValid) {
@@ -435,6 +562,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
         queryClient.invalidateQueries({ queryKey: sourceKeys.lists() }),
       ]);
       invalidateDashboard(queryClient);
+      await invalidateBudgetAwareness(queryClient);
 
       addToast({
         type: "success",
@@ -448,9 +576,33 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
     }
   }
 
-  const selectedCount = drafts.filter((d) => d.selected && !d.isRefund).length;
-  const expenseCount = drafts.filter((d) => !d.isRefund).length;
-  const refundCount = drafts.length - expenseCount;
+  const draftsByImageId = useMemo(() => {
+    const groups = new Map<string, ImageImportDraft[]>();
+    for (const draft of drafts) {
+      const group = groups.get(draft.imageId);
+      if (group) group.push(draft);
+      else groups.set(draft.imageId, [draft]);
+    }
+    return groups;
+  }, [drafts]);
+  const { selectedCount, expenseCount, incomeCount, refundCount } = useMemo(() => {
+    let selectedRows = 0;
+    let expenses = 0;
+    let incomes = 0;
+    let refunds = 0;
+    for (const draft of drafts) {
+      if (draft.isRefund) refunds++;
+      else if (draft.direction === "income") incomes++;
+      else expenses++;
+      if (draft.selected && !draft.isRefund) selectedRows++;
+    }
+    return {
+      selectedCount: selectedRows,
+      expenseCount: expenses,
+      incomeCount: incomes,
+      refundCount: refunds,
+    };
+  }, [drafts]);
   const selectedImage =
     images.find((img) => img.id === selectedImageId) ?? images[0] ?? null;
 
@@ -467,7 +619,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       title="Nhập bằng ảnh"
       description={
         step === "upload"
-          ? "Chọn nguồn tiền và tải một hoặc nhiều ảnh sao kê / lịch sử giao dịch."
+          ? t("uploadDescription")
           : "Kiểm tra giao dịch và đối chiếu với ảnh trước khi lưu."
       }
       size="full"
@@ -484,12 +636,83 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
     >
       {step === "upload" ? (
         <div className="flex flex-col gap-5">
+          <fieldset disabled={scanning}>
+            <legend className="mb-2 text-sm font-medium text-warm-700">
+              {t("imageKind")}
+            </legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {IMAGE_IMPORT_KIND_OPTIONS.map((option) => {
+                const selected = importKind === option.value;
+                return (
+                  <label
+                    key={option.value}
+                    className={cn(
+                      "flex min-h-20 cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 transition-colors",
+                      "focus-within:ring-2 focus-within:ring-accent/30",
+                      selected
+                        ? "border-accent bg-accent/5"
+                        : "border-warm-200 bg-warm-25 hover:border-warm-300",
+                      scanning && "cursor-not-allowed opacity-60",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="image-import-kind"
+                      value={option.value}
+                      checked={selected}
+                      className="mt-0.5 size-5 shrink-0 border-warm-300 text-accent"
+                      onChange={() => {
+                        setImportKind(option.value);
+                        setScanError("");
+                      }}
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-warm-900">
+                        {t(option.labelKey)}
+                      </span>
+                      <span className="mt-0.5 block text-xs leading-relaxed text-warm-500">
+                        {t(option.descriptionKey)}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+
           <SourcePicker
             sources={sources}
             value={sourceId}
             onChange={setSourceId}
             disabled={scanning}
           />
+          {sourcesQuery.isLoading ? (
+            <p className="-mt-3 text-xs text-warm-500" role="status">
+              {t("sourceLoading")}
+            </p>
+          ) : sourcesQuery.isError ? (
+            <div className="-mt-3 flex flex-wrap items-center gap-2 text-xs text-danger" role="alert">
+              <span>{t("sourceLoadError")}</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={scanning}
+                onClick={() => void sourcesQuery.refetch()}
+              >
+                {t("retry")}
+              </Button>
+            </div>
+          ) : sources.length === 0 ? (
+            <p className="-mt-3 text-xs text-warm-500">
+              {t("sourceEmpty")}
+            </p>
+          ) : null}
+          {importKind === "bank_transaction_list" && sourceId && currency !== "VND" ? (
+            <p className="-mt-3 text-xs font-medium text-danger" role="alert">
+              {t("bankListVndOnly")}
+            </p>
+          ) : null}
 
           <div>
             <div className="mb-2 flex items-center justify-between gap-2">
@@ -529,6 +752,8 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                           <img
                             src={img.previewUrl}
                             alt={`Ảnh ${String(index + 1)}`}
+                            loading="lazy"
+                            decoding="async"
                             className="aspect-[9/16] w-full object-cover object-top"
                           />
                         </div>
@@ -539,7 +764,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                           <button
                             type="button"
                             disabled={scanning}
-                            className="rounded p-0.5 text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
+                            className="flex size-9 items-center justify-center rounded-md text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
                             aria-label={`Xóa ảnh ${String(index + 1)}`}
                             onClick={() => removeImage(img.id)}
                           >
@@ -638,7 +863,11 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
               type="button"
               leftIcon={<ScanLine className="size-4" aria-hidden />}
               isLoading={scanning}
-              disabled={images.length === 0 || !sourceId}
+              disabled={
+                images.length === 0
+                || !sourceId
+                || (importKind === "bank_transaction_list" && currency !== "VND")
+              }
               onClick={() => void handleScan()}
             >
               {images.length > 1
@@ -650,7 +879,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-3">
           <div className="shrink-0 rounded-xl border border-warm-200 bg-warm-25/50 p-3 sm:p-4">
-            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-[minmax(10rem,0.7fr)_minmax(14rem,1fr)_minmax(18rem,1.5fr)]">
               <div>
                 <span className="mb-1 block text-xs font-medium text-warm-500">
                   Nguồn tiền
@@ -660,8 +889,16 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                 </p>
               </div>
               <div>
+                <span className="mb-1 block text-xs font-medium text-warm-500">
+                  {t("imageKind")}
+                </span>
+                <p className="text-sm font-medium text-warm-900">
+                  {t(importKind === "bank_transaction_list" ? "bankListKind" : "statementKind")}
+                </p>
+              </div>
+              <div>
                 <span className="mb-1.5 block text-xs font-medium text-warm-500">
-                  Gán danh mục hàng loạt
+                  {t("bulkExpenseCategory")}
                 </span>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <div className="min-w-0 flex-1">
@@ -691,7 +928,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
           {(scanWarnings.length > 0 || refundCount > 0) && (
             <div className="shrink-0 space-y-2">
               {scanWarnings.length > 0 ? (
-                <div className="rounded-lg border border-amber-200/80 bg-amber-50 px-3 py-2 text-xs text-warm-600">
+                <div className="rounded-lg border border-warm-300 bg-warm-100 px-3 py-2 text-xs text-warm-600">
                   {scanWarnings.map((warning) => (
                     <p key={warning}>{warning}</p>
                   ))}
@@ -708,8 +945,12 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
 
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-warm-600">
-              {selectedCount} / {expenseCount} chi tiêu được chọn
-              {refundCount > 0 ? ` · ${String(refundCount)} hoàn trả` : ""}
+              {t("selectionSummary", {
+                selected: selectedCount,
+                expenses: expenseCount,
+                incomes: incomeCount,
+              })}
+              {refundCount > 0 ? ` · ${t("refundCount", { count: refundCount })}` : ""}
             </p>
             <Button
               type="button"
@@ -753,7 +994,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
               <div className="mt-1.5 flex shrink-0 gap-1.5 overflow-x-auto pb-0.5 md:mt-1">
                 {images.map((img, index) => {
                   const isSelected = selectedImageId === img.id;
-                  const txnCount = drafts.filter((d) => d.imageId === img.id).length;
+                  const txnCount = draftsByImageId.get(img.id)?.length ?? 0;
                   return (
                     <button
                       key={img.id}
@@ -771,6 +1012,8 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                       <img
                         src={img.previewUrl}
                         alt={`Ảnh ${String(index + 1)}`}
+                        loading="lazy"
+                        decoding="async"
                         className="h-14 w-10 object-cover object-top sm:h-16 sm:w-11"
                       />
                       <span
@@ -792,11 +1035,15 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
               className="order-2 min-h-0 md:order-1 md:overflow-auto md:rounded-xl md:border md:border-warm-200"
             >
               {images.map((img, imageIndex) => {
-                const groupDrafts = drafts.filter((d) => d.imageId === img.id);
+                const groupDrafts = draftsByImageId.get(img.id) ?? [];
                 if (groupDrafts.length === 0) return null;
 
                 const isActiveGroup = selectedImageId === img.id;
                 const isCollapsed = collapsedGroups.has(img.id);
+                const undatedCount = groupDrafts.reduce(
+                  (count, draft) => count + (draft.txnDate ? 0 : 1),
+                  0,
+                );
 
                 return (
                   <section
@@ -811,7 +1058,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                   >
                     <div
                       className={cn(
-                        "flex items-center gap-1 border-b px-2 py-2 md:sticky md:top-0 md:z-20",
+                        "flex flex-wrap items-center gap-1 border-b px-2 py-2 md:sticky md:top-0 md:z-20",
                         isActiveGroup
                           ? "border-accent/20 bg-accent/10"
                           : "border-warm-100 bg-warm-50",
@@ -819,7 +1066,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                     >
                       <button
                         type="button"
-                        className="rounded-md p-1.5 text-warm-500 hover:bg-warm-100 hover:text-warm-800"
+                        className="flex size-9 shrink-0 items-center justify-center rounded-md text-warm-500 hover:bg-warm-100 hover:text-warm-800"
                         aria-expanded={!isCollapsed}
                         aria-label={
                           isCollapsed
@@ -851,62 +1098,104 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                           {groupDrafts.length} giao dịch
                         </span>
                       </button>
+                      {undatedCount > 0 ? (
+                        <div className="flex w-full flex-wrap items-center gap-2 border-t border-current/10 pt-2 sm:ml-8 sm:flex-nowrap">
+                          <label
+                            htmlFor={`group-date-${img.id}`}
+                            className="shrink-0 text-xs font-medium text-warm-600"
+                          >
+                            Điền ngày cho {undatedCount} dòng trống
+                          </label>
+                          <input
+                            id={`group-date-${img.id}`}
+                            type="date"
+                            value={groupDateValues[img.id] ?? ""}
+                            disabled={submitting}
+                            className="h-8 min-w-[8.5rem] rounded-md border border-warm-200 bg-surface px-2 text-xs text-warm-800"
+                            onChange={(event) =>
+                              setGroupDateValues((prev) => ({
+                                ...prev,
+                                [img.id]: event.target.value,
+                              }))
+                            }
+                          />
+                          <button
+                            type="button"
+                            disabled={submitting || !groupDateValues[img.id]}
+                            className="h-8 rounded-md bg-accent px-3 text-xs font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+                            onClick={() =>
+                              applyDateToUndatedDrafts(
+                                img.id,
+                                groupDateValues[img.id] ?? "",
+                              )
+                            }
+                          >
+                            Áp dụng
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
 
                     {!isCollapsed ? (
                       <>
-                        <div className="divide-y divide-warm-100 md:hidden">
-                          {groupDrafts.map((row) => (
-                            <DraftCardRow
-                              key={row.id}
-                              row={row}
-                              currency={currency}
-                              submitting={submitting}
-                              canRemove={drafts.length > 1}
-                              onUpdate={(patch) => updateDraft(row.id, patch)}
-                              onRemove={() => removeDraft(row.id)}
-                            />
-                          ))}
-                        </div>
-                        <DataTableScrollRegion
-                          label={`Giao dịch nhận diện từ ảnh ${String(imageIndex + 1)}`}
-                          className="hidden md:block"
-                        >
-                          <table className="w-full min-w-[580px] text-sm">
-                            <caption className="sr-only">
-                              Giao dịch nhận diện từ ảnh {String(imageIndex + 1)}
-                            </caption>
-                            <thead className="bg-warm-25 text-left text-[11px] font-medium uppercase tracking-wide text-warm-500">
-                              <tr className="border-b border-warm-100">
-                                <th scope="col" className="w-9 px-2 py-2">
-                                  <span className="sr-only">Chọn</span>
-                                </th>
-                                <th scope="col" className="w-[7.5rem] px-2 py-2">Ngày</th>
-                                <th scope="col" className="min-w-[8rem] px-2 py-2">Mô tả</th>
-                                <th scope="col" className="w-[6.5rem] px-2 py-2 text-right">
-                                  Số tiền
-                                </th>
-                                <th scope="col" className="min-w-[9rem] px-2 py-2">Danh mục</th>
-                                <th scope="col" className="w-9 px-1 py-2">
-                                  <span className="sr-only">Xóa</span>
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {groupDrafts.map((row) => (
-                                <DraftTableRow
-                                  key={row.id}
-                                  row={row}
-                                  currency={currency}
-                                  submitting={submitting}
-                                  canRemove={drafts.length > 1}
-                                  onUpdate={(patch) => updateDraft(row.id, patch)}
-                                  onRemove={() => removeDraft(row.id)}
-                                />
-                              ))}
-                            </tbody>
-                          </table>
-                        </DataTableScrollRegion>
+                        {isMdUp ? (
+                          <DataTableScrollRegion
+                            label={`Giao dịch nhận diện từ ảnh ${String(imageIndex + 1)}`}
+                          >
+                            <table className="w-full min-w-[880px] text-sm">
+                              <caption className="sr-only">
+                                Giao dịch nhận diện từ ảnh {String(imageIndex + 1)}
+                              </caption>
+                              <thead className="bg-warm-25 text-left text-[11px] font-medium uppercase tracking-wide text-warm-500">
+                                <tr className="border-b border-warm-100">
+                                  <th scope="col" className="w-9 px-2 py-2">
+                                    <span className="sr-only">Chọn</span>
+                                  </th>
+                                  <th scope="col" className="w-[7.5rem] px-2 py-2">Ngày</th>
+                                  <th scope="col" className="min-w-[8rem] px-2 py-2">Mô tả</th>
+                                  <th scope="col" className="w-[6.5rem] px-2 py-2 text-right">
+                                    Số tiền
+                                  </th>
+                                  <th scope="col" className="w-[7.5rem] px-2 py-2">
+                                    {t("direction")}
+                                  </th>
+                                  <th scope="col" className="min-w-[9rem] px-2 py-2">Danh mục</th>
+                                  <th scope="col" className="min-w-[11rem] px-2 py-2">{t("tag")}</th>
+                                  <th scope="col" className="w-9 px-1 py-2">
+                                    <span className="sr-only">Xóa</span>
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {groupDrafts.map((row) => (
+                                  <DraftTableRow
+                                    key={row.id}
+                                    row={row}
+                                    currency={currency}
+                                    submitting={submitting}
+                                    canRemove={drafts.length > 1}
+                                    onUpdate={updateDraft}
+                                    onRemove={removeDraft}
+                                  />
+                                ))}
+                              </tbody>
+                            </table>
+                          </DataTableScrollRegion>
+                        ) : (
+                          <div className="divide-y divide-warm-100">
+                            {groupDrafts.map((row) => (
+                              <DraftCardRow
+                                key={row.id}
+                                row={row}
+                                currency={currency}
+                                submitting={submitting}
+                                canRemove={drafts.length > 1}
+                                onUpdate={updateDraft}
+                                onRemove={removeDraft}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </>
                     ) : null}
                   </section>
@@ -953,7 +1242,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
   );
 }
 
-function DraftCardRow({
+const DraftCardRow = memo(function DraftCardRow({
   row,
   currency,
   submitting,
@@ -965,9 +1254,11 @@ function DraftCardRow({
   currency: string;
   submitting: boolean;
   canRemove: boolean;
-  onUpdate: (patch: Partial<ImageImportDraft>) => void;
-  onRemove: () => void;
+  onUpdate: (id: string, patch: Partial<ImageImportDraft>) => void;
+  onRemove: (id: string) => void;
 }) {
+  const t = useTranslations("imageImport");
+  const reviewLabel = formatReviewFields(row.reviewFields, t);
   return (
     <div
       className={cn(
@@ -976,28 +1267,35 @@ function DraftCardRow({
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <label className="flex items-center gap-2">
+        <label className="flex min-h-10 items-center gap-2">
           <input
             type="checkbox"
             checked={row.selected}
             disabled={submitting}
+            aria-label={t("selectTransaction")}
             className="size-4 rounded border-warm-300 text-accent"
-            onChange={(e) => onUpdate({ selected: e.target.checked })}
+            onChange={(e) => onUpdate(row.id, { selected: e.target.checked })}
           />
           <span className="text-xs font-medium text-warm-500">Chọn</span>
         </label>
         <button
           type="button"
           disabled={submitting || !canRemove}
-          className="rounded p-1 text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
+          className="flex size-10 items-center justify-center rounded-md text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
           aria-label="Xóa dòng"
-          onClick={onRemove}
+          onClick={() => onRemove(row.id)}
         >
           <Trash2 className="size-4" />
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      {reviewLabel ? (
+        <p className="rounded-md bg-warm-100 px-2.5 py-2 text-xs font-medium text-warm-700">
+          {t("needsReview", { fields: reviewLabel })}
+        </p>
+      ) : null}
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <div className="col-span-2 sm:col-span-1">
           <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-warm-500">
             Ngày
@@ -1006,8 +1304,13 @@ function DraftCardRow({
             type="date"
             value={row.txnDate}
             disabled={submitting || !row.selected}
-            className="h-10 w-full rounded-md border border-warm-200 bg-warm-50 px-2 text-sm"
-            onChange={(e) => onUpdate({ txnDate: e.target.value })}
+            aria-label={t("date")}
+            aria-invalid={row.reviewFields.includes("txnDate")}
+            className={cn(
+              "h-10 w-full rounded-md border bg-warm-50 px-2 text-sm",
+              row.reviewFields.includes("txnDate") ? "border-danger" : "border-warm-200",
+            )}
+            onChange={(e) => onUpdate(row.id, { txnDate: e.target.value })}
           />
         </div>
         <div className="col-span-2 sm:col-span-1">
@@ -1017,9 +1320,24 @@ function DraftCardRow({
           <DraftAmountInput
             value={row.amount}
             currency={currency}
+            direction={row.direction}
             isRefund={row.isRefund}
             disabled={submitting || !row.selected}
-            onChange={(amount) => onUpdate({ amount })}
+            ariaLabel={t("amount")}
+            invalid={row.reviewFields.includes("amount")}
+            onChange={(amount) => onUpdate(row.id, { amount })}
+          />
+        </div>
+        <div className="col-span-2 sm:col-span-1">
+          <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-warm-500">
+            {t("direction")}
+          </span>
+          <DraftDirectionSelect
+            value={row.direction}
+            isRefund={row.isRefund}
+            disabled={submitting || !row.selected}
+            invalid={row.reviewFields.includes("direction")}
+            onChange={(direction) => onUpdate(row.id, { direction, categoryId: "" })}
           />
         </div>
       </div>
@@ -1039,8 +1357,13 @@ function DraftCardRow({
             value={row.description}
             disabled={submitting || !row.selected}
             placeholder="Tên giao dịch"
-            className="h-10 min-w-0 flex-1 rounded-md border border-warm-200 bg-warm-50 px-2 text-sm"
-            onChange={(e) => onUpdate({ description: e.target.value })}
+            aria-label={t("description")}
+            aria-invalid={row.reviewFields.includes("description")}
+            className={cn(
+              "h-10 min-w-0 flex-1 rounded-md border bg-warm-50 px-2 text-sm",
+              row.reviewFields.includes("description") ? "border-danger" : "border-warm-200",
+            )}
+            onChange={(e) => onUpdate(row.id, { description: e.target.value })}
           />
         </div>
         {row.note ? (
@@ -1049,25 +1372,39 @@ function DraftCardRow({
       </div>
 
       {!row.isRefund ? (
-        <div>
-          <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-warm-500">
-            Danh mục
-          </span>
-          <CategorySelector
-            kind="expense"
-            value={row.categoryId || undefined}
-            onChange={(id) => onUpdate({ categoryId: id ?? "" })}
-            disabled={submitting || !row.selected}
-            placeholder="Danh mục"
-            className="[&_button]:h-10 [&_button]:w-full [&_button]:text-sm"
-          />
+        <div className="space-y-3">
+          <div>
+            <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-warm-500">
+              Danh mục
+            </span>
+            <CategorySelector
+              kind={row.direction}
+              value={row.categoryId || undefined}
+              onChange={(id) => onUpdate(row.id, { categoryId: id ?? "" })}
+              disabled={submitting || !row.selected}
+              placeholder="Danh mục"
+              ariaLabel={t("category")}
+              className="[&_button]:h-10 [&_button]:w-full [&_button]:text-sm"
+            />
+          </div>
+          <div>
+            <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-warm-500">
+              {t("tag")}
+            </span>
+            <TagPicker
+              value={row.tagIds}
+              onChange={(tagIds) => onUpdate(row.id, { tagIds })}
+              disabled={submitting || !row.selected}
+              label={t("tag")}
+            />
+          </div>
         </div>
       ) : null}
     </div>
   );
-}
+});
 
-function DraftTableRow({
+const DraftTableRow = memo(function DraftTableRow({
   row,
   currency,
   submitting,
@@ -1079,9 +1416,11 @@ function DraftTableRow({
   currency: string;
   submitting: boolean;
   canRemove: boolean;
-  onUpdate: (patch: Partial<ImageImportDraft>) => void;
-  onRemove: () => void;
+  onUpdate: (id: string, patch: Partial<ImageImportDraft>) => void;
+  onRemove: (id: string) => void;
 }) {
+  const t = useTranslations("imageImport");
+  const reviewLabel = formatReviewFields(row.reviewFields, t);
   return (
     <tr
       className={cn(
@@ -1094,13 +1433,14 @@ function DraftTableRow({
           type="checkbox"
           checked={row.selected}
           disabled={submitting}
+          aria-label={t("selectTransaction")}
           title={
             row.isRefund
               ? "Hoàn trả — chỉ để tham khảo, không nhập vào sổ"
               : undefined
           }
           className="size-4 rounded border-warm-300 text-accent"
-          onChange={(e) => onUpdate({ selected: e.target.checked })}
+          onChange={(e) => onUpdate(row.id, { selected: e.target.checked })}
         />
       </td>
       <td className="px-2 py-1.5 align-top">
@@ -1108,8 +1448,13 @@ function DraftTableRow({
           type="date"
           value={row.txnDate}
           disabled={submitting || !row.selected}
-          className="h-9 w-full min-w-[7rem] rounded-md border border-warm-200 bg-warm-50 px-2 text-sm"
-          onChange={(e) => onUpdate({ txnDate: e.target.value })}
+          aria-label={t("date")}
+          aria-invalid={row.reviewFields.includes("txnDate")}
+          className={cn(
+            "h-9 w-full min-w-[7rem] rounded-md border bg-warm-50 px-2 text-sm",
+            row.reviewFields.includes("txnDate") ? "border-danger" : "border-warm-200",
+          )}
+          onChange={(e) => onUpdate(row.id, { txnDate: e.target.value })}
         />
       </td>
       <td className="px-2 py-1.5 align-top">
@@ -1124,21 +1469,43 @@ function DraftTableRow({
             value={row.description}
             disabled={submitting || !row.selected}
             placeholder="Tên giao dịch"
-            className="h-9 min-w-0 flex-1 rounded-md border border-warm-200 bg-warm-50 px-2 text-sm"
-            onChange={(e) => onUpdate({ description: e.target.value })}
+            aria-label={t("description")}
+            aria-invalid={row.reviewFields.includes("description")}
+            className={cn(
+              "h-9 min-w-0 flex-1 rounded-md border bg-warm-50 px-2 text-sm",
+              row.reviewFields.includes("description") ? "border-danger" : "border-warm-200",
+            )}
+            onChange={(e) => onUpdate(row.id, { description: e.target.value })}
           />
         </div>
         {row.note ? (
           <p className="mt-1 line-clamp-2 text-[11px] text-warm-400">{row.note}</p>
+        ) : null}
+        {reviewLabel ? (
+          <p className="mt-1 text-[11px] font-medium text-warm-600">
+            {t("needsReview", { fields: reviewLabel })}
+          </p>
         ) : null}
       </td>
       <td className="px-2 py-1.5 align-top">
         <DraftAmountInput
           value={row.amount}
           currency={currency}
+          direction={row.direction}
           isRefund={row.isRefund}
           disabled={submitting || !row.selected}
-          onChange={(amount) => onUpdate({ amount })}
+          ariaLabel={t("amount")}
+          invalid={row.reviewFields.includes("amount")}
+          onChange={(amount) => onUpdate(row.id, { amount })}
+        />
+      </td>
+      <td className="px-2 py-1.5 align-top">
+        <DraftDirectionSelect
+          value={row.direction}
+          isRefund={row.isRefund}
+          disabled={submitting || !row.selected}
+          invalid={row.reviewFields.includes("direction")}
+          onChange={(direction) => onUpdate(row.id, { direction, categoryId: "" })}
         />
       </td>
       <td className="px-2 py-1.5 align-top">
@@ -1146,41 +1513,103 @@ function DraftTableRow({
           <span className="block py-2 text-xs text-warm-400">—</span>
         ) : (
           <CategorySelector
-            kind="expense"
+            kind={row.direction}
             value={row.categoryId || undefined}
-            onChange={(id) => onUpdate({ categoryId: id ?? "" })}
+            onChange={(id) => onUpdate(row.id, { categoryId: id ?? "" })}
             disabled={submitting || !row.selected}
             placeholder="Danh mục"
+            ariaLabel={t("category")}
             className="[&_button]:h-9 [&_button]:text-xs"
           />
+        )}
+      </td>
+      <td className="px-2 py-1.5 align-top">
+        {row.isRefund ? (
+          <span className="block py-2 text-xs text-warm-400">—</span>
+        ) : (
+          <div>
+            <TagPicker
+              value={row.tagIds}
+              onChange={(tagIds) => onUpdate(row.id, { tagIds })}
+              disabled={submitting || !row.selected}
+              className="min-w-[10rem] gap-1"
+              label={t("tag")}
+            />
+          </div>
         )}
       </td>
       <td className="px-1 py-1.5 align-top">
         <button
           type="button"
           disabled={submitting || !canRemove}
-          className="rounded p-1 text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
+          className="flex size-9 items-center justify-center rounded-md text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
           aria-label="Xóa dòng"
-          onClick={onRemove}
+          onClick={() => onRemove(row.id)}
         >
           <Trash2 className="size-4" />
         </button>
       </td>
     </tr>
   );
+});
+
+function DraftDirectionSelect({
+  value,
+  isRefund,
+  disabled,
+  invalid,
+  onChange,
+}: {
+  value: ImageImportDraft["direction"];
+  isRefund?: boolean;
+  disabled?: boolean;
+  invalid?: boolean;
+  onChange: (direction: ImageImportDraft["direction"]) => void;
+}) {
+  const t = useTranslations("imageImport");
+  if (isRefund) {
+    return (
+      <span className="flex h-9 items-center text-xs font-semibold text-success">
+        {t("refund")}
+      </span>
+    );
+  }
+  return (
+    <select
+      value={value}
+      disabled={disabled}
+      aria-label={t("direction")}
+      aria-invalid={invalid}
+      className={cn(
+        "h-9 w-full rounded-md border bg-warm-50 px-2 text-sm text-warm-900",
+        "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
+        invalid ? "border-danger" : "border-warm-200",
+      )}
+      onChange={(event) => onChange(event.target.value as ImageImportDraft["direction"])}
+    >
+      <option value="expense">{t("expenseDirection")}</option>
+      <option value="income">{t("incomeDirection")}</option>
+    </select>
+  );
 }
 
 function DraftAmountInput({
   value,
   currency,
+  direction,
   isRefund,
   disabled,
+  ariaLabel,
+  invalid,
   onChange,
 }: {
   value: number;
   currency: string;
+  direction: ImageImportDraft["direction"];
   isRefund?: boolean;
   disabled?: boolean;
+  ariaLabel: string;
+  invalid?: boolean;
   onChange: (amount: number) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -1190,8 +1619,9 @@ function DraftAmountInput({
     const el = inputRef.current;
     if (!el || focusedRef.current) return;
     const formatted = formatAmountDisplay(value, currency);
-    el.value = isRefund && formatted ? `+ ${formatted}` : formatted;
-  }, [value, currency, isRefund]);
+    const sign = isRefund || direction === "income" ? "+ " : "- ";
+    el.value = formatted ? `${sign}${formatted}` : "";
+  }, [value, currency, direction, isRefund]);
 
   return (
     <input
@@ -1199,11 +1629,15 @@ function DraftAmountInput({
       type="text"
       inputMode={currency === "VND" ? "numeric" : "decimal"}
       disabled={disabled}
+      aria-label={ariaLabel}
+      aria-invalid={invalid}
       className={cn(
         "h-9 w-full min-w-[5.5rem] rounded-md border bg-warm-50 px-2 text-right font-mono text-sm",
-        isRefund
-          ? "border-success/30 text-success"
-          : "border-warm-200 text-warm-900",
+        invalid
+          ? "border-danger text-warm-900"
+          : isRefund || direction === "income"
+            ? "border-success/30 text-success"
+            : "border-warm-200 text-warm-900",
       )}
       onFocus={(e) => {
         focusedRef.current = true;
@@ -1215,8 +1649,8 @@ function DraftAmountInput({
         const parsed = parseAmountInput(e.currentTarget.value, currency);
         onChange(parsed);
         const formatted = formatAmountDisplay(parsed, currency);
-        e.currentTarget.value =
-          isRefund && formatted ? `+ ${formatted}` : formatted;
+        const sign = isRefund || direction === "income" ? "+ " : "- ";
+        e.currentTarget.value = formatted ? `${sign}${formatted}` : "";
       }}
       onInput={(e) => {
         const el = e.currentTarget;
