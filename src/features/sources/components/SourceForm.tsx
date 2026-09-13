@@ -99,7 +99,7 @@ const SOURCE_TYPE_OPTIONS: { value: FinSourceType; label: string }[] = [
 export { SOURCE_COLOR_PRESETS } from "@/shared/lib/iconColorPresets";
 
 const DEFAULT_ICON = SOURCE_ICON_PRESETS[0] ?? "💰";
-const DEFAULT_COLOR = COLOR_PRESETS[0] ?? "#725a3a";
+const DEFAULT_COLOR = COLOR_PRESETS[0] ?? "#0891b2";
 
 const selectClassName = cn(
   "h-10 w-full rounded-button border border-warm-200 bg-warm-50 px-3 text-sm text-warm-900",

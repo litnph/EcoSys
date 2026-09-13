@@ -8,7 +8,7 @@ import type {
 import { newDraftId } from "./types";
 
 const DATE_LINE =
-  /^\s*([\dOoIl]{1,2})\s*[/.−-]\s*([\dOoIl]{1,2})\s*[/.−-]\s*([\dOoIl]{2,4})\s*$/;
+  /^\s*([\dOoIl]{1,2})\s*[/.−-]\s*([\dOoIl]{1,2})\s*[/.−-]\s*([\dOoIl]{2,4})(?:\s*[-−–]\s*.+)?\s*$/;
 const SIGNED_AMOUNT_TAIL =
   /(?:^|[\s:])~?\s*([+−–-])\s*([\dOoIlSsBbZzG]{1,3}(?:[.,/\s][\dOoIlSsBbZzG]{3})+|[\dOoIlSsBbZzG]{1,12})\s*(?:VND)?\s*$/i;
 const NUMERIC_AMOUNT_TAIL =
@@ -283,9 +283,7 @@ function draftsFromBlock(
     const directionConflict = closestNumeric?.sign != null
       && closestNumeric.sign !== candidate.sign;
     const reviewFields: ImageImportReviewField[] = [
-      ...(block.dateUncertain || (candidateIndex > 0 && amountCandidates.length > 1)
-        ? ["txnDate" as const]
-        : []),
+      ...(block.dateUncertain ? ["txnDate" as const] : []),
       ...(!description || descriptionConfidence < 35
         ? ["description" as const]
         : []),
@@ -300,7 +298,7 @@ function draftsFromBlock(
     return {
       id: newDraftId(),
       imageId,
-      txnDate: candidateIndex === 0 ? block.date : "",
+      txnDate: block.date,
       description,
       amount: closestNumeric?.amount ?? candidate.amount,
       note: "",
@@ -315,8 +313,9 @@ function draftsFromBlock(
 }
 
 /**
- * Parses a mobile bank transaction list. Each visible date starts a transaction
- * boundary; wrapped description rows are assigned to the closest signed amount.
+ * Parses a mobile bank transaction list. Each visible date starts a group and is
+ * inherited by every transaction until the next date header. Wrapped description
+ * rows are assigned to the closest signed amount.
  * A second, numeric-only OCR pass corrects digits without overriding the visible sign.
  */
 export function parseBankTransactionListOcr(

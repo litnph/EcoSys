@@ -18,7 +18,7 @@ export function TagsPage() {
   const del = useDeleteTag();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [color, setColor] = useState<string>(COLOR_PRESETS[2] ?? "#725a3a");
+  const [color, setColor] = useState<string>(COLOR_PRESETS[2] ?? "#6366f1");
 
   const colorPresets = useMemo(() => {
     const set = new Set<string>(COLOR_PRESETS);
@@ -88,7 +88,7 @@ export function TagsPage() {
                 onSuccess: () => {
                   setOpen(false);
                   setName("");
-                  setColor(COLOR_PRESETS[2] ?? "#725a3a");
+                  setColor(COLOR_PRESETS[2] ?? "#6366f1");
                 },
               },
             );

@@ -20,6 +20,7 @@ export const ROUTES = {
     settings: "/settings",
     settingsProfile: "/settings/profile",
     settingsPreferences: "/settings/preferences",
+    settingsImageImport: "/settings/image-import",
     settingsClassification: "/settings/classification",
     settingsMembers: "/settings/members",
   },

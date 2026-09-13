@@ -192,7 +192,7 @@ export function TransactionDetailDrawer({
           <div className="space-y-6">
             {mergedDisplay.hasInstallmentPlan ? (
               <div
-                className="rounded-lg border border-warm-300 bg-warm-100 px-3 py-2.5 text-sm text-warm-900"
+                className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-sm text-warning"
                 role="status"
               >
                 <p className="font-medium">Đã chuyển sang trả góp</p>
@@ -204,7 +204,7 @@ export function TransactionDetailDrawer({
             ) : null}
             {mergedDisplay.isInstallmentPayment ? (
               <div
-                className="rounded-lg border border-warm-300 bg-warm-100 px-3 py-2.5 text-sm text-warm-900"
+                className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-sm text-warning"
                 role="status"
               >
                 <p className="font-medium">Thanh toán kỳ trả góp</p>
@@ -220,7 +220,7 @@ export function TransactionDetailDrawer({
                   {transactionTypeLabel(mergedDisplay.type, t)}
                 </span>
                 {installmentRelated ? (
-                  <span className="inline-flex rounded-badge bg-warm-100 px-2 py-0.5 text-xs font-medium text-warm-900 ring-1 ring-warm-300">
+                  <span className="inline-flex rounded-badge bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning ring-1 ring-warning/20">
                     Trả góp
                   </span>
                 ) : null}

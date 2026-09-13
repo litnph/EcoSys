@@ -75,6 +75,11 @@ const SettingsPreferencesPage = lazy(() =>
     default: m.SettingsPreferencesPage,
   })),
 );
+const SettingsImageImportPage = lazy(() =>
+  import("@/pages/SettingsImageImportPage").then((m) => ({
+    default: m.SettingsImageImportPage,
+  })),
+);
 const SettingsClassificationRulesPage = lazy(() =>
   import("@/pages/SettingsClassificationRulesPage").then((m) => ({
     default: m.SettingsClassificationRulesPage,
@@ -262,6 +267,14 @@ export function AppRoutes() {
               element={
                 <PageSuspense>
                   <SettingsPreferencesPage />
+                </PageSuspense>
+              }
+            />
+            <Route
+              path="image-import"
+              element={
+                <PageSuspense>
+                  <SettingsImageImportPage />
                 </PageSuspense>
               }
             />

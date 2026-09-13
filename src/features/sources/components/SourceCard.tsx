@@ -167,7 +167,7 @@ function SourceCardInner({ source, onEdit, onDelete, onViewLedger }: SourceCardP
             {formatCurrency(Math.max(0, source.balance), source.currency)}
           </p>
           {(source.installmentRemainingAmount ?? 0) > 0 ? (
-            <p className="text-xs text-warm-700">
+            <p className="text-xs text-warning">
               Trả góp còn lại:{" "}
               <span className="font-mono font-medium">
                 {formatCurrency(

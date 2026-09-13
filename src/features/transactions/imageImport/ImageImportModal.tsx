@@ -1,6 +1,14 @@
-import { ChevronDown, ImagePlus, Loader2, Plus, ScanLine, Trash2, X } from "lucide-react";
-import * as SelectPrimitive from "@radix-ui/react-select";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, FileImage, ImagePlus, Loader2, Plus, ScanLine, Trash2, X } from "lucide-react";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import {
+  memo,
+  type DragEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 
@@ -11,9 +19,10 @@ import { invalidateBudgetAwareness } from "@/features/budgets/lib/invalidateBudg
 import { invalidateDashboard } from "@/features/dashboard/lib/invalidateDashboard";
 import { debtKeys } from "@/features/debt/api/debtKeys";
 import { sourceKeys } from "@/features/sources/api/sourceKeys";
+import { MoneySourceSelect } from "@/features/sources/components";
 import { useSources } from "@/features/sources/hooks";
-import type { FinSource } from "@/features/sources/types";
 import { getFinanceApiErrorMessage } from "@/features/sources/utils/apiError";
+import { useImageImportTypeSettings } from "@/features/settings/hooks/useImageImportSettings";
 import { useTranslations } from "@/i18n/hooks";
 import { Button } from "@/shared/components/ui/Button";
 import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
@@ -38,7 +47,13 @@ import type {
   ImageImportKind,
   ImageImportReviewField,
 } from "./types";
-import { newDraftId, newImageId } from "./types";
+import {
+  applyImageImportDescriptionPreference,
+  IMAGE_IMPORT_KIND_DEFINITIONS,
+  newDraftId,
+  newImageId,
+  resolveImageImportTypeSettings,
+} from "./types";
 
 export interface ImageImportModalProps {
   isOpen: boolean;
@@ -52,23 +67,6 @@ type ScanProgress = {
   totalImages: number;
   ocrProgress: number;
 };
-
-const IMAGE_IMPORT_KIND_OPTIONS: Array<{
-  value: ImageImportKind;
-  labelKey: "statementKind" | "bankListKind";
-  descriptionKey: "statementKindHelp" | "bankListKindHelp";
-}> = [
-  {
-    value: "statement",
-    labelKey: "statementKind",
-    descriptionKey: "statementKindHelp",
-  },
-  {
-    value: "bank_transaction_list",
-    labelKey: "bankListKind",
-    descriptionKey: "bankListKindHelp",
-  },
-];
 
 function formatReviewFields(
   fields: ImageImportReviewField[],
@@ -108,8 +106,12 @@ function parseAmountInput(raw: string, currency: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function createEmptyDraft(imageId: string, txnDate?: string): ImageImportDraft {
-  return {
+function createEmptyDraft(
+  imageId: string,
+  txnDate?: string,
+  includeDescription = true,
+): ImageImportDraft {
+  return applyImageImportDescriptionPreference([{
     id: newDraftId(),
     imageId,
     txnDate: txnDate ?? "",
@@ -124,70 +126,14 @@ function createEmptyDraft(imageId: string, txnDate?: string): ImageImportDraft {
       ? ["description", "amount"]
       : ["txnDate", "description", "amount"],
     selected: true,
-  };
-}
-
-function SourcePicker({
-  sources,
-  value,
-  onChange,
-  disabled,
-}: {
-  sources: FinSource[];
-  value: string;
-  onChange: (id: string) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div>
-      <label className="mb-1 block text-sm font-medium text-warm-700">
-        Nguồn tiền
-      </label>
-      <SelectPrimitive.Root
-        value={value || "__none__"}
-        onValueChange={(v) => onChange(v === "__none__" ? "" : v)}
-        disabled={disabled || sources.length === 0}
-      >
-        <SelectPrimitive.Trigger
-          className={cn(
-            "flex h-11 w-full items-center justify-between gap-2 rounded-button border border-warm-200",
-            "bg-warm-50 px-3 text-left text-sm text-warm-900",
-            "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
-            "disabled:cursor-not-allowed disabled:opacity-60",
-          )}
-        >
-          <SelectPrimitive.Value placeholder="Chọn nguồn tiền" />
-          <SelectPrimitive.Icon>
-            <span className="text-warm-400">▾</span>
-          </SelectPrimitive.Icon>
-        </SelectPrimitive.Trigger>
-        <SelectPrimitive.Portal>
-          <SelectPrimitive.Content
-            position="popper"
-            className="z-[200] max-h-60 overflow-auto rounded-button border border-warm-200 bg-surface p-1 shadow-lg"
-          >
-            <SelectPrimitive.Viewport>
-              {sources.map((s) => (
-                <SelectPrimitive.Item
-                  key={s.id}
-                  value={s.id}
-                  className="cursor-pointer rounded-md px-3 py-2 text-sm outline-none data-[highlighted]:bg-warm-100"
-                >
-                  <SelectPrimitive.ItemText>{s.name}</SelectPrimitive.ItemText>
-                </SelectPrimitive.Item>
-              ))}
-            </SelectPrimitive.Viewport>
-          </SelectPrimitive.Content>
-        </SelectPrimitive.Portal>
-      </SelectPrimitive.Root>
-    </div>
-  );
+  }], includeDescription)[0];
 }
 
 export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
   const t = useTranslations("imageImport");
   const sourcesQuery = useSources();
-  const sources = sourcesQuery.data ?? [];
+  const imageTypeSettingsQuery = useImageImportTypeSettings(isOpen);
+  const sources = useMemo(() => sourcesQuery.data ?? [], [sourcesQuery.data]);
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   const isMdUp = useIsMdUp();
@@ -195,6 +141,8 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
   const [step, setStep] = useState<Step>("upload");
   const [importKind, setImportKind] = useState<ImageImportKind>("statement");
   const [sourceId, setSourceId] = useState("");
+  const [includeDescription, setIncludeDescription] = useState(true);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const [images, setImages] = useState<ImageImportImage[]>([]);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<ImageImportDraft[]>([]);
@@ -213,6 +161,23 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
   imagesRef.current = images;
   const groupRefs = useRef<Record<string, HTMLElement | null>>({});
   const transactionsScrollRef = useRef<HTMLDivElement>(null);
+  const autoAppliedSourceRef = useRef<string | null>(null);
+  const appliedSourceConfigRef = useRef<string | null>(null);
+
+  const imageTypeSettings = useMemo(
+    () => resolveImageImportTypeSettings(
+      imageTypeSettingsQuery.data,
+      (labelKey) => t(labelKey),
+    ),
+    [imageTypeSettingsQuery.data, t],
+  );
+  const activeTypeDefinition = IMAGE_IMPORT_KIND_DEFINITIONS.find(
+    (definition) => definition.type === importKind,
+  );
+  const activeTypeSetting = imageTypeSettings.find(
+    (setting) => setting.type === importKind,
+  );
+  const requiresVnd = activeTypeDefinition?.requiresVnd ?? false;
 
   const currency =
     sources.find((s) => s.id === sourceId)?.currency ?? "VND";
@@ -232,6 +197,8 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       setStep("upload");
       setImportKind("statement");
       setSourceId("");
+      setIncludeDescription(true);
+      setIsDraggingFiles(false);
       setSelectedImageId(null);
       setDrafts([]);
       setCategoryId("");
@@ -243,6 +210,8 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       setSubmitError("");
       setCollapsedGroups(new Set());
       setGroupDateValues({});
+      autoAppliedSourceRef.current = null;
+      appliedSourceConfigRef.current = null;
     }
   }, [isOpen, revokeAllPreviews]);
 
@@ -252,17 +221,81 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
     };
   }, [revokeAllPreviews]);
 
+  useEffect(() => {
+    if (
+      !isOpen
+      || imageTypeSettingsQuery.isPending
+      || sourcesQuery.isPending
+    ) {
+      return;
+    }
+
+    const configuredSourceId = activeTypeSetting?.sourceId ?? null;
+    const availableConfiguredSource = configuredSourceId
+      && sources.some((source) => source.id === configuredSourceId)
+      ? configuredSourceId
+      : null;
+    const sourceConfigKey = `${importKind}:${availableConfiguredSource ?? ""}`;
+    if (appliedSourceConfigRef.current === sourceConfigKey) return;
+    appliedSourceConfigRef.current = sourceConfigKey;
+
+    setSourceId((currentSourceId) => {
+      if (availableConfiguredSource) {
+        autoAppliedSourceRef.current = availableConfiguredSource;
+        return availableConfiguredSource;
+      }
+
+      const shouldClearPreviousAutoSource =
+        autoAppliedSourceRef.current !== null
+        && currentSourceId === autoAppliedSourceRef.current;
+      autoAppliedSourceRef.current = null;
+      return shouldClearPreviousAutoSource ? "" : currentSourceId;
+    });
+  }, [
+    activeTypeSetting?.sourceId,
+    importKind,
+    isOpen,
+    imageTypeSettingsQuery.isPending,
+    sources,
+    sourcesQuery.isPending,
+  ]);
+
   function handleAddFiles(fileList: FileList | File[] | null) {
     if (!fileList || fileList.length === 0) return;
 
-    const newImages: ImageImportImage[] = Array.from(fileList).map((file) => ({
+    const selectedFiles = Array.from(fileList);
+    const imageFiles = selectedFiles.filter((file) => file.type.startsWith("image/"));
+    if (imageFiles.length === 0) {
+      setScanError("Chỉ hỗ trợ tệp ảnh PNG, JPG hoặc ảnh chụp màn hình.");
+      return;
+    }
+
+    const newImages: ImageImportImage[] = imageFiles.map((file) => ({
       id: newImageId(),
       file,
       previewUrl: URL.createObjectURL(file),
     }));
 
     setImages((prev) => [...prev, ...newImages]);
-    setScanError("");
+    setScanError(
+      imageFiles.length < selectedFiles.length
+        ? `Đã bỏ qua ${String(selectedFiles.length - imageFiles.length)} tệp không phải ảnh.`
+        : "",
+    );
+  }
+
+  function handleFileDrag(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    if (scanning || !event.dataTransfer.types.includes("Files")) return;
+    event.dataTransfer.dropEffect = "copy";
+    setIsDraggingFiles(true);
+  }
+
+  function handleFileDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDraggingFiles(false);
+    if (scanning) return;
+    handleAddFiles(event.dataTransfer.files);
   }
 
   function removeImage(imageId: string) {
@@ -291,8 +324,8 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       setScanError("Chọn hoặc tải ít nhất một ảnh lên.");
       return;
     }
-    if (importKind === "bank_transaction_list" && currency !== "VND") {
-      setScanError(t("bankListVndOnly"));
+    if (requiresVnd && currency !== "VND") {
+      setScanError(t("kindVndOnly", { type: activeTypeSetting?.displayName ?? "" }));
       return;
     }
 
@@ -325,12 +358,15 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
           });
         });
 
-        const parsed = parseImageImportOcr(ocrResult, img.id, importKind);
+        const parsed = applyImageImportDescriptionPreference(
+          parseImageImportOcr(ocrResult, img.id, importKind),
+          includeDescription,
+        );
         if (parsed.length === 0) {
           warnings.push(
             `Ảnh ${String(i + 1)}: không nhận diện được giao dịch — thêm dòng trống để nhập thủ công.`,
           );
-          allDrafts.push(createEmptyDraft(img.id));
+          allDrafts.push(createEmptyDraft(img.id, undefined, includeDescription));
         } else {
           allDrafts.push(...parsed);
         }
@@ -340,7 +376,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
         setScanError(
           "Không nhận diện được giao dịch. Thử ảnh rõ hơn hoặc chỉnh sửa thủ công ở bước sau.",
         );
-        allDrafts.push(createEmptyDraft(images[0].id));
+        allDrafts.push(createEmptyDraft(images[0].id, undefined, includeDescription));
       }
 
       try {
@@ -438,6 +474,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
       createEmptyDraft(
         targetImageId,
         lastInGroup?.txnDate,
+        includeDescription,
       ),
     ]);
   }
@@ -520,7 +557,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
         setSubmitError(`Dòng ${String(i + 1)}: số tiền phải lớn hơn 0.`);
         return;
       }
-      if (!row.description.trim()) {
+      if (includeDescription && !row.description.trim()) {
         setSubmitError(`Dòng ${String(i + 1)}: nhập mô tả.`);
         return;
       }
@@ -623,69 +660,75 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
           : "Kiểm tra giao dịch và đối chiếu với ảnh trước khi lưu."
       }
       size="full"
-      contentClassName={
-        step === "review"
-          ? "h-[98dvh] max-h-[98dvh] md:h-[96vh] md:max-h-[96vh]"
-          : undefined
-      }
-      bodyClassName={
-        step === "review"
-          ? "flex min-h-0 flex-col overflow-y-auto py-3 md:overflow-hidden"
-          : undefined
-      }
+      contentClassName={cn(
+        step === "upload"
+          ? "!max-w-6xl"
+          : "h-[90dvh] max-h-[860px]",
+      )}
+      bodyClassName="flex min-h-0 flex-col overflow-hidden py-3"
     >
       {step === "upload" ? (
-        <div className="flex flex-col gap-5">
-          <fieldset disabled={scanning}>
-            <legend className="mb-2 text-sm font-medium text-warm-700">
-              {t("imageKind")}
-            </legend>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {IMAGE_IMPORT_KIND_OPTIONS.map((option) => {
-                const selected = importKind === option.value;
-                return (
-                  <label
-                    key={option.value}
-                    className={cn(
-                      "flex min-h-20 cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 transition-colors",
-                      "focus-within:ring-2 focus-within:ring-accent/30",
-                      selected
-                        ? "border-accent bg-accent/5"
-                        : "border-warm-200 bg-warm-25 hover:border-warm-300",
-                      scanning && "cursor-not-allowed opacity-60",
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="image-import-kind"
-                      value={option.value}
-                      checked={selected}
-                      className="mt-0.5 size-5 shrink-0 border-warm-300 text-accent"
-                      onChange={() => {
-                        setImportKind(option.value);
-                        setScanError("");
-                      }}
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-warm-900">
-                        {t(option.labelKey)}
-                      </span>
-                      <span className="mt-0.5 block text-xs leading-relaxed text-warm-500">
-                        {t(option.descriptionKey)}
-                      </span>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1 md:flex md:flex-col md:overflow-hidden">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,0.8fr)_minmax(14rem,1fr)_auto] lg:items-end">
+              <div className="min-w-0">
+                <label
+                  htmlFor="image-import-kind"
+                  className="mb-1 block text-sm font-medium text-warm-700"
+                >
+                  {t("imageKind")}
+                </label>
+                <select
+                  id="image-import-kind"
+                  value={importKind}
+                  disabled={scanning}
+                  className={cn(
+                    "h-11 w-full min-w-0 truncate rounded-button border border-warm-200 bg-warm-50 px-3 text-sm text-warm-900",
+                    "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
+                    "disabled:cursor-not-allowed disabled:opacity-60",
+                  )}
+                  onChange={(event) => {
+                    setImportKind(event.target.value as ImageImportKind);
+                    setScanError("");
+                  }}
+                >
+                  {IMAGE_IMPORT_KIND_DEFINITIONS.map((option) => {
+                    const setting = imageTypeSettings.find(
+                      (entry) => entry.type === option.type,
+                    );
+                    return (
+                      <option key={option.type} value={option.type}>
+                        {setting?.displayName ?? t(option.labelKey)}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
 
-          <SourcePicker
-            sources={sources}
-            value={sourceId}
-            onChange={setSourceId}
-            disabled={scanning}
-          />
+              <MoneySourceSelect
+                sources={sources}
+                value={sourceId}
+                label={t("source")}
+                placeholder={t("selectSource")}
+                emptyLabel={t("selectSource")}
+                onChange={(nextSourceId) => {
+                  autoAppliedSourceRef.current = null;
+                  setSourceId(nextSourceId);
+                }}
+                disabled={scanning}
+              />
+
+              <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-button border border-warm-200 bg-warm-25 px-3 text-sm font-medium text-warm-700 lg:mb-0">
+                <input
+                  type="checkbox"
+                  checked={includeDescription}
+                  disabled={scanning}
+                  className="size-4 rounded border-warm-300 text-accent focus:ring-accent"
+                  onChange={(event) => setIncludeDescription(event.target.checked)}
+                />
+                <span className="whitespace-nowrap">{t("includeDescription")}</span>
+              </label>
+            </div>
           {sourcesQuery.isLoading ? (
             <p className="-mt-3 text-xs text-warm-500" role="status">
               {t("sourceLoading")}
@@ -708,23 +751,30 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
               {t("sourceEmpty")}
             </p>
           ) : null}
-          {importKind === "bank_transaction_list" && sourceId && currency !== "VND" ? (
+          {requiresVnd && sourceId && currency !== "VND" ? (
             <p className="-mt-3 text-xs font-medium text-danger" role="alert">
-              {t("bankListVndOnly")}
+              {t("kindVndOnly", { type: activeTypeSetting?.displayName ?? "" })}
             </p>
           ) : null}
 
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-sm font-medium text-warm-700">
-                Ảnh giao dịch
-                {images.length > 0 ? ` (${String(images.length)})` : ""}
-              </span>
+          <div className="shrink-0">
+            <div className="mb-2 flex min-h-8 items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="text-sm font-medium text-warm-700">
+                  Ảnh giao dịch
+                </span>
+                {images.length > 0 ? (
+                  <span className="rounded-full bg-warm-100 px-2 py-0.5 text-xs font-medium text-warm-600">
+                    {String(images.length)} ảnh
+                  </span>
+                ) : null}
+              </div>
               {images.length > 0 ? (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
+                  leftIcon={<Trash2 className="size-3.5" aria-hidden />}
                   disabled={scanning}
                   onClick={clearAllImages}
                 >
@@ -734,77 +784,92 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
             </div>
             <div
               className={cn(
-                "overflow-hidden rounded-card border-2 border-dashed transition-colors",
+                "relative overflow-hidden rounded-card border-2 border-dashed transition-colors",
+                isDraggingFiles && "border-accent bg-accent/5 ring-4 ring-accent/10",
                 images.length > 0
-                  ? "border-warm-200 bg-warm-50/50"
-                  : "border-warm-200 bg-warm-25/80",
+                  ? "min-h-24 border-warm-200 bg-warm-25/60"
+                  : "min-h-32 border-warm-200 bg-warm-25/80",
               )}
+              onDragEnter={handleFileDrag}
+              onDragOver={handleFileDrag}
+              onDragLeave={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                  setIsDraggingFiles(false);
+                }
+              }}
+              onDrop={handleFileDrop}
             >
               {images.length > 0 ? (
-                <div className="p-4">
-                  <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory">
-                    {images.map((img, index) => (
-                      <div
-                        key={img.id}
-                        className="group relative w-28 shrink-0 snap-start sm:w-32"
-                      >
-                        <div className="overflow-hidden rounded-lg border border-warm-200 bg-surface shadow-sm">
-                          <img
-                            src={img.previewUrl}
-                            alt={`Ảnh ${String(index + 1)}`}
-                            loading="lazy"
-                            decoding="async"
-                            className="aspect-[9/16] w-full object-cover object-top"
-                          />
-                        </div>
-                        <div className="mt-1.5 flex items-center justify-between gap-1 px-0.5">
-                          <span className="text-xs font-medium text-warm-600">
-                            Ảnh {String(index + 1)}
-                          </span>
+                <div className="flex min-h-24 items-center gap-3 p-3">
+                  <TooltipPrimitive.Provider delayDuration={200}>
+                    <div className="scrollbar-stable flex min-w-0 flex-1 items-center gap-3 overflow-x-auto p-1">
+                      {images.map((img, index) => (
+                        <div key={img.id} className="relative shrink-0">
+                          <TooltipPrimitive.Root>
+                            <TooltipPrimitive.Trigger asChild>
+                              <span
+                                tabIndex={0}
+                                aria-label={`Ảnh ${String(index + 1)}: ${img.file.name}`}
+                                className="relative flex size-14 items-center justify-center rounded-lg border border-warm-200 bg-surface text-warm-500 outline-none transition-colors hover:border-accent/50 hover:bg-accent/5 focus-visible:ring-2 focus-visible:ring-accent/30"
+                              >
+                                <FileImage className="size-6" aria-hidden />
+                                <span className="absolute bottom-1 right-1 min-w-4 rounded bg-warm-100 px-1 text-center text-[10px] font-semibold leading-4 text-warm-600">
+                                  {String(index + 1)}
+                                </span>
+                              </span>
+                            </TooltipPrimitive.Trigger>
+                            <TooltipPrimitive.Portal>
+                              <TooltipPrimitive.Content
+                                sideOffset={6}
+                                collisionPadding={12}
+                                className="z-[210] max-w-72 break-all rounded-md bg-warm-900 px-2.5 py-1.5 text-xs text-surface elevation-menu"
+                              >
+                                {img.file.name}
+                              </TooltipPrimitive.Content>
+                            </TooltipPrimitive.Portal>
+                          </TooltipPrimitive.Root>
                           <button
                             type="button"
                             disabled={scanning}
-                            className="flex size-9 items-center justify-center rounded-md text-warm-400 hover:bg-warm-100 hover:text-danger disabled:opacity-40"
-                            aria-label={`Xóa ảnh ${String(index + 1)}`}
+                            className="absolute -right-2 -top-2 flex size-7 items-center justify-center rounded-full border border-warm-200 bg-surface text-warm-500 elevation-menu hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-40"
+                            aria-label={`${t("removeImage")} ${String(index + 1)}: ${img.file.name}`}
                             onClick={() => removeImage(img.id)}
                           >
-                            <X className="size-3.5" />
+                            <X className="size-3.5" aria-hidden />
                           </button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-warm-100 pt-3">
-                    <p className="text-xs text-warm-500">
-                      Vuốt ngang để xem thêm ảnh
-                    </p>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      disabled={scanning}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      Thêm ảnh
-                    </Button>
-                  </div>
+                      ))}
+                      <button
+                        type="button"
+                        disabled={scanning}
+                        className="flex h-14 shrink-0 items-center gap-2 rounded-lg border border-dashed border-warm-300 bg-surface px-3 text-sm font-medium text-warm-600 outline-none transition-colors hover:border-accent hover:bg-accent/5 hover:text-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <ImagePlus className="size-4" aria-hidden />
+                        Thêm ảnh
+                      </button>
+                    </div>
+                  </TooltipPrimitive.Provider>
+                  <p className="hidden max-w-44 shrink-0 text-right text-xs leading-relaxed text-warm-500 lg:block">
+                    Kéo thả thêm ảnh vào khung này
+                  </p>
                 </div>
               ) : (
                 <button
                   type="button"
                   disabled={scanning}
-                  className="flex w-full flex-col items-center gap-3 px-6 py-10 text-center disabled:opacity-60"
+                  className="flex min-h-32 w-full items-center justify-center gap-3 px-5 py-4 text-left outline-none transition-colors hover:bg-warm-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/30 disabled:opacity-60 sm:text-center"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <div className="flex size-14 items-center justify-center rounded-full bg-warm-100">
-                    <ImagePlus className="size-7 text-warm-400" aria-hidden />
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-warm-100">
+                    <ImagePlus className="size-5 text-warm-400" aria-hidden />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-warm-700">
-                      Chọn hoặc kéo thả ảnh vào đây
+                      Chọn ảnh hoặc kéo thả vào đây
                     </p>
                     <p className="mt-1 text-xs text-warm-500">
-                      PNG, JPG, ảnh chụp màn hình — có thể chọn nhiều ảnh
+                      PNG, JPG hoặc ảnh chụp màn hình · Có thể chọn nhiều ảnh
                     </p>
                   </div>
                 </button>
@@ -855,7 +920,9 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
             </p>
           ) : null}
 
-          <div className="flex justify-end gap-2 border-t border-warm-100 pt-4">
+          </div>
+
+          <div className="flex shrink-0 justify-end gap-2 border-t border-warm-100 pt-3">
             <Button type="button" variant="ghost" onClick={onClose}>
               Hủy
             </Button>
@@ -866,7 +933,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
               disabled={
                 images.length === 0
                 || !sourceId
-                || (importKind === "bank_transaction_list" && currency !== "VND")
+                || (requiresVnd && currency !== "VND")
               }
               onClick={() => void handleScan()}
             >
@@ -878,8 +945,9 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-3">
-          <div className="shrink-0 rounded-xl border border-warm-200 bg-warm-25/50 p-3 sm:p-4">
-            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-[minmax(10rem,0.7fr)_minmax(14rem,1fr)_minmax(18rem,1.5fr)]">
+          <div className="scrollbar-stable flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto md:grid md:grid-cols-[minmax(0,1fr)_minmax(18rem,28%)] md:grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] md:gap-x-4 md:gap-y-3 md:overflow-hidden xl:grid-cols-[minmax(0,1fr)_24rem]">
+          <div className="shrink-0 rounded-xl border border-warm-200 bg-warm-25/50 p-3 sm:p-4 md:col-start-1 md:row-start-1">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-[minmax(10rem,0.7fr)_minmax(14rem,1fr)_minmax(18rem,1.5fr)]">
               <div>
                 <span className="mb-1 block text-xs font-medium text-warm-500">
                   Nguồn tiền
@@ -892,11 +960,11 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                 <span className="mb-1 block text-xs font-medium text-warm-500">
                   {t("imageKind")}
                 </span>
-                <p className="text-sm font-medium text-warm-900">
-                  {t(importKind === "bank_transaction_list" ? "bankListKind" : "statementKind")}
+                <p className="truncate text-sm font-medium text-warm-900" title={activeTypeSetting?.displayName}>
+                  {activeTypeSetting?.displayName ?? t(activeTypeDefinition?.labelKey ?? "statementKind")}
                 </p>
               </div>
-              <div>
+              <div className="sm:col-span-2 xl:col-span-1">
                 <span className="mb-1.5 block text-xs font-medium text-warm-500">
                   {t("bulkExpenseCategory")}
                 </span>
@@ -926,9 +994,9 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
           </div>
 
           {(scanWarnings.length > 0 || refundCount > 0) && (
-            <div className="shrink-0 space-y-2">
+            <div className="shrink-0 space-y-2 md:col-start-1 md:row-start-2">
               {scanWarnings.length > 0 ? (
-                <div className="rounded-lg border border-warm-300 bg-warm-100 px-3 py-2 text-xs text-warm-600">
+                <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
                   {scanWarnings.map((warning) => (
                     <p key={warning}>{warning}</p>
                   ))}
@@ -943,7 +1011,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
             </div>
           )}
 
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 md:col-start-1 md:row-start-3">
             <p className="text-sm text-warm-600">
               {t("selectionSummary", {
                 selected: selectedCount,
@@ -964,8 +1032,8 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
             </Button>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-3 md:grid md:grid-cols-[minmax(0,1fr)_minmax(380px,54%)] md:gap-4 md:overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(420px,58%)] xl:grid-cols-[minmax(0,1fr)_620px] 2xl:grid-cols-[minmax(0,1fr)_680px]">
-            <aside className="sticky top-0 z-30 shrink-0 border-b border-warm-100 bg-surface pb-3 md:static md:order-2 md:flex md:min-h-0 md:flex-col md:gap-2 md:border-b-0 md:pb-0">
+          <div className="contents">
+            <aside className="shrink-0 border-b border-warm-100 bg-surface pb-3 md:col-start-2 md:row-span-5 md:row-start-1 md:flex md:min-h-0 md:flex-col md:gap-2 md:border-b-0 md:pb-0">
               <div className="flex items-center justify-between gap-2 px-0.5">
                 <span className="text-xs font-semibold uppercase tracking-wide text-warm-500">
                   Ảnh đối chiếu
@@ -980,12 +1048,12 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                   </span>
                 ) : null}
               </div>
-              <div className="flex h-[min(68vh,720px)] min-h-[20rem] items-center justify-center overflow-hidden rounded-xl border border-warm-200 bg-warm-100/80 p-2 md:h-auto md:min-h-[32rem] md:flex-1">
+              <div className="flex h-[min(76dvh,840px)] min-h-[20rem] items-center justify-center overflow-hidden rounded-xl border border-warm-200 bg-warm-100/80 p-2 md:h-auto md:min-h-0 md:flex-1">
                 {selectedImage ? (
                   <img
                     src={selectedImage.previewUrl}
                     alt="Ảnh đang xem"
-                    className="max-h-full max-w-full object-contain"
+                    className="h-full w-full object-contain"
                   />
                 ) : (
                   <p className="text-sm text-warm-400">Chọn ảnh để đối chiếu</p>
@@ -1032,7 +1100,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
 
             <div
               ref={transactionsScrollRef}
-              className="order-2 min-h-0 md:order-1 md:overflow-auto md:rounded-xl md:border md:border-warm-200"
+              className="scrollbar-stable min-h-0 md:col-start-1 md:row-start-4 md:overflow-auto md:rounded-xl md:border md:border-warm-200"
             >
               {images.map((img, imageIndex) => {
                 const groupDrafts = draftsByImageId.get(img.id) ?? [];
@@ -1058,7 +1126,7 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                   >
                     <div
                       className={cn(
-                        "flex flex-wrap items-center gap-1 border-b px-2 py-2 md:sticky md:top-0 md:z-20",
+                        "isolate flex flex-wrap items-center gap-1 border-b px-2 py-2 md:sticky md:top-0 md:z-30",
                         isActiveGroup
                           ? "border-accent/20 bg-accent/10"
                           : "border-warm-100 bg-warm-50",
@@ -1142,26 +1210,36 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
                           <DataTableScrollRegion
                             label={`Giao dịch nhận diện từ ảnh ${String(imageIndex + 1)}`}
                           >
-                            <table className="w-full min-w-[880px] text-sm">
+                            <table className="w-full min-w-[1080px] table-fixed text-sm">
                               <caption className="sr-only">
                                 Giao dịch nhận diện từ ảnh {String(imageIndex + 1)}
                               </caption>
+                              <colgroup>
+                                <col className="w-10" />
+                                <col className="w-[8.25rem]" />
+                                <col className="w-[14rem]" />
+                                <col className="w-[7.5rem]" />
+                                <col className="w-[8.25rem]" />
+                                <col className="w-[11.5rem]" />
+                                <col className="w-[10.5rem]" />
+                                <col className="w-10" />
+                              </colgroup>
                               <thead className="bg-warm-25 text-left text-[11px] font-medium uppercase tracking-wide text-warm-500">
                                 <tr className="border-b border-warm-100">
-                                  <th scope="col" className="w-9 px-2 py-2">
+                                  <th scope="col" className="px-2 py-2">
                                     <span className="sr-only">Chọn</span>
                                   </th>
-                                  <th scope="col" className="w-[7.5rem] px-2 py-2">Ngày</th>
-                                  <th scope="col" className="min-w-[8rem] px-2 py-2">Mô tả</th>
-                                  <th scope="col" className="w-[6.5rem] px-2 py-2 text-right">
+                                  <th scope="col" className="px-2 py-2">Ngày</th>
+                                  <th scope="col" className="px-2 py-2">Mô tả</th>
+                                  <th scope="col" className="px-2 py-2 text-right">
                                     Số tiền
                                   </th>
-                                  <th scope="col" className="w-[7.5rem] px-2 py-2">
+                                  <th scope="col" className="px-2 py-2">
                                     {t("direction")}
                                   </th>
-                                  <th scope="col" className="min-w-[9rem] px-2 py-2">Danh mục</th>
-                                  <th scope="col" className="min-w-[11rem] px-2 py-2">{t("tag")}</th>
-                                  <th scope="col" className="w-9 px-1 py-2">
+                                  <th scope="col" className="px-2 py-2">Danh mục</th>
+                                  <th scope="col" className="px-2 py-2">{t("tag")}</th>
+                                  <th scope="col" className="px-1 py-2">
                                     <span className="sr-only">Xóa</span>
                                   </th>
                                 </tr>
@@ -1205,10 +1283,11 @@ export function ImageImportModal({ isOpen, onClose }: ImageImportModalProps) {
           </div>
 
           {submitError ? (
-            <p className="shrink-0 text-sm text-danger" role="alert">
+            <p className="shrink-0 text-sm text-danger md:col-start-1 md:row-start-5" role="alert">
               {submitError}
             </p>
           ) : null}
+          </div>
 
           <div className="sticky bottom-0 z-30 -mx-6 flex shrink-0 flex-wrap justify-between gap-2 border-t border-warm-100 bg-surface px-6 py-3 md:static md:mx-0 md:px-0">
             <Button
@@ -1396,6 +1475,7 @@ const DraftCardRow = memo(function DraftCardRow({
               onChange={(tagIds) => onUpdate(row.id, { tagIds })}
               disabled={submitting || !row.selected}
               label={t("tag")}
+              compact
             />
           </div>
         </div>
@@ -1457,8 +1537,8 @@ const DraftTableRow = memo(function DraftTableRow({
           onChange={(e) => onUpdate(row.id, { txnDate: e.target.value })}
         />
       </td>
-      <td className="px-2 py-1.5 align-top">
-        <div className="flex flex-wrap items-center gap-1.5">
+      <td className="min-w-0 overflow-hidden px-2 py-1.5 align-top">
+        <div className="flex min-w-0 items-center gap-1.5">
           {row.isRefund ? (
             <span className="shrink-0 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-success">
               Hoàn trả
@@ -1487,7 +1567,7 @@ const DraftTableRow = memo(function DraftTableRow({
           </p>
         ) : null}
       </td>
-      <td className="px-2 py-1.5 align-top">
+      <td className="min-w-0 px-2 py-1.5 align-top">
         <DraftAmountInput
           value={row.amount}
           currency={currency}
@@ -1499,7 +1579,7 @@ const DraftTableRow = memo(function DraftTableRow({
           onChange={(amount) => onUpdate(row.id, { amount })}
         />
       </td>
-      <td className="px-2 py-1.5 align-top">
+      <td className="min-w-0 px-2 py-1.5 align-top">
         <DraftDirectionSelect
           value={row.direction}
           isRefund={row.isRefund}
@@ -1508,7 +1588,7 @@ const DraftTableRow = memo(function DraftTableRow({
           onChange={(direction) => onUpdate(row.id, { direction, categoryId: "" })}
         />
       </td>
-      <td className="px-2 py-1.5 align-top">
+      <td className="min-w-0 px-2 py-1.5 align-top">
         {row.isRefund ? (
           <span className="block py-2 text-xs text-warm-400">—</span>
         ) : (
@@ -1523,7 +1603,7 @@ const DraftTableRow = memo(function DraftTableRow({
           />
         )}
       </td>
-      <td className="px-2 py-1.5 align-top">
+      <td className="min-w-0 px-2 py-1.5 align-top">
         {row.isRefund ? (
           <span className="block py-2 text-xs text-warm-400">—</span>
         ) : (
@@ -1532,8 +1612,9 @@ const DraftTableRow = memo(function DraftTableRow({
               value={row.tagIds}
               onChange={(tagIds) => onUpdate(row.id, { tagIds })}
               disabled={submitting || !row.selected}
-              className="min-w-[10rem] gap-1"
+              className="w-full"
               label={t("tag")}
+              compact
             />
           </div>
         )}
@@ -1581,7 +1662,7 @@ function DraftDirectionSelect({
       aria-label={t("direction")}
       aria-invalid={invalid}
       className={cn(
-        "h-9 w-full rounded-md border bg-warm-50 px-2 text-sm text-warm-900",
+        "h-9 w-full min-w-0 truncate rounded-md border bg-warm-50 px-2 text-sm text-warm-900",
         "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
         invalid ? "border-danger" : "border-warm-200",
       )}

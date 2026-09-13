@@ -119,7 +119,7 @@ function SourceBreakdownRow({
         ) : null}
         {nextMonthShare > 0 ? (
           <div
-            className="h-full bg-warm-400"
+            className="h-full bg-warning"
             style={{ width: `${String(nextMonthShare)}%` }}
           />
         ) : null}
@@ -143,7 +143,7 @@ function SourceBreakdownRow({
           </span>
         ) : null}
         {source.nextMonthDueAmount > 0 ? (
-          <span className="text-warm-700">
+          <span className="text-warning">
             Tháng sau {formatCurrency(source.nextMonthDueAmount, currency)}
           </span>
         ) : null}

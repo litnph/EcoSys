@@ -1,6 +1,7 @@
 import { parseBankTransactionListOcr } from "./parseBankTransactionListOcr";
 import { parseOcrTransactionText } from "./parseOcrTransactionText";
 import type { ImageOcrResult } from "./runImageOcr";
+import { IMAGE_IMPORT_KIND_DEFINITIONS } from "./types";
 import type { ImageImportDraft, ImageImportKind } from "./types";
 
 export function parseImageImportOcr(
@@ -9,7 +10,8 @@ export function parseImageImportOcr(
   kind: ImageImportKind,
   referenceDate = new Date(),
 ): ImageImportDraft[] {
-  if (kind === "bank_transaction_list") {
+  const definition = IMAGE_IMPORT_KIND_DEFINITIONS.find((entry) => entry.type === kind);
+  if (definition?.parser === "bank_transaction_list") {
     return parseBankTransactionListOcr(result, imageId);
   }
   return parseOcrTransactionText(

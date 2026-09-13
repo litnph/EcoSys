@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ChevronRight,
+  Images,
   SlidersHorizontal,
   Tags,
   UserRound,
@@ -18,10 +19,16 @@ import { cn } from "@/shared/lib/utils";
 
 type SettingsTab = {
   href: string;
-  labelKey: "tabProfile" | "tabPreferences" | "tabClassification" | "tabMembers";
+  labelKey:
+    | "tabProfile"
+    | "tabPreferences"
+    | "tabImageImport"
+    | "tabClassification"
+    | "tabMembers";
   descriptionKey:
     | "tabProfileDescription"
     | "tabPreferencesDescription"
+    | "tabImageImportDescription"
     | "tabClassificationDescription"
     | "tabMembersDescription";
   group: "personal" | "workspace";
@@ -43,6 +50,14 @@ const TABS: SettingsTab[] = [
     descriptionKey: "tabPreferencesDescription",
     group: "personal",
     icon: SlidersHorizontal,
+  },
+  {
+    href: ROUTES.dashboard.settingsImageImport,
+    labelKey: "tabImageImport",
+    descriptionKey: "tabImageImportDescription",
+    group: "workspace",
+    icon: Images,
+    adminOnly: true,
   },
   {
     href: ROUTES.dashboard.settingsClassification,

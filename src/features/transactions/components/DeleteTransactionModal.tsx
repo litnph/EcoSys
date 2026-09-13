@@ -67,7 +67,7 @@ export function DeleteTransactionModal({
     >
       <div className="space-y-4">
         <div
-          className="rounded-lg border border-warm-300 bg-warm-100 px-3 py-2.5 text-sm text-warm-900"
+          className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-sm text-warning"
           role="alert"
         >
           Giao dịch sẽ bị xóa và số dư tài khoản sẽ được hoàn lại tự động

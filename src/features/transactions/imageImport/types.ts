@@ -7,9 +7,62 @@ export interface ImageImportImage {
 export const IMAGE_IMPORT_KINDS = [
   "statement",
   "bank_transaction_list",
+  "tp",
 ] as const;
 
 export type ImageImportKind = (typeof IMAGE_IMPORT_KINDS)[number];
+
+export const IMAGE_IMPORT_KIND_DEFINITIONS = [
+  {
+    type: "statement",
+    labelKey: "statementKind",
+    descriptionKey: "statementKindHelp",
+    parser: "statement",
+    requiresVnd: false,
+  },
+  {
+    type: "bank_transaction_list",
+    labelKey: "bankListKind",
+    descriptionKey: "bankListKindHelp",
+    parser: "bank_transaction_list",
+    requiresVnd: true,
+  },
+  {
+    type: "tp",
+    labelKey: "tpKind",
+    descriptionKey: "tpKindHelp",
+    parser: "bank_transaction_list",
+    requiresVnd: true,
+  },
+] as const satisfies ReadonlyArray<{
+  type: ImageImportKind;
+  labelKey: string;
+  descriptionKey: string;
+  parser: "statement" | "bank_transaction_list";
+  requiresVnd: boolean;
+}>;
+
+export interface ImageImportTypeSetting {
+  type: ImageImportKind;
+  displayName: string;
+  sourceId: string | null;
+}
+
+export function resolveImageImportTypeSettings(
+  stored: readonly ImageImportTypeSetting[] | null | undefined,
+  defaultName: (labelKey: string) => string,
+): ImageImportTypeSetting[] {
+  const byType = new Map(stored?.map((setting) => [setting.type, setting]));
+  return IMAGE_IMPORT_KIND_DEFINITIONS.map((definition) => {
+    const configured = byType.get(definition.type);
+    return {
+      type: definition.type,
+      displayName: configured?.displayName.trim() || defaultName(definition.labelKey),
+      sourceId: configured?.sourceId || null,
+    };
+  });
+}
+
 export type ImageImportDirection = "expense" | "income";
 export type ImageImportReviewField =
   | "txnDate"
@@ -47,6 +100,18 @@ export interface ImageImportDraft {
   /** OCR fields that should be explicitly checked in the existing preview. */
   reviewFields: ImageImportReviewField[];
   selected: boolean;
+}
+
+export function applyImageImportDescriptionPreference(
+  drafts: readonly ImageImportDraft[],
+  includeDescription: boolean,
+): ImageImportDraft[] {
+  if (includeDescription) return [...drafts];
+  return drafts.map((draft) => ({
+    ...draft,
+    description: "",
+    reviewFields: draft.reviewFields.filter((field) => field !== "description"),
+  }));
 }
 
 export function newDraftId(): string {

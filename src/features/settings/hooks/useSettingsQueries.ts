@@ -57,13 +57,15 @@ export function usePatchPreferences() {
         await invalidateBudgetAwareness(qc);
         await qc.invalidateQueries({ queryKey: reportKeys.all });
       }
-      const lang = normalizeAppLocale(vars.languageCode);
-      setPreferredLocale(lang);
-      const seg = typeof window !== "undefined"
-        ? window.location.pathname.split("/").filter(Boolean)[0]
-        : "";
-      if (seg !== lang) {
-        router.replace(pathname, { locale: lang, preserveSearch: true });
+      if (vars.languageCode !== undefined) {
+        const lang = normalizeAppLocale(vars.languageCode);
+        setPreferredLocale(lang);
+        const seg = typeof window !== "undefined"
+          ? window.location.pathname.split("/").filter(Boolean)[0]
+          : "";
+        if (seg !== lang) {
+          router.replace(pathname, { locale: lang, preserveSearch: true });
+        }
       }
     },
     onError: (e: Error) => {

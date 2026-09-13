@@ -7,7 +7,17 @@ import { useAuthStore } from "@/features/auth/stores/authStore";
 import { useEffect } from "react";
 import { ShieldX } from "lucide-react";
 
-export function AdminOnly({ children }: { children: ReactNode }) {
+type AdminOnlyProps = {
+  children: ReactNode;
+  title?: string;
+  description?: string;
+};
+
+export function AdminOnly({
+  children,
+  title = "Bạn không có quyền mở màn hình này",
+  description = "Chỉ quản trị viên gia đình có thể quản lý thành viên. EcoSys đang đưa bạn về trang tổng quan.",
+}: AdminOnlyProps) {
   const isAdmin = useIsAdmin();
   const user = useAuthStore((s) => s.user);
   const router = useRouter();
@@ -29,8 +39,8 @@ export function AdminOnly({ children }: { children: ReactNode }) {
           <ShieldX className="size-5" aria-hidden />
         </span>
         <div>
-          <h1 className="text-base font-semibold text-warm-900">Bạn không có quyền mở màn hình này</h1>
-          <p className="mt-1 text-sm leading-6 text-warm-600">Chỉ quản trị viên gia đình có thể quản lý thành viên. EcoSys đang đưa bạn về trang tổng quan.</p>
+          <h1 className="text-base font-semibold text-warm-900">{title}</h1>
+          <p className="mt-1 text-sm leading-6 text-warm-600">{description}</p>
         </div>
       </div>
     );

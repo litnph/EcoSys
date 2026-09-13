@@ -46,15 +46,15 @@ export function sortTransactions(
 
 export const TRANSACTION_TYPE_COLORS: Partial<Record<TransactionType, string>> =
   {
-    direct: "#52525b",
-    income: "#3f3f46",
-    deferred: "#71717a",
-    transfer: "#52525b",
-    split: "#a1a1aa",
-    debt_borrow: "#725a3a",
-    debt_repay: "#725a3a",
-    loan_give: "#71717a",
-    loan_collect: "#3f3f46",
-    balance_adjustment: "#52525b",
-    reversal: "#a1a1aa",
+    direct: "#64748b",
+    income: "#10b981",
+    deferred: "#6366f1",
+    transfer: "#2563eb",
+    split: "#8b5cf6",
+    debt_borrow: "#f97316",
+    debt_repay: "#ef4444",
+    loan_give: "#ec4899",
+    loan_collect: "#14b8a6",
+    balance_adjustment: "#78716c",
+    reversal: "#94a3b8",
   };

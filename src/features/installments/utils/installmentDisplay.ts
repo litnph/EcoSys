@@ -25,7 +25,7 @@ export function bucketBadgeClass(bucket: InstallmentUpcomingPayBucket): string {
     case "thisMonth":
       return "bg-accent/10 text-accent ring-accent/20";
     case "nextMonth":
-      return "bg-warm-100 text-warm-900 ring-warm-300";
+      return "bg-warning/10 text-warning ring-warning/20";
     case "later":
     default:
       return "bg-warm-100 text-warm-600 ring-warm-200";

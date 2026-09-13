@@ -13,10 +13,10 @@ const SHORT_LABEL_BY_VALUE: Record<CategoryNecessityLevel, string> = {
 };
 
 const BADGE_CLASS_BY_VALUE: Record<CategoryNecessityLevel, string> = {
-  needs: "bg-warm-100 text-warm-900 ring-warm-300/80",
-  flexible: "bg-warm-50 text-warm-700 ring-warm-300/80",
-  wants: "bg-accent/10 text-accent ring-accent/25",
-  waste: "bg-warm-200 text-warm-900 ring-warm-400/80",
+  needs: "bg-success/10 text-success ring-success/20",
+  flexible: "bg-info/10 text-info ring-info/20",
+  wants: "bg-warning/10 text-warning ring-warning/20",
+  waste: "bg-danger/10 text-danger ring-danger/20",
 };
 
 export function necessityLevelLabel(

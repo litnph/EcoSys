@@ -24,8 +24,8 @@ function changeTypeLabel(t: HistoryChangeType): string {
 
 function changeTypeBadgeClass(t: HistoryChangeType): string {
   const m: Record<HistoryChangeType, string> = {
-    created: "border-warm-300 bg-warm-50 text-warm-900",
-    updated: "border-warm-300 bg-warm-100 text-warm-900",
+    created: "border-success/30 bg-success/10 text-success",
+    updated: "border-info/30 bg-info/10 text-info",
     deleted: "border-danger/40 bg-danger/10 text-danger",
     restored: "border-accent/30 bg-accent/10 text-accent",
     cancelled: "border-warm-300 bg-warm-100 text-warm-800",

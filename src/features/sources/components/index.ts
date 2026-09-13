@@ -8,3 +8,5 @@ export { BalanceAdjustmentModal } from "./BalanceAdjustmentModal";
 export { RecalculateSourcesModal } from "./RecalculateSourcesModal";
 export { RecalculateSourceConfirmModal } from "./RecalculateSourceConfirmModal";
 export { SourceBalanceLedgerTable } from "./SourceBalanceLedgerTable";
+export { MoneySourceSelect } from "./MoneySourceSelect";
+export type { MoneySourceSelectProps } from "./MoneySourceSelect";

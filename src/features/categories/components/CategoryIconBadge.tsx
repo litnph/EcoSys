@@ -15,7 +15,7 @@ export function CategoryIconBadge({
 }) {
   const emoji = icon?.trim() || "📁";
   const hex = color?.trim();
-  const validHex = hex && /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : "#71717a";
+  const validHex = hex && /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : "#64748b";
 
   const sizeClass =
     size === "sm"

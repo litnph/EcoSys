@@ -81,15 +81,34 @@ describe("bank transaction list OCR parser", () => {
     expect(row.reviewFields).toContain("txnDate");
   });
 
-  it("does not merge two adjacent amount rows when a date marker is missed", () => {
+  it("inherits the group date for adjacent transaction rows", () => {
     const rows = parseBankTransactionListOcr(textResult(
       "06/09/2026\nFirst merchant -76,000 VND\nSecond merchant -15,000 VND",
     ));
 
     expect(rows).toHaveLength(2);
     expect(rows.map((row) => row.description)).toEqual(["First merchant", "Second merchant"]);
-    expect(rows[1].txnDate).toBe("");
-    expect(rows[1].reviewFields).toContain("txnDate");
+    expect(rows.map((row) => row.txnDate)).toEqual(["2026-09-06", "2026-09-06"]);
+    expect(rows.every((row) => !row.reviewFields.includes("txnDate"))).toBe(true);
+  });
+
+  it("applies each dated screenshot header to every row until the next header", () => {
+    const rows = parseBankTransactionListOcr(textResult([
+      "03/09/2026 - Thu Nam",
+      "PHAN THI MINH THUONG -555,000 VND",
+      "NGO THI NGOC MINH -100,000 VND",
+      "01/09/2026 - Thu Ba",
+      "NGUYEN TRUNG HIEU -8,000 VND",
+      "NGUYEN DINH CHUONG -3,963,000 VND",
+    ].join("\n")));
+
+    expect(rows.map((row) => row.txnDate)).toEqual([
+      "2026-09-03",
+      "2026-09-03",
+      "2026-09-01",
+      "2026-09-01",
+    ]);
+    expect(rows.every((row) => !row.reviewFields.includes("txnDate"))).toBe(true);
   });
 
   it("does not create transactions from header text or unrelated numbers", () => {

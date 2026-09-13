@@ -29,7 +29,7 @@ export function DebtSummaryBar({
         <p className="flex items-center gap-2 text-sm font-semibold text-danger">
           <ArrowUpRight className="size-4" aria-hidden /> Tôi đang nợ
         </p>
-        <p className="mt-2 font-amount text-2xl font-semibold tabular-nums text-warm-900 sm:text-3xl">
+        <p className="mt-2 font-amount text-2xl font-semibold tabular-nums text-danger sm:text-3xl">
           <AnimatedAmount value={borrowedRemaining} currency={currency} />
         </p>
         <p className="mt-1 text-xs text-warm-600">
@@ -40,7 +40,7 @@ export function DebtSummaryBar({
         <p className="flex items-center gap-2 text-sm font-semibold text-success">
           <ArrowDownLeft className="size-4" aria-hidden /> Người khác nợ tôi
         </p>
-        <p className="mt-2 font-amount text-2xl font-semibold tabular-nums text-warm-900 sm:text-3xl">
+        <p className="mt-2 font-amount text-2xl font-semibold tabular-nums text-success sm:text-3xl">
           <AnimatedAmount value={lentRemaining} currency={currency} />
         </p>
         <p className="mt-1 text-xs text-warm-600">
