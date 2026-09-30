@@ -1,9 +1,10 @@
-import { Wallet } from "lucide-react";
+import { Plus, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { formatCurrency, formatDate } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
 import { DataTableScrollRegion } from "@/shared/components/ui/DataTableScrollRegion";
+import { Button } from "@/shared/components/ui/Button";
 
 import type { MonthlyReportDirectExpenseSection } from "../types";
 
@@ -11,6 +12,7 @@ export interface DirectExpensesSectionProps {
   section: MonthlyReportDirectExpenseSection | undefined;
   isLoading: boolean;
   className?: string;
+  onAddTransaction?: () => void;
 }
 
 function SectionShell({
@@ -18,11 +20,13 @@ function SectionShell({
   subtitle,
   children,
   className,
+  action,
 }: {
   title: string;
   subtitle: string;
   children: ReactNode;
   className?: string;
+  action?: ReactNode;
 }) {
   return (
     <section
@@ -41,6 +45,7 @@ function SectionShell({
             <p className="mt-0.5 text-xs text-warm-500">{subtitle}</p>
           </div>
         </div>
+        {action}
       </header>
       {children}
     </section>
@@ -51,13 +56,27 @@ export function DirectExpensesSection({
   section,
   isLoading,
   className,
+  onAddTransaction,
 }: DirectExpensesSectionProps) {
+  const addAction = onAddTransaction ? (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      leftIcon={<Plus className="size-3.5" aria-hidden />}
+      onClick={onAddTransaction}
+    >
+      Thêm giao dịch
+    </Button>
+  ) : null;
+
   if (isLoading) {
     return (
       <SectionShell
         title="Chi trả trực tiếp"
         subtitle="Tiền mặt / ngân hàng — không gồm thanh toán kỳ sao kê."
         className={className}
+        action={addAction}
       >
         <div className="space-y-2 p-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -77,6 +96,7 @@ export function DirectExpensesSection({
       title="Chi trả trực tiếp"
       subtitle="Tiền mặt / ngân hàng — không gồm thanh toán kỳ sao kê."
       className={className}
+      action={addAction}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-warm-100 bg-warm-50/60 px-4 py-2.5 text-sm">
         <p className="text-warm-600">

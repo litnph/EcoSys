@@ -3,7 +3,11 @@ import { apiClient } from "@/shared/lib/axios";
 import type { ApiResponse } from "@/shared/types/api";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
 
-import type { UserPreferencesDto, UserProfileBundleDto } from "../types";
+import type {
+  MonthlyReportPeriodMode,
+  UserPreferencesDto,
+  UserProfileBundleDto,
+} from "../types";
 
 function assertSuccess<T>(res: ApiResponse<T>): asserts res is ApiResponse<T> & {
   success: true;
@@ -31,6 +35,7 @@ type BeUserProfileDto = {
   dateOfBirth?: string | null;
   avatarUrl?: string | null;
   monthlyReportDay?: number;
+  monthlyReportPeriodMode?: string;
 };
 
 function normalizePreferences(raw: Partial<UserPreferencesDto>): UserPreferencesDto {
@@ -50,6 +55,10 @@ function normalizePreferences(raw: Partial<UserPreferencesDto>): UserPreferences
       && raw.monthlyReportDay <= 31
         ? Math.trunc(raw.monthlyReportDay)
         : 1,
+    monthlyReportPeriodMode:
+      raw.monthlyReportPeriodMode === "upperBoundary"
+        ? "upperBoundary"
+        : "lowerBoundary",
   };
 }
 
@@ -76,6 +85,10 @@ function mapProfileToPreferences(profile: BeUserProfileDto): UserPreferencesDto 
         ? profile.theme
         : "system",
     monthlyReportDay: profile.monthlyReportDay ?? 1,
+    monthlyReportPeriodMode:
+      profile.monthlyReportPeriodMode === "upperBoundary"
+        ? "upperBoundary"
+        : "lowerBoundary",
   });
 }
 
@@ -96,6 +109,7 @@ async function putProfileDto(payload: {
   dateFormat: string;
   theme: string;
   monthlyReportDay: number;
+  monthlyReportPeriodMode: MonthlyReportPeriodMode;
 }): Promise<BeUserProfileDto> {
   const { data: body } = await apiClient.put<ApiResponse<{ profile: BeUserProfileDto }>>(
     "/user/profile",
@@ -113,6 +127,7 @@ function profilePayloadFromDto(
     dateFormat: string;
     theme: string;
     monthlyReportDay: number;
+    monthlyReportPeriodMode: MonthlyReportPeriodMode;
   }> = {}) {
   return {
     fullName: overrides.fullName ?? profile.fullName,
@@ -124,6 +139,11 @@ function profilePayloadFromDto(
     dateFormat: overrides.dateFormat ?? profile.dateFormat,
     theme: overrides.theme ?? profile.theme,
     monthlyReportDay: overrides.monthlyReportDay ?? profile.monthlyReportDay ?? 1,
+    monthlyReportPeriodMode:
+      overrides.monthlyReportPeriodMode
+      ?? (profile.monthlyReportPeriodMode === "upperBoundary"
+        ? "upperBoundary"
+        : "lowerBoundary"),
   };
 }
 
@@ -182,6 +202,7 @@ export async function patchPreferences(
       dateFormat: merged.dateFormat,
       theme: merged.theme,
       monthlyReportDay: merged.monthlyReportDay,
+      monthlyReportPeriodMode: merged.monthlyReportPeriodMode,
     }),
   });
   return mapProfileToPreferences(updated);

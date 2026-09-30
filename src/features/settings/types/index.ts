@@ -8,6 +8,8 @@ export type FirstDayOfWeekPreference = "monday" | "sunday";
 
 export type DateFormatPreference = "dd/MM/yyyy" | "MM/dd/yyyy";
 
+export type MonthlyReportPeriodMode = "lowerBoundary" | "upperBoundary";
+
 export type UserPreferencesDto = {
   languageCode: "vi" | "en";
   timezone: string;
@@ -16,6 +18,7 @@ export type UserPreferencesDto = {
   theme: ThemePreference;
   firstDayOfWeek: FirstDayOfWeekPreference;
   monthlyReportDay: number;
+  monthlyReportPeriodMode: MonthlyReportPeriodMode;
 };
 
 export type UserProfileBundleDto = {

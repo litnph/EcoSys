@@ -132,6 +132,7 @@ export interface MonthlyReportMetadata {
   reportingPeriodStart: string | null;
   reportingPeriodEnd: string | null;
   monthlyReportDay: number;
+  monthlyReportPeriodMode: "lowerBoundary" | "upperBoundary";
 }
 
 export type BudgetTargetMode = "maximum" | "minimum";

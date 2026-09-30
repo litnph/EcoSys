@@ -1,15 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useTranslations } from "@/i18n/hooks";
 import { useLocale } from "@/i18n/navigation";
-import { setPreferredLocale } from "@/shared/lib/localePreference";
-
-import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTheme } from "@/shared/providers/theme-provider";
+import { Button } from "@/shared/components/ui/Button";
 
 import type {
   DateFormatPreference,
   FirstDayOfWeekPreference,
+  MonthlyReportPeriodMode,
   ThemePreference,
   TimeFormatPreference,
   UserPreferencesDto,
@@ -21,6 +20,7 @@ import {
 import { usePatchPreferences, usePreferencesQuery } from "../hooks/useSettingsQueries";
 import { TimezoneSelect } from "./TimezoneSelect";
 import { buildReportingPeriodPreview } from "../utils/reportingPeriodPreview";
+import { PreferencesSaveConfirmModal } from "./PreferencesSaveConfirmModal";
 
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { AsyncStateError } from "@/shared/components/ui/AsyncStateError";
@@ -69,14 +69,24 @@ const defaultPreferences: UserPreferencesDto = {
   theme: "system",
   firstDayOfWeek: "monday",
   monthlyReportDay: 1,
+  monthlyReportPeriodMode: "lowerBoundary",
   ...readClientPreferences(),
 };
+
+function preferencesEqual(a: UserPreferencesDto, b: UserPreferencesDto): boolean {
+  return a.languageCode === b.languageCode
+    && a.timezone === b.timezone
+    && a.dateFormat === b.dateFormat
+    && a.timeFormat === b.timeFormat
+    && a.theme === b.theme
+    && a.firstDayOfWeek === b.firstDayOfWeek
+    && a.monthlyReportDay === b.monthlyReportDay
+    && a.monthlyReportPeriodMode === b.monthlyReportPeriodMode;
+}
 
 export function PreferencesSettingsPanel() {
   const { setTheme: applyRootTheme } = useTheme();
   const t = useTranslations("settings");
-  const router = useRouter();
-  const pathname = usePathname();
   const locale = useLocale();
 
   const prefsQuery = usePreferencesQuery();
@@ -84,70 +94,49 @@ export function PreferencesSettingsPanel() {
 
   const server = prefsQuery.data;
   const [local, setLocal] = useState<UserPreferencesDto>(defaultPreferences);
-  const dirtyRef = useRef(false);
+  const [saved, setSaved] = useState<UserPreferencesDto>(defaultPreferences);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const isDirty = !preferencesEqual(local, saved);
 
   useEffect(() => {
-    if (server && !dirtyRef.current) {
-      setLocal({ ...server, ...readClientPreferences() });
+    if (server && !isDirty) {
+      const next = { ...server, ...readClientPreferences() };
+      setLocal(next);
+      setSaved(next);
       applyRootTheme(server.theme);
     }
-  }, [server, applyRootTheme]);
-
-  useEffect(() => {
-    if (!dirtyRef.current) return;
-    const timer = window.setTimeout(() => {
-      patch.mutate(
-        {
-          languageCode: local.languageCode,
-          timezone: local.timezone,
-          dateFormat: local.dateFormat,
-          theme: local.theme,
-          monthlyReportDay: local.monthlyReportDay,
-        },
-        {
-          onSuccess: () => {
-            dirtyRef.current = false;
-          },
-        },
-      );
-    }, 500);
-    return () => window.clearTimeout(timer);
-  }, [
-    local.languageCode,
-    local.timezone,
-    local.dateFormat,
-    local.theme,
-    local.monthlyReportDay,
-    patch,
-  ]);
+  }, [server, applyRootTheme, isDirty]);
 
   const bump = (partial: Partial<UserPreferencesDto>) => {
-    if (
-      partial.timeFormat !== undefined ||
-      partial.firstDayOfWeek !== undefined
-    ) {
-      setLocal((prev) => {
-        const merged = { ...prev, ...partial };
-        writeClientPreferences({
-          timeFormat: merged.timeFormat,
-          firstDayOfWeek: merged.firstDayOfWeek,
-        });
-        return merged;
-      });
-      return;
-    }
-
-    dirtyRef.current = true;
-    setLocal((prev) => {
-      const merged = { ...prev, ...partial };
-      if (partial.theme) {
-        applyRootTheme(partial.theme as ThemePreference);
-      }
-      return merged;
-    });
+    setLocal((prev) => ({ ...prev, ...partial }));
   };
 
-  const periodPreview = buildReportingPeriodPreview(local.monthlyReportDay, locale);
+  const periodPreview = buildReportingPeriodPreview(
+    local.monthlyReportDay,
+    local.monthlyReportPeriodMode,
+    locale,
+  );
+  const periodLabel = t("monthlyReportDayPreview", {
+    month: periodPreview.month,
+    year: periodPreview.year,
+    start: periodPreview.start,
+    end: periodPreview.end,
+  });
+
+  const handleConfirmSave = async () => {
+    try {
+      await patch.mutateAsync(local);
+      writeClientPreferences({
+        timeFormat: local.timeFormat,
+        firstDayOfWeek: local.firstDayOfWeek,
+      });
+      applyRootTheme(local.theme);
+      setSaved(local);
+      setConfirmOpen(false);
+    } catch {
+      // The mutation hook presents the API error and leaves the dialog open.
+    }
+  };
 
   if (prefsQuery.isLoading && !prefsQuery.data) {
     return <SkeletonCard lines={6} className="p-8" />;
@@ -178,11 +167,7 @@ export function PreferencesSettingsPanel() {
               value={local.languageCode}
               onChange={(e) => {
                 const code = e.target.value as "vi" | "en";
-                setPreferredLocale(code);
                 bump({ languageCode: code });
-                if (code !== locale) {
-                  router.replace(pathname, { locale: code, preserveSearch: true });
-                }
               }}
               className="mt-3 h-10 w-full max-w-xs rounded-input border border-warm-200 bg-surface px-3 text-sm text-warm-900 outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25"
             >
@@ -213,16 +198,50 @@ export function PreferencesSettingsPanel() {
                 <option key={day} value={day}>{day}</option>
               ))}
             </select>
+
+            <fieldset className="mt-5 max-w-2xl">
+              <legend className="text-sm font-medium text-warm-900">
+                {t("monthlyReportPeriodMode")}
+              </legend>
+              <p className="mt-1 text-sm text-warm-600">
+                {t("monthlyReportPeriodModeHelp")}
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {(["lowerBoundary", "upperBoundary"] as MonthlyReportPeriodMode[]).map((mode) => (
+                  <label
+                    key={mode}
+                    className="flex cursor-pointer items-start gap-3 rounded-input border border-warm-200 p-3 text-sm text-warm-800 has-[:checked]:border-accent has-[:checked]:bg-accent/5"
+                  >
+                    <input
+                      type="radio"
+                      name="monthly-report-period-mode"
+                      value={mode}
+                      checked={local.monthlyReportPeriodMode === mode}
+                      disabled={patch.isPending}
+                      onChange={() => bump({ monthlyReportPeriodMode: mode })}
+                      className="mt-0.5 size-4 border-warm-300 text-accent focus:ring-accent"
+                    />
+                    <span>
+                      <span className="block font-medium text-warm-900">
+                        {t(mode === "lowerBoundary"
+                          ? "monthlyReportLowerBoundary"
+                          : "monthlyReportUpperBoundary")}
+                      </span>
+                      <span className="mt-1 block text-xs leading-relaxed text-warm-600">
+                        {t(mode === "lowerBoundary"
+                          ? "monthlyReportLowerBoundaryHelp"
+                          : "monthlyReportUpperBoundaryHelp")}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <p
               id="monthly-report-day-preview"
-              className="mt-3 text-sm font-medium text-warm-800"
+              className="mt-4 rounded-input bg-warm-50 px-3 py-2.5 text-sm font-medium text-warm-800"
             >
-              {t("monthlyReportDayPreview", {
-                month: periodPreview.month,
-                year: periodPreview.year,
-                start: periodPreview.start,
-                end: periodPreview.end,
-              })}
+              {periodLabel}
             </p>
           </div>
 
@@ -299,16 +318,36 @@ export function PreferencesSettingsPanel() {
             </div>
           </fieldset>
         </div>
-        <p className="mt-5 text-sm text-warm-600" aria-live="polite">
-          {patch.isPending
-            ? t("savingPreferences")
-            : patch.isError
-              ? t("preferencesSaveError")
-              : patch.isSuccess
-                ? t("preferencesSaved")
-                : null}
-        </p>
+        <div className="mt-6 flex flex-col gap-3 border-t border-warm-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-warm-600" aria-live="polite">
+            {patch.isPending
+              ? t("savingPreferences")
+              : patch.isError
+                ? t("preferencesSaveError")
+                : isDirty
+                  ? t("preferencesUnsaved")
+                  : patch.isSuccess
+                    ? t("preferencesSaved")
+                    : null}
+          </p>
+          <Button
+            type="button"
+            variant="primary"
+            disabled={!isDirty || patch.isPending}
+            onClick={() => setConfirmOpen(true)}
+          >
+            {t("savePreferences")}
+          </Button>
+        </div>
       </section>
+
+      <PreferencesSaveConfirmModal
+        isOpen={confirmOpen}
+        isPending={patch.isPending}
+        periodLabel={periodLabel}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => void handleConfirmSave()}
+      />
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import type { MonthlyReportPeriodMode } from "../types";
+
 export interface ReportingPeriodPreview {
   year: number;
   month: number;
@@ -27,15 +29,21 @@ function financeToday(): { year: number; monthIndex: number; day: number } {
 
 export function buildReportingPeriodPreview(
   reportDay: number,
+  periodMode: MonthlyReportPeriodMode,
   locale: string,
 ): ReportingPeriodPreview {
   const today = financeToday();
   const cutoff = boundary(today.year, today.monthIndex, reportDay).getUTCDate();
-  const targetMonthIndex = today.day < cutoff ? today.monthIndex : today.monthIndex + 1;
+  const targetMonthIndex = periodMode === "lowerBoundary"
+    ? today.day < cutoff ? today.monthIndex : today.monthIndex + 1
+    : today.day < cutoff ? today.monthIndex - 1 : today.monthIndex;
   const target = new Date(Date.UTC(today.year, targetMonthIndex, 1));
-  const previous = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() - 1, 1));
-  const startDate = boundary(previous.getUTCFullYear(), previous.getUTCMonth(), reportDay);
-  const endDate = boundary(target.getUTCFullYear(), target.getUTCMonth(), reportDay);
+  const startMonth = periodMode === "lowerBoundary"
+    ? new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() - 1, 1))
+    : target;
+  const endMonth = new Date(Date.UTC(startMonth.getUTCFullYear(), startMonth.getUTCMonth() + 1, 1));
+  const startDate = boundary(startMonth.getUTCFullYear(), startMonth.getUTCMonth(), reportDay);
+  const endDate = boundary(endMonth.getUTCFullYear(), endMonth.getUTCMonth(), reportDay);
   const formatter = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "vi-VN", {
     timeZone: "UTC",
     day: "2-digit",

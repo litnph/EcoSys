@@ -6,4 +6,6 @@ export const reportKeys = {
   details: () => [...reportKeys.all, "detail"] as const,
   detail: (year: number, month: number) =>
     [...reportKeys.details(), year, month] as const,
+  addable: (year: number, month: number) =>
+    [...reportKeys.detail(year, month), "addable-transactions"] as const,
 };

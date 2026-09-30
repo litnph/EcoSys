@@ -17,3 +17,4 @@ export { DailyBreakdownChart } from "./DailyBreakdownChart";
 export { CloseMonthSection } from "./CloseMonthSection";
 export { CloseMonthConfirmModal } from "./CloseMonthConfirmModal";
 export { DeleteMonthlyReportModal } from "./DeleteMonthlyReportModal";
+export { AddMonthlyReportTransactionModal } from "./AddMonthlyReportTransactionModal";

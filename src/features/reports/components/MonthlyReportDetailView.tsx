@@ -19,6 +19,7 @@ import {
   filterMonthlyReport,
 } from "../utils/filterMonthlyReport";
 import { BillingCyclesReportSection } from "./BillingCyclesReportSection";
+import { AddMonthlyReportTransactionModal } from "./AddMonthlyReportTransactionModal";
 import { BudgetUtilizationChart } from "./BudgetUtilizationChart";
 import { CloseMonthSection } from "./CloseMonthSection";
 import { DirectExpensesSection } from "./DirectExpensesSection";
@@ -72,6 +73,7 @@ export function MonthlyReportDetailView({
   const defaultCurrency =
     report?.metadata?.currency ?? report?.currencyGroups[0]?.currency ?? "";
   const [selectedCurrency, setSelectedCurrency] = useState(defaultCurrency);
+  const [addTransactionOpen, setAddTransactionOpen] = useState(false);
 
   useEffect(() => {
     setSelectedCurrency(defaultCurrency);
@@ -246,6 +248,11 @@ export function MonthlyReportDetailView({
           <DirectExpensesSection
             section={filteredReport?.directExpenses}
             isLoading={isLoading}
+            onAddTransaction={
+              activeReport?.status === "open"
+                ? () => setAddTransactionOpen(true)
+                : undefined
+            }
           />
           <BillingCyclesReportSection
             section={filteredReport?.billingCycles}
@@ -271,6 +278,13 @@ export function MonthlyReportDetailView({
           />
         </section>
       ) : null}
+
+      <AddMonthlyReportTransactionModal
+        year={year}
+        month={month}
+        isOpen={addTransactionOpen}
+        onClose={() => setAddTransactionOpen(false)}
+      />
     </div>
   );
 }

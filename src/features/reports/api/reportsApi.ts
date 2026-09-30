@@ -1,6 +1,11 @@
 import type { ApiResponse } from "@/shared/types/api";
 import { apiClient } from "@/shared/lib/axios";
 import { getFailureMessageFromApiBody } from "@/shared/lib/errorMessages";
+import type { Transaction } from "@/features/transactions/types";
+import {
+  normalizeTxnStatus,
+  normalizeTxnType,
+} from "@/features/transactions/utils/txnDisplay";
 
 import type {
   Comparison,
@@ -107,6 +112,7 @@ interface MonthlyReportMetadataDto {
   reportingPeriodStart?: string | null;
   reportingPeriodEnd?: string | null;
   monthlyReportDay?: number;
+  monthlyReportPeriodMode?: string;
 }
 
 interface CategoryBudgetUtilizationDto {
@@ -313,6 +319,27 @@ function mapDirectExpenseItem(
     sourceId: row.sourceId,
     sourceName: row.sourceName?.trim()?.length ? row.sourceName : "—",
   };
+}
+
+interface MonthlyReportAddableTransactionDto {
+  id: string;
+  type: string;
+  purpose?: Transaction["purpose"];
+  status: string;
+  amount: number;
+  currency: string;
+  txnDate: string;
+  sourceId: string;
+  sourceName: string;
+  categoryId?: string | null;
+  categoryName?: string | null;
+  description: string;
+  note?: string | null;
+  createdAt: string;
+}
+
+interface MonthlyReportAddableTransactionsEnvelope {
+  items: MonthlyReportAddableTransactionDto[];
 }
 
 function mapBudgetUtilizations(
@@ -522,6 +549,10 @@ export async function getMonthlyReport(
           reportingPeriodStart: reportSlice.metadata.reportingPeriodStart ?? null,
           reportingPeriodEnd: reportSlice.metadata.reportingPeriodEnd ?? null,
           monthlyReportDay: Number(reportSlice.metadata.monthlyReportDay ?? 1),
+          monthlyReportPeriodMode:
+            reportSlice.metadata.monthlyReportPeriodMode === "upperBoundary"
+              ? "upperBoundary"
+              : "lowerBoundary",
         }
       : null,
     currencyGroups,
@@ -575,6 +606,52 @@ export async function deleteMonthlyReport(
   await unwrap<unknown>(
     apiClient.delete(
       `/finance/monthly-periods/${String(year)}/${String(month)}`,
+    ),
+  );
+}
+
+function mapAddableTransaction(
+  row: MonthlyReportAddableTransactionDto,
+): Transaction {
+  return {
+    id: row.id,
+    type: normalizeTxnType(row.type),
+    purpose: row.purpose ?? "general",
+    status: normalizeTxnStatus(row.status),
+    amount: Number(row.amount),
+    currency: row.currency,
+    txnDate: row.txnDate,
+    sourceId: row.sourceId,
+    sourceName: row.sourceName,
+    categoryId: row.categoryId ?? null,
+    categoryName: row.categoryName ?? null,
+    description: row.description,
+    note: row.note ?? null,
+    createdAt: row.createdAt,
+  };
+}
+
+export async function getMonthlyReportAddableTransactions(
+  year: number,
+  month: number,
+): Promise<Transaction[]> {
+  const data = await unwrap<MonthlyReportAddableTransactionsEnvelope>(
+    apiClient.get(
+      `/finance/monthly-periods/${String(year)}/${String(month)}/addable-transactions`,
+    ),
+  );
+  return data.items.map(mapAddableTransaction);
+}
+
+export async function addMonthlyReportTransaction(
+  year: number,
+  month: number,
+  transactionId: string,
+): Promise<void> {
+  await unwrap<unknown>(
+    apiClient.post(
+      `/finance/monthly-periods/${String(year)}/${String(month)}/items`,
+      { transactionId },
     ),
   );
 }

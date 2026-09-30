@@ -53,7 +53,10 @@ export function usePatchPreferences() {
     onSuccess: async (_next, vars) => {
       await qc.invalidateQueries({ queryKey: [...settingsKeys.root, "preferences"] });
       await qc.invalidateQueries({ queryKey: settingsKeys.profile() });
-      if (vars.monthlyReportDay !== undefined) {
+      if (
+        vars.monthlyReportDay !== undefined
+        || vars.monthlyReportPeriodMode !== undefined
+      ) {
         await invalidateBudgetAwareness(qc);
         await qc.invalidateQueries({ queryKey: reportKeys.all });
       }
